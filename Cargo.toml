@@ -5,6 +5,7 @@ authors = ["Nathan Jaremko <nathan@jaremko.ca>"]
 edition = "2018"
 license = "MIT"
 repository = "https://github.com/njaremko/samael"
+description = "A SAML2 library for Rust"
 
 [dependencies]
 openssl = "0.10"
