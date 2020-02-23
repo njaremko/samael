@@ -1,11 +1,15 @@
 [package]
 name = "samael"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Nathan Jaremko <nathan@jaremko.ca>"]
 edition = "2018"
 license = "MIT"
+readme = "README.md"
 repository = "https://github.com/njaremko/samael"
 description = "A SAML2 library for Rust"
+keywords = ["saml", "saml2", "xml", "sso"]
+categories = ["authentication"]
+maintenance = { status = "actively-developed" }
 
 [dependencies]
 openssl = "0.10"
