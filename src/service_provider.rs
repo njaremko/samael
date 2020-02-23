@@ -1,0 +1,551 @@
+use crate::metadata::{Endpoint, IndexedEndpoint, KeyDescriptor, NameIdFormat, SpSsoDescriptor};
+use crate::schema::{Assertion, Response};
+use crate::signature::Signature;
+use crate::{
+    key_info::{KeyInfo, X509Data},
+    metadata::{ContactPerson, EncryptionMethod, EntityDescriptor, HTTP_POST_BINDING},
+    schema::{AuthnRequest, Issuer, NameIdPolicy},
+};
+use chrono::prelude::*;
+use chrono::Duration;
+use flate2::{write::DeflateEncoder, Compression};
+use openssl::pkey::Private;
+use openssl::{rsa, x509};
+use snafu::ResultExt;
+use snafu::Snafu;
+use std::io::Write;
+use url::Url;
+
+#[derive(Debug, Snafu)]
+pub enum Error {
+    #[snafu(display(
+        "SAML response destination does not match SP ACS URL. {:?} != {:?}",
+        response_destination,
+        sp_acs_url
+    ))]
+    DestinationValidationError {
+        response_destination: Option<String>,
+        sp_acs_url: Option<String>,
+    },
+    #[snafu(display("SAML Assertion expired at: {}", time))]
+    AssertionExpired { time: String },
+    #[snafu(display(
+        "SAML Assertion Issuer does not match IDP entity ID: {:?} != {:?}",
+        issuer,
+        entity_id
+    ))]
+    AssertionIssuerMismatch {
+        issuer: Option<String>,
+        entity_id: Option<String>,
+    },
+    #[snafu(display("SAML Assertion Condition expired at: {}", time))]
+    AssertionConditionExpired { time: String },
+    #[snafu(display("SAML Assertion Condition is not valid until: {}", time))]
+    AssertionConditionExpiredBefore { time: String },
+    #[snafu(display(
+        "SAML Assertion Condition has unfulfilled AudienceRequirement: {}",
+        requirement
+    ))]
+    AssertionConditionAudienceRestrictionFailed { requirement: String },
+    #[snafu(display(
+        "SAML Response 'InResponseTo' does not match any of the possible request IDs: {:?}",
+        possible_ids
+    ))]
+    ResponseInResponseToInvalid { possible_ids: Vec<String> },
+    #[snafu(display(
+        "SAML Response Issuer does not match IDP entity ID: {:?} != {:?}",
+        issuer,
+        entity_id
+    ))]
+    ResponseIssuerMismatch {
+        issuer: Option<String>,
+        entity_id: Option<String>,
+    },
+    #[snafu(display("SAML Response expired at: {}", time))]
+    ResponseExpired { time: String },
+    #[snafu(display("SAML Response StatusCode is not successful: {}", code))]
+    ResponseBadStatusCode { code: String },
+    #[snafu(display("Encrypted SAML Assertions are not yet supported"))]
+    EncryptedAssertionsNotYetSupported,
+    #[snafu(display("SAML Response and all assertions must be signed"))]
+    FailedToValidateSignature,
+    #[snafu(display("Failed to deserialize SAML response."))]
+    DeserializeResponseError,
+    #[snafu(display("Failed to parse cert '{}'. Assumed DER format.", cert))]
+    FailedToParseCert { cert: String },
+    #[snafu(display("Unexpected Error Occurred!"))]
+    UnexpectedError,
+}
+
+#[derive(Clone)]
+pub struct ServiceProvider {
+    pub entity_id: Option<String>,
+    pub key: Option<rsa::Rsa<Private>>,
+    pub certificate: Option<x509::X509>,
+    pub intermediates: Option<Vec<x509::X509>>,
+    pub metadata_url: Option<String>,
+    pub acs_url: Option<String>,
+    pub slo_url: Option<String>,
+    pub idp_metadata: EntityDescriptor,
+    pub authn_name_id_format: Option<String>,
+    pub metadata_valid_duration: Option<chrono::Duration>,
+    pub force_authn: bool,
+    pub allow_idp_initiated: bool,
+    pub contact_person: Option<ContactPerson>,
+    pub max_issue_delay: Duration,
+    pub max_clock_skew: Duration,
+}
+
+impl Default for ServiceProvider {
+    fn default() -> Self {
+        ServiceProvider {
+            entity_id: None,
+            key: None,
+            certificate: None,
+            intermediates: None,
+            metadata_url: Some("http://localhost:8080/saml/metadata".to_string()),
+            acs_url: Some("http://localhost:8080/saml/acs".to_string()),
+            slo_url: Some("http://localhost:8080/saml/slo".to_string()),
+            idp_metadata: EntityDescriptor::default(),
+            authn_name_id_format: None,
+            metadata_valid_duration: None,
+            force_authn: false,
+            allow_idp_initiated: false,
+            contact_person: None,
+            max_issue_delay: Duration::seconds(90),
+            max_clock_skew: Duration::seconds(180),
+        }
+    }
+}
+
+impl ServiceProvider {
+    pub fn metadata(&self) -> Result<EntityDescriptor, Box<dyn std::error::Error>> {
+        let valid_duration = if let Some(duration) = self.metadata_valid_duration {
+            Some(duration)
+        } else {
+            Some(chrono::Duration::hours(48))
+        };
+
+        let valid_until = valid_duration.map(|d| Utc::now() + d);
+
+        let entity_id = if let Some(entity_id) = self.entity_id.clone() {
+            Some(entity_id)
+        } else {
+            self.metadata_url.clone()
+        };
+
+        let mut key_descriptors = vec![];
+        if let Some(cert) = &self.certificate {
+            let mut cert_bytes: Vec<u8> = cert.to_der()?;
+            if let Some(intermediates) = &self.intermediates {
+                for intermediate in intermediates {
+                    cert_bytes.append(&mut intermediate.to_der()?);
+                }
+            }
+            key_descriptors.push(KeyDescriptor {
+                encryption_methods: None,
+                key_use: Some("signing".to_string()),
+                key_info: KeyInfo {
+                    id: None,
+                    x509_data: Some(X509Data {
+                        certificate: Some(base64::encode(&cert_bytes)),
+                    }),
+                },
+            });
+            key_descriptors.push(KeyDescriptor {
+                key_use: Some("signing".to_string()),
+                key_info: KeyInfo {
+                    id: None,
+                    x509_data: Some(X509Data {
+                        certificate: Some(base64::encode(&cert_bytes)),
+                    }),
+                },
+                encryption_methods: Some(vec![
+                    EncryptionMethod {
+                        algorithm: "http://www.w3.org/2001/04/xmlenc#aes128-cbc".to_string(),
+                    },
+                    EncryptionMethod {
+                        algorithm: "http://www.w3.org/2001/04/xmlenc#aes192-cbc".to_string(),
+                    },
+                    EncryptionMethod {
+                        algorithm: "http://www.w3.org/2001/04/xmlenc#aes256-cbc".to_string(),
+                    },
+                    EncryptionMethod {
+                        algorithm: "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p".to_string(),
+                    },
+                ]),
+            })
+        }
+
+        let sso_sp_descriptor = SpSsoDescriptor {
+            protocol_support_enumeration: Some("urn:oasis:names:tc:SAML:2.0:protocol".to_string()),
+            key_descriptors: Some(key_descriptors),
+            valid_until,
+            single_logout_services: Some(vec![Endpoint {
+                binding: HTTP_POST_BINDING.to_string(),
+                location: self.slo_url.clone().unwrap(),
+                response_location: self.slo_url.clone(),
+            }]),
+            authn_requests_signed: Some(false),
+            want_assertions_signed: Some(true),
+            assertion_consumer_services: vec![IndexedEndpoint {
+                binding: HTTP_POST_BINDING.to_string(),
+                location: self.acs_url.clone().unwrap(),
+                ..IndexedEndpoint::default()
+            }],
+
+            ..SpSsoDescriptor::default()
+        };
+
+        Ok(EntityDescriptor {
+            entity_id,
+            valid_until,
+            sp_sso_descriptors: Some(vec![sso_sp_descriptor]),
+            contact_person: self.contact_person.clone(),
+            ..EntityDescriptor::default()
+        })
+    }
+
+    fn name_id_format(&self) -> Option<String> {
+        self.authn_name_id_format
+            .clone()
+            .and_then(|v| -> Option<String> {
+                let unspecified = NameIdFormat::UnspecifiedNameIDFormat.value();
+                if v.is_empty() {
+                    Some(NameIdFormat::TransientNameIDFormat.value().to_string())
+                } else if v == unspecified {
+                    None
+                } else {
+                    Some(v)
+                }
+            })
+    }
+
+    fn sso_binding_location(&self, binding: &str) -> Option<String> {
+        if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
+            for idp_sso_descriptor in idp_sso_descriptors {
+                for sso_service in &idp_sso_descriptor.single_sign_on_services {
+                    if sso_service.binding == binding {
+                        return Some(sso_service.location.clone());
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    fn slo_binding_location(&self, binding: &str) -> Option<String> {
+        if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
+            for idp_sso_descriptor in idp_sso_descriptors {
+                for single_logout_services in &idp_sso_descriptor.single_logout_services {
+                    if single_logout_services.binding == binding {
+                        return Some(single_logout_services.location.clone());
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    fn idp_signing_certs(&self) -> Result<Option<Vec<openssl::x509::X509>>, Error> {
+        let mut result = vec![];
+        if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
+            for idp_sso_descriptor in idp_sso_descriptors {
+                for key_descriptor in &idp_sso_descriptor.key_descriptors {
+                    if key_descriptor
+                        .key_use
+                        .as_ref()
+                        .filter(|key_use| *key_use == "signing")
+                        .is_some()
+                    {
+                        if let Some(cert) = key_descriptor
+                            .key_info
+                            .x509_data
+                            .as_ref()
+                            .and_then(|data| data.certificate.as_ref())
+                        {
+                            if let Ok(parsed) = openssl::x509::X509::from_der(cert.as_bytes()) {
+                                result.push(parsed)
+                            } else {
+                                return Err(Error::FailedToParseCert {
+                                    cert: cert.to_string(),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            // No signing keys found, look for keys with no use specified
+            if result.is_empty() {
+                for idp_sso_descriptor in idp_sso_descriptors {
+                    for key_descriptor in &idp_sso_descriptor.key_descriptors {
+                        if key_descriptor.key_use == None
+                            || key_descriptor.key_use == Some("".to_string())
+                        {
+                            if let Some(cert) = key_descriptor
+                                .key_info
+                                .x509_data
+                                .as_ref()
+                                .and_then(|data| data.certificate.as_ref())
+                            {
+                                if let Ok(parsed) = openssl::x509::X509::from_der(cert.as_bytes()) {
+                                    result.push(parsed)
+                                } else {
+                                    return Err(Error::FailedToParseCert {
+                                        cert: cert.to_string(),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Ok(if result.is_empty() {
+            None
+        } else {
+            Some(result)
+        })
+    }
+
+    pub fn parse_response(
+        &self,
+        encoded_resp: &str,
+        possible_request_ids: &[String],
+    ) -> Result<Assertion, Box<dyn std::error::Error>> {
+        let bytes = base64::decode(encoded_resp)?;
+        let decoded = std::str::from_utf8(&bytes)?;
+        let assertion = self.parse_xml_response(decoded, possible_request_ids)?;
+        Ok(assertion)
+    }
+
+    fn parse_xml_response(
+        &self,
+        response_xml: &str,
+        possible_request_ids: &[String],
+    ) -> Result<Assertion, Error> {
+        let response: Response = quick_xml::de::from_str(response_xml).unwrap();
+        self.validate_destination(&response)?;
+        let mut request_id_valid = false;
+        if self.allow_idp_initiated {
+            request_id_valid = true;
+        } else if let Some(in_response_to) = &response.in_response_to {
+            for req_id in possible_request_ids {
+                if req_id == in_response_to {
+                    request_id_valid = true;
+                }
+            }
+        }
+        if !request_id_valid {
+            return Err(Error::ResponseInResponseToInvalid {
+                possible_ids: possible_request_ids.to_vec(),
+            });
+        }
+        if response.issue_instant + self.max_issue_delay < Utc::now() {
+            return Err(Error::ResponseExpired {
+                time: (response.issue_instant + self.max_issue_delay)
+                    .to_rfc3339_opts(SecondsFormat::Secs, true),
+            });
+        }
+        if let Some(issuer) = &response.issuer {
+            if issuer.value != self.idp_metadata.entity_id {
+                return Err(Error::ResponseIssuerMismatch {
+                    issuer: issuer.value.clone(),
+                    entity_id: self.idp_metadata.entity_id.clone(),
+                });
+            }
+        }
+        if let Some(status) = &response.status.status_code.value {
+            if status != "urn:oasis:names:tc:SAML:2.0:status:Success" {
+                return Err(Error::ResponseBadStatusCode {
+                    code: status.clone(),
+                });
+            }
+        }
+
+        if let Some(encrypted_assertion) = &response.encrypted_assertion {
+            Err(Error::EncryptedAssertionsNotYetSupported)
+        } else if let Some(assertion) = &response.assertion {
+            self.validate_signed(&response)?;
+            self.validate_assertion(assertion, possible_request_ids)?;
+            Ok(assertion.clone())
+        } else {
+            Err(Error::UnexpectedError)
+        }
+    }
+
+    fn validate_assertion(
+        &self,
+        assertion: &Assertion,
+        possible_request_ids: &[String],
+    ) -> Result<(), Error> {
+        if assertion.issue_instant + self.max_issue_delay < Utc::now() {
+            return Err(Error::AssertionExpired {
+                time: (assertion.issue_instant + self.max_issue_delay)
+                    .to_rfc3339_opts(SecondsFormat::Secs, true),
+            });
+        }
+        if assertion.issuer.value != self.idp_metadata.entity_id {
+            return Err(Error::AssertionIssuerMismatch {
+                issuer: assertion.issuer.value.clone(),
+                entity_id: self.idp_metadata.entity_id.clone(),
+            });
+        }
+        if let Some(conditions) = &assertion.conditions {
+            if let Some(not_before) = conditions.not_before {
+                if Utc::now() < not_before - self.max_clock_skew {
+                    return Err(Error::AssertionConditionExpiredBefore {
+                        time: (not_before - self.max_clock_skew)
+                            .to_rfc3339_opts(SecondsFormat::Secs, true),
+                    });
+                }
+            }
+            if let Some(not_on_or_after) = conditions.not_on_or_after {
+                if not_on_or_after + self.max_clock_skew < Utc::now() {
+                    return Err(Error::AssertionConditionExpired {
+                        time: (not_on_or_after + self.max_clock_skew)
+                            .to_rfc3339_opts(SecondsFormat::Secs, true),
+                    });
+                }
+            }
+            if let Some(audience_restrictions) = &conditions.audience_restrictions {
+                let mut valid = false;
+                if let Some(audience) = self.entity_id.clone().or_else(|| self.metadata_url.clone())
+                {
+                    for restriction in audience_restrictions {
+                        if restriction.audience.iter().any(|a| a == &audience) {
+                            valid = true;
+                        }
+                    }
+                    if !valid {
+                        return Err(Error::AssertionConditionAudienceRestrictionFailed {
+                            requirement: audience,
+                        });
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn validate_destination(&self, response: &Response) -> Result<(), Error> {
+        if response.signature.is_some() || response.destination.is_some() {
+            if response.destination.as_ref().map(String::as_str)
+                != self.acs_url.as_ref().map(String::as_str)
+            {
+                return Err(Error::DestinationValidationError {
+                    response_destination: response.destination.clone(),
+                    sp_acs_url: self.acs_url.clone(),
+                });
+            }
+        }
+        Ok(())
+    }
+
+    fn validate_signed(&self, response: &Response) -> Result<(), Error> {
+        let mut signed = false;
+        if let Some(signature) = &response.signature {
+            // self.validate_signature(signature)?;
+            signed = true;
+        }
+        if let Some(assertion) = &response.assertion {
+            if let Some(signature) = &assertion.signature {
+                // self.validate_signature(signature)?;
+                signed = true;
+            }
+        }
+        if signed {
+            Ok(())
+        } else {
+            Err(Error::FailedToValidateSignature)
+        }
+    }
+
+    fn validate_signature(&self, signature: &Signature) -> Result<(), Error> {
+        // if let Some(certs) = self.idp_signing_certs()? {
+        //     let reference = &signature.signed_info.reference;
+        //     assert_eq!(reference.len(), 1);
+        //     assert!(reference[0].transforms.is_some())
+        // } else {
+        //     todo!()
+        // }
+        Ok(())
+    }
+
+    pub fn make_authentication_request(
+        &self,
+        idp_url: &str,
+    ) -> Result<AuthnRequest, Box<dyn std::error::Error>> {
+        let entity_id = if let Some(entity_id) = self.entity_id.clone() {
+            Some(entity_id)
+        } else {
+            self.metadata_url.clone()
+        };
+
+        Ok(AuthnRequest {
+            assertion_consumer_service_url: self.acs_url.clone(),
+            destination: Some(idp_url.to_string()),
+            protocol_binding: Some(HTTP_POST_BINDING.to_string()),
+            id: format!("id-{}", rand::random::<u32>()),
+            issue_instant: Utc::now(),
+            version: "2.0".to_string(),
+            issuer: Some(Issuer {
+                format: Some("urn:oasis:names:tc:SAML:2.0:nameid-format:entity".to_string()),
+                value: entity_id,
+                ..Issuer::default()
+            }),
+            name_id_policy: Some(NameIdPolicy {
+                allow_create: Some(true),
+                format: self.name_id_format(),
+                ..NameIdPolicy::default()
+            }),
+            force_authn: Some(self.force_authn),
+            ..AuthnRequest::default()
+        })
+    }
+}
+
+impl AuthnRequest {
+    pub fn post(&self, relay_state: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
+        let encoded = base64::encode(self.to_xml()?.as_bytes());
+        if let Some(dest) = &self.destination {
+            Ok(Some(format!(
+                r#"
+            <form method="post" action="{}" id="SAMLRequestForm">
+                <input type="hidden" name="SAMLRequest" value="{}" />
+                <input type="hidden" name="RelayState" value="{}" />
+                <input id="SAMLSubmitButton" type="submit" value="Submit" />
+            </form>
+            <script>
+                document.getElementById('SAMLSubmitButton').style.visibility="hidden";
+                document.getElementById('SAMLRequestForm').submit();
+            </script>
+        "#,
+                dest, encoded, relay_state
+            )))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn redirect(&self, relay_state: &str) -> Result<Option<Url>, Box<dyn std::error::Error>> {
+        let mut compressed_buf = vec![];
+        {
+            let mut encoder = DeflateEncoder::new(&mut compressed_buf, Compression::default());
+            encoder.write_all(self.to_xml()?.as_bytes())?;
+        }
+        let encoded = base64::encode(&compressed_buf);
+        Ok(self.destination.clone().map(|d| {
+            let mut url: Url = d.parse().unwrap();
+            url.set_query(Some(&format!("SAMLRequest={}", &encoded)));
+            if relay_state != "" {
+                let owned_url = url.to_owned();
+                if let Some(query) = owned_url.query() {
+                    url.set_query(Some(&format!("{}&RelayState={}", query, relay_state)))
+                }
+            }
+            url
+        }))
+    }
+}
