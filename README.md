@@ -45,23 +45,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..ServiceProvider::default()
     };
 
-    let mut metadata = sp.metadata()?;
-    metadata.organization = Some(Organization {
-        organization_names: Some(vec![LocalizedName {
-            lang: "en".to_string(),
-            value: "https://google.com".to_string(),
-        }]),
-        organization_display_names: Some(vec![LocalizedName {
-            lang: "en".to_string(),
-            value: "https://google.com".to_string(),
-        }]),
-        organization_urls: Some(vec![LocalizedUri {
-            lang: "en".to_string(),
-            value: "https://google.com".to_string(),
-        }]),
-        ..Organization::default()
-    });
-
     let metadata = sp.metadata()?.to_xml()?;
 
     let metadata_route = warp::get()
