@@ -1,6 +1,6 @@
 [package]
 name = "samael"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["Nathan Jaremko <nathan@jaremko.ca>"]
 edition = "2018"
 license = "MIT"
@@ -16,8 +16,6 @@ quick-xml = { version = "0.17", features = [ "serialize" ] }
 serde = { version = "1.0", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
 base64 = "0.11"
-reqwest = "0.10"
-tokio = { version = "0.2", features = ["full"] }
 flate2 = "1.0"
 snafu = "0.6"
 rand = "0.7"

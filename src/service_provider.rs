@@ -11,7 +11,6 @@ use chrono::Duration;
 use flate2::{write::DeflateEncoder, Compression};
 use openssl::pkey::Private;
 use openssl::{rsa, x509};
-use snafu::ResultExt;
 use snafu::Snafu;
 use std::io::Write;
 use url::Url;
@@ -430,15 +429,14 @@ impl ServiceProvider {
     }
 
     fn validate_destination(&self, response: &Response) -> Result<(), Error> {
-        if response.signature.is_some() || response.destination.is_some() {
-            if response.destination.as_ref().map(String::as_str)
+        if (response.signature.is_some() || response.destination.is_some())
+            && response.destination.as_ref().map(String::as_str)
                 != self.acs_url.as_ref().map(String::as_str)
-            {
-                return Err(Error::DestinationValidationError {
-                    response_destination: response.destination.clone(),
-                    sp_acs_url: self.acs_url.clone(),
-                });
-            }
+        {
+            return Err(Error::DestinationValidationError {
+                response_destination: response.destination.clone(),
+                sp_acs_url: self.acs_url.clone(),
+            });
         }
         Ok(())
     }
