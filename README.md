@@ -6,16 +6,16 @@ This is a work in progress. Pull Requests are welcome.
 
 Current Features:
 - Serializing and Deserializing SAML messages
+- IDP-initiated SSO
+- SP-initiated SSO Redirect-POST binding 
 - Helpers for validating SAML assertions
     - Encrypted assertions aren't supported yet
     - SAMLResponse signatures aren't validated yet
     
-Priority right now is correctness, then I'll revisit usability.
-    
-Here is some saml code using this library:
+Here is some sample code using this library:
 ```rust
-use samael::metadata::{ContactPerson, ContactType, LocalizedName, LocalizedUri, Organization};
-use samael::service_provider::ServiceProvider;
+use samael::metadata::{ContactPerson, ContactType, EntityDescriptor};
+use samael::service_provider::ServiceProviderBuilder;
 use std::collections::HashMap;
 use std::fs;
 use warp::Filter;
@@ -23,27 +23,30 @@ use warp::Filter;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     openssl_probe::init_ssl_cert_env_vars();
+
     let resp = reqwest::get("https://samltest.id/saml/idp")
         .await?
         .text()
         .await?;
+    let idp_metadata: EntityDescriptor = samael::metadata::de::from_str(&resp)?;
+
     let pub_key = openssl::x509::X509::from_pem(&fs::read("./publickey.cer")?)?;
     let private_key = openssl::rsa::Rsa::private_key_from_pem(&fs::read("./privatekey.pem")?)?;
-    let sp = ServiceProvider {
-        entity_id: Some("nid-1234".to_string()),
-        key: Some(private_key),
-        certificate: Some(pub_key),
-        allow_idp_initiated: true,
-        contact_person: Some(ContactPerson {
+
+    let sp = ServiceProviderBuilder::default()
+        .entity_id("".to_string())
+        .key(private_key)
+        .certificate(pub_key)
+        .allow_idp_initiated(true)
+        .contact_person(ContactPerson {
             sur_name: Some("Bob".to_string()),
             contact_type: Some(ContactType::Technical.value().to_string()),
             ..ContactPerson::default()
-        }),
-        idp_metadata: samael::metadata::de::from_str(&resp)?,
-        acs_url: Some("http://localhost:8080/saml/acs".to_string()),
-        slo_url: Some("http://localhost:8080/saml/slo".to_string()),
-        ..ServiceProvider::default()
-    };
+        })
+        .idp_metadata(idp_metadata)
+        .acs_url("http://localhost:8080/saml/acs".to_string())
+        .slo_url("http://localhost:8080/saml/slo".to_string())
+        .build()?;
 
     let metadata = sp.metadata()?.to_xml()?;
 
@@ -57,7 +60,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(move |s: HashMap<String, String>| {
             if let Some(encoded_resp) = s.get("SAMLResponse") {
                 let t = sp
-                    .parse_response(encoded_resp, &["test".to_string()])
+                    .parse_response(encoded_resp, &["a_possible_request_id".to_string()])
                     .unwrap();
                 return format!("{:?}", t);
             }
