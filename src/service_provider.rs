@@ -76,7 +76,8 @@ pub enum Error {
     UnexpectedError,
 }
 
-#[derive(Clone)]
+#[derive(Builder, Clone)]
+#[builder(default, setter(into))]
 pub struct ServiceProvider {
     pub entity_id: Option<String>,
     pub key: Option<rsa::Rsa<Private>>,
@@ -323,7 +324,7 @@ impl ServiceProvider {
         response_xml: &str,
         possible_request_ids: &[String],
     ) -> Result<Assertion, Error> {
-        let response: Response = quick_xml::de::from_str(response_xml).unwrap();
+        let response: Response = response_xml.parse().unwrap();
         self.validate_destination(&response)?;
         let mut request_id_valid = false;
         if self.allow_idp_initiated {

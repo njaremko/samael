@@ -4,9 +4,11 @@ use chrono::prelude::*;
 use quick_xml::events::{BytesEnd, BytesStart, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
+use snafu::Snafu;
 use std::io::Cursor;
+use std::str::FromStr;
 
-const NAME: &str = "samlp:AuthnRequest";
+const NAME: &str = "samlp2:AuthnRequest";
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct AuthnRequest {
@@ -67,6 +69,21 @@ impl Default for AuthnRequest {
             attribute_consuming_service_index: None,
             provider_name: None,
         }
+    }
+}
+
+#[derive(Debug, Snafu)]
+pub enum Error {
+    #[snafu(display("Failed to deserialize AuthnRequest: {:?}", source))]
+    #[snafu(context(false))]
+    ParseError { source: quick_xml::DeError },
+}
+
+impl FromStr for AuthnRequest {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(quick_xml::de::from_str(&s)?)
     }
 }
 

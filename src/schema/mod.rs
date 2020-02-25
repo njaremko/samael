@@ -2,12 +2,14 @@ mod authn_request;
 mod conditions;
 mod issuer;
 mod name_id_policy;
+mod response;
 mod subject;
 
 pub use authn_request::AuthnRequest;
 pub use conditions::*;
 pub use issuer::Issuer;
 pub use name_id_policy::NameIdPolicy;
+pub use response::Response;
 pub use subject::*;
 
 use crate::attribute::Attribute;
@@ -31,32 +33,6 @@ pub struct LogoutRequest {
     pub signature: Option<Signature>,
     #[serde(rename = "SessionIndex")]
     pub session_index: Option<String>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct Response {
-    #[serde(rename = "ID")]
-    pub id: String,
-    #[serde(rename = "InResponseTo")]
-    pub in_response_to: Option<String>,
-    #[serde(rename = "Version")]
-    pub version: String,
-    #[serde(rename = "IssueInstant")]
-    pub issue_instant: DateTime<Utc>,
-    #[serde(rename = "Destination")]
-    pub destination: Option<String>,
-    #[serde(rename = "Consent")]
-    pub consent: Option<String>,
-    #[serde(rename = "Issuer")]
-    pub issuer: Option<Issuer>,
-    #[serde(rename = "Signature")]
-    pub signature: Option<Signature>,
-    #[serde(rename = "Status")]
-    pub status: Status,
-    #[serde(rename = "EncryptedAssertion")]
-    pub encrypted_assertion: Option<String>,
-    #[serde(rename = "Assertion")]
-    pub assertion: Option<Assertion>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
