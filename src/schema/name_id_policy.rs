@@ -1,9 +1,9 @@
-use quick_xml::events::{BytesEnd, BytesStart, Event};
+use quick_xml::events::{BytesStart, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
 use std::io::Cursor;
 
-const NAME: &str = "samlp:NameIDPolicy";
+const NAME: &str = "saml2p:NameIDPolicy";
 
 #[derive(Clone, Debug, Deserialize, Default)]
 pub struct NameIdPolicy {
@@ -26,14 +26,10 @@ impl NameIdPolicy {
         if let Some(sp_name_qualifier) = &self.sp_name_qualifier {
             root.push_attribute(("SPNameQualifier", sp_name_qualifier.as_ref()));
         }
-        if let Some(format) = &self.format {
-            root.push_attribute(("Format", format.as_ref()));
-        }
         if let Some(allow_create) = &self.allow_create {
             root.push_attribute(("AllowCreate", allow_create.to_string().as_ref()));
         }
-        writer.write_event(Event::Start(root))?;
-        writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
+        writer.write_event(Event::Empty(root))?;
         Ok(String::from_utf8(write_buf)?)
     }
 }

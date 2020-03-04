@@ -18,29 +18,29 @@ pub struct EntityDescriptor {
     pub entity_id: Option<String>,
     #[serde(rename = "ID")]
     pub id: Option<String>,
-    #[serde(rename = "ds:Signature")]
+    #[serde(rename = "Signature")]
     pub signature: Option<Signature>,
     #[serde(rename = "validUntil")]
     pub valid_until: Option<DateTime<Utc>>,
     #[serde(rename = "cacheDuration")]
     pub cache_duration: Option<String>,
-    #[serde(rename = "md:RoleDescriptor")]
+    #[serde(rename = "RoleDescriptor")]
     pub role_descriptors: Option<Vec<RoleDescriptor>>,
-    #[serde(rename = "md:IDPSSODescriptor")]
+    #[serde(rename = "IDPSSODescriptor")]
     pub idp_sso_descriptors: Option<Vec<IdpSsoDescriptor>>,
-    #[serde(rename = "md:SPSSODescriptor")]
+    #[serde(rename = "SPSSODescriptor")]
     pub sp_sso_descriptors: Option<Vec<SpSsoDescriptor>>,
-    #[serde(rename = "md:AuthnAuthorityDescriptor")]
+    #[serde(rename = "AuthnAuthorityDescriptor")]
     pub authn_authority_descriptors: Option<Vec<AuthnAuthorityDescriptors>>,
-    #[serde(rename = "md:AttributeAuthorityDescriptor")]
+    #[serde(rename = "AttributeAuthorityDescriptor")]
     pub attribute_authority_descriptors: Option<Vec<AttributeAuthorityDescriptors>>,
-    #[serde(rename = "md:PDPDescriptor")]
+    #[serde(rename = "PDPDescriptor")]
     pub pdp_descriptors: Option<Vec<PdpDescriptors>>,
-    #[serde(rename = "md:AffiliationDescriptor")]
+    #[serde(rename = "AffiliationDescriptor")]
     pub affiliation_descriptors: Option<AffiliationDescriptor>,
-    #[serde(rename = "md:ContactPerson")]
+    #[serde(rename = "ContactPerson")]
     pub contact_person: Option<ContactPerson>,
-    #[serde(rename = "md:Organization")]
+    #[serde(rename = "Organization")]
     pub organization: Option<Organization>,
 }
 
@@ -87,11 +87,10 @@ impl EntityDescriptor {
         ));
         root.push_attribute(("xmlns:ds", "http://www.w3.org/2000/09/xmldsig#"));
         writer.write_event(Event::Start(root))?;
-        if let Some(sp_sso_descriptors) = &self.sp_sso_descriptors {
-            for descriptor in sp_sso_descriptors {
-                writer.write(descriptor.to_xml()?.as_bytes())?;
-            }
+        for descriptor in self.sp_sso_descriptors.as_ref().unwrap_or(&vec![]) {
+            writer.write(descriptor.to_xml()?.as_bytes())?;
         }
+
         if let Some(organization) = &self.organization {
             writer.write(organization.to_xml()?.as_bytes())?;
         }

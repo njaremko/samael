@@ -1,14 +1,15 @@
 use crate::schema::{Conditions, Issuer, NameIdPolicy, Subject};
 use crate::signature::Signature;
 use chrono::prelude::*;
-use quick_xml::events::{BytesEnd, BytesStart, Event};
+use quick_xml::events::{BytesEnd, BytesStart, Event, BytesDecl};
 use quick_xml::Writer;
 use serde::Deserialize;
 use snafu::Snafu;
 use std::io::Cursor;
 use std::str::FromStr;
 
-const NAME: &str = "samlp2:AuthnRequest";
+const NAME: &str = "saml2p:AuthnRequest";
+const SCHEMA:(&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct AuthnRequest {
@@ -77,6 +78,8 @@ pub enum Error {
     #[snafu(display("Failed to deserialize AuthnRequest: {:?}", source))]
     #[snafu(context(false))]
     ParseError { source: quick_xml::DeError },
+
+    NoSubjectNameID,
 }
 
 impl FromStr for AuthnRequest {
@@ -88,18 +91,36 @@ impl FromStr for AuthnRequest {
 }
 
 impl AuthnRequest {
+    pub fn subject_name_id(&self) -> Result<String, Error> {
+        Ok(
+            self.subject.clone().and_then(|s| s.name_id).ok_or(Error::NoSubjectNameID)?.value
+        )
+    }
+
+    pub fn issuer_at(&self) -> &DateTime<Utc> {
+        &self.issue_instant
+    }
+
+    pub fn issuer_value(&self) -> Option<String> {
+        self.issuer.clone().and_then(|iss| iss.value)
+    }
+
     pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
+        writer.write_event(Event::Decl(BytesDecl::new("1.0".as_bytes(), Some("UTF-8".as_bytes()), None)))?;
+
         let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
+        root.push_attribute(SCHEMA);
         root.push_attribute(("ID", self.id.as_ref()));
         root.push_attribute(("Version", self.version.as_ref()));
         root.push_attribute((
             "IssueInstant",
             self.issue_instant
-                .to_rfc3339_opts(SecondsFormat::Secs, true)
+                .to_rfc3339_opts(SecondsFormat::Millis, true)
                 .as_ref(),
         ));
+
         if let Some(destination) = &self.destination {
             root.push_attribute(("Destination", destination.as_ref()));
         }

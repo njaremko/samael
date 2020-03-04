@@ -11,13 +11,17 @@ const NAME: &str = "md:KeyDescriptor";
 pub struct KeyDescriptor {
     #[serde(rename = "use")]
     pub key_use: Option<String>,
-    #[serde(rename = "ds:KeyInfo")]
+    #[serde(rename = "KeyInfo")]
     pub key_info: KeyInfo,
-    #[serde(rename = "md:EncryptionMethod")]
+    #[serde(rename = "EncryptionMethod")]
     pub encryption_methods: Option<Vec<EncryptionMethod>>,
 }
 
 impl KeyDescriptor {
+    pub fn is_signing(&self) -> bool {
+        self.key_use == Some("signing".to_string())
+    }
+
     pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));

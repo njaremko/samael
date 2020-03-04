@@ -4,6 +4,7 @@ use serde::Deserialize;
 use std::io::Cursor;
 
 const NAME: &str = "saml2:Issuer";
+const SCHEMA:(&str, &str) = ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion");
 
 #[derive(Clone, Debug, Deserialize, Default)]
 pub struct Issuer {
@@ -24,6 +25,8 @@ impl Issuer {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
         let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
+        root.push_attribute(SCHEMA);
+
         if let Some(name_qualifier) = &self.name_qualifier {
             root.push_attribute(("NameQualifier", name_qualifier.as_ref()));
         }

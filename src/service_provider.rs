@@ -66,6 +66,8 @@ pub enum Error {
     ResponseBadStatusCode { code: String },
     #[snafu(display("Encrypted SAML Assertions are not yet supported"))]
     EncryptedAssertionsNotYetSupported,
+    #[snafu(display("Signed SAML Assertions are not yet supported"))]
+    SignedAssertionsNotYetSupported,
     #[snafu(display("SAML Response and all assertions must be signed"))]
     FailedToValidateSignature,
     #[snafu(display("Failed to deserialize SAML response."))]
@@ -221,7 +223,7 @@ impl ServiceProvider {
             })
     }
 
-    fn sso_binding_location(&self, binding: &str) -> Option<String> {
+    pub fn sso_binding_location(&self, binding: &str) -> Option<String> {
         if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
             for idp_sso_descriptor in idp_sso_descriptors {
                 for sso_service in &idp_sso_descriptor.single_sign_on_services {
@@ -234,7 +236,7 @@ impl ServiceProvider {
         None
     }
 
-    fn slo_binding_location(&self, binding: &str) -> Option<String> {
+    pub fn slo_binding_location(&self, binding: &str) -> Option<String> {
         if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
             for idp_sso_descriptor in idp_sso_descriptors {
                 for single_logout_services in &idp_sso_descriptor.single_logout_services {
@@ -247,7 +249,8 @@ impl ServiceProvider {
         None
     }
 
-    fn idp_signing_certs(&self) -> Result<Option<Vec<openssl::x509::X509>>, Error> {
+
+    pub fn idp_signing_certs(&self) -> Result<Option<Vec<openssl::x509::X509>>, Error> {
         let mut result = vec![];
         if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
             for idp_sso_descriptor in idp_sso_descriptors {
@@ -363,7 +366,7 @@ impl ServiceProvider {
             }
         }
 
-        if let Some(encrypted_assertion) = &response.encrypted_assertion {
+        if let Some(_encrypted_assertion) = &response.encrypted_assertion {
             Err(Error::EncryptedAssertionsNotYetSupported)
         } else if let Some(assertion) = &response.assertion {
             self.validate_signed(&response)?;
@@ -377,7 +380,7 @@ impl ServiceProvider {
     fn validate_assertion(
         &self,
         assertion: &Assertion,
-        possible_request_ids: &[String],
+        _possible_request_ids: &[String],
     ) -> Result<(), Error> {
         if assertion.issue_instant + self.max_issue_delay < Utc::now() {
             return Err(Error::AssertionExpired {
@@ -445,12 +448,12 @@ impl ServiceProvider {
     fn validate_signed(&self, response: &Response) -> Result<(), Error> {
         let mut signed = false;
         if let Some(signature) = &response.signature {
-            // self.validate_signature(signature)?;
+            self.validate_signature(signature)?;
             signed = true;
         }
         if let Some(assertion) = &response.assertion {
             if let Some(signature) = &assertion.signature {
-                // self.validate_signature(signature)?;
+                self.validate_signature(signature)?;
                 signed = true;
             }
         }
@@ -461,15 +464,8 @@ impl ServiceProvider {
         }
     }
 
-    fn validate_signature(&self, signature: &Signature) -> Result<(), Error> {
-        // if let Some(certs) = self.idp_signing_certs()? {
-        //     let reference = &signature.signed_info.reference;
-        //     assert_eq!(reference.len(), 1);
-        //     assert!(reference[0].transforms.is_some())
-        // } else {
-        //     todo!()
-        // }
-        Ok(())
+    fn validate_signature(&self, _signature: &Signature) -> Result<(), Error> {
+        Err(Error::SignedAssertionsNotYetSupported)
     }
 
     pub fn make_authentication_request(

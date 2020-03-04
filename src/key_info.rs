@@ -36,7 +36,7 @@ const X509_DATA_NAME: &str = "ds:X509Data";
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct X509Data {
-    #[serde(rename = "ds:X509Certificate")]
+    #[serde(rename = "X509Certificate")]
     pub certificate: Option<String>,
 }
 

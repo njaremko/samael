@@ -34,11 +34,12 @@ impl<'a> SubjectType<'a> {
 }
 
 const NAME: &str = "saml2:Subject";
+const SCHEMA:(&str, &str) = ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion");
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Subject {
     #[serde(rename = "NameID")]
-    pub name_id: Option<String>,
+    pub name_id: Option<SubjectNameID>,
     #[serde(rename = "SubjectConfirmation")]
     pub subject_confirmations: Option<Vec<SubjectConfirmation>>,
 }
@@ -47,10 +48,12 @@ impl Subject {
     pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        let root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
+        let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
+        root.push_attribute(SCHEMA);
+
         writer.write_event(Event::Start(root))?;
         if let Some(name_id) = &self.name_id {
-            writer.write(SubjectType::NameId(name_id).to_xml()?.as_bytes())?;
+            writer.write(name_id.to_xml()?.as_bytes())?;
         }
         if let Some(subject_confirmations) = &self.subject_confirmations {
             for confirmation in subject_confirmations {
@@ -62,14 +65,44 @@ impl Subject {
     }
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct SubjectNameID {
+    #[serde(rename = "Format")]
+    pub format: Option<String>,
+
+    #[serde(rename = "$value")]
+    pub value: String,
+}
+
+impl SubjectNameID {
+    fn name() -> &'static str {
+        "saml2:NameID"
+    }
+
+    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+        let mut write_buf = Vec::new();
+        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+        let mut root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
+
+        if let Some(format) = &self.format {
+            root.push_attribute(("Format", format.as_ref()));
+        }
+
+        writer.write_event(Event::Start(root))?;
+        writer.write(self.value.as_bytes())?;
+        writer.write_event(Event::End(BytesEnd::borrowed(Self::name().as_bytes())))?;
+        Ok(String::from_utf8(write_buf)?)
+    }
+}
+
 const SUBJECT_CONFIRMATION_NAME: &str = "saml2:SubjectConfirmation";
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct SubjectConfirmation {
     #[serde(rename = "Method")]
     pub method: Option<String>,
-    #[serde(rename = "NameID")]
-    pub name_id: Option<String>,
+    // #[serde(rename = "NameID")]
+    // pub name_id: Option<String>,
     #[serde(rename = "SubjectConfirmationData")]
     pub subject_confirmation_data: Option<SubjectConfirmationData>,
 }
@@ -86,9 +119,9 @@ impl SubjectConfirmation {
             root.push_attribute(("Method", method.as_ref()));
         }
         writer.write_event(Event::Start(root))?;
-        if let Some(name_id) = &self.name_id {
-            writer.write(SubjectType::NameId(name_id).to_xml()?.as_bytes())?;
-        }
+        // if let Some(name_id) = &self.name_id {
+        //     writer.write(SubjectType::NameId(name_id).to_xml()?.as_bytes())?;
+        // }
         if let Some(subject_confirmation_data) = &self.subject_confirmation_data {
             writer.write(subject_confirmation_data.to_xml()?.as_bytes())?;
         }
@@ -98,7 +131,7 @@ impl SubjectConfirmation {
         Ok(String::from_utf8(write_buf)?)
     }
 }
-const SUBJECT_CONFIRMATION_DATA_NAME: &str = "saml2:SubjectConfirmation";
+const SUBJECT_CONFIRMATION_DATA_NAME: &str = "saml2:SubjectConfirmationData";
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct SubjectConfirmationData {
@@ -128,15 +161,15 @@ impl SubjectConfirmationData {
             root.push_attribute((
                 "NotBefore",
                 not_before
-                    .to_rfc3339_opts(SecondsFormat::Secs, true)
+                    .to_rfc3339_opts(SecondsFormat::Millis, true)
                     .as_ref(),
             ));
         }
         if let Some(not_on_or_after) = &self.not_on_or_after {
             root.push_attribute((
-                "NotBefore",
+                "NotOnOrAfter",
                 not_on_or_after
-                    .to_rfc3339_opts(SecondsFormat::Secs, true)
+                    .to_rfc3339_opts(SecondsFormat::Millis, true)
                     .as_ref(),
             ));
         }
