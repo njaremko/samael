@@ -76,6 +76,12 @@ pub enum Error {
     FailedToParseCert { cert: String },
     #[snafu(display("Unexpected Error Occurred!"))]
     UnexpectedError,
+
+    #[snafu(display("Failed to parse SAMLResponse"))]
+    FailedToParseSamlResponse,
+
+    MissingAcsUrl,
+    MissingSloUrl,
 }
 
 #[derive(Builder, Clone)]
@@ -185,14 +191,14 @@ impl ServiceProvider {
             valid_until,
             single_logout_services: Some(vec![Endpoint {
                 binding: HTTP_POST_BINDING.to_string(),
-                location: self.slo_url.clone().unwrap(),
+                location: self.slo_url.clone().ok_or(Error::MissingSloUrl)?,
                 response_location: self.slo_url.clone(),
             }]),
             authn_requests_signed: Some(false),
             want_assertions_signed: Some(true),
             assertion_consumer_services: vec![IndexedEndpoint {
                 binding: HTTP_POST_BINDING.to_string(),
-                location: self.acs_url.clone().unwrap(),
+                location: self.acs_url.clone().ok_or(Error::MissingAcsUrl)?,
                 ..IndexedEndpoint::default()
             }],
 
@@ -327,7 +333,7 @@ impl ServiceProvider {
         response_xml: &str,
         possible_request_ids: &[String],
     ) -> Result<Assertion, Error> {
-        let response: Response = response_xml.parse().unwrap();
+        let response: Response = response_xml.parse().map_err(|_e| Error::FailedToParseSamlResponse)?;
         self.validate_destination(&response)?;
         let mut request_id_valid = false;
         if self.allow_idp_initiated {
@@ -531,8 +537,9 @@ impl AuthnRequest {
             encoder.write_all(self.to_xml()?.as_bytes())?;
         }
         let encoded = base64::encode(&compressed_buf);
-        Ok(self.destination.clone().map(|d| {
-            let mut url: Url = d.parse().unwrap();
+
+        if let Some(destination) = self.destination.as_ref() {
+            let mut url: Url = destination.parse()?;
             url.set_query(Some(&format!("SAMLRequest={}", &encoded)));
             if relay_state != "" {
                 let owned_url = url.to_owned();
@@ -540,7 +547,9 @@ impl AuthnRequest {
                     url.set_query(Some(&format!("{}&RelayState={}", query, relay_state)))
                 }
             }
-            url
-        }))
+            Ok(Some(url))
+        } else {
+            Ok(None)
+        }
     }
 }
