@@ -5,7 +5,7 @@ use std::io::Cursor;
 
 const ATTRIBUTE_VALUE_NAME: &str = "saml2:AttributeValue";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AttributeValue {
     #[serde(rename = "xsi:type")]
     pub attribute_type: Option<String>,
@@ -47,7 +47,7 @@ impl AttributeValue {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Attribute {
     #[serde(rename = "FriendlyName")]
     pub friendly_name: Option<String>,

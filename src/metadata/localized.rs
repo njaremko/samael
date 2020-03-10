@@ -3,7 +3,7 @@ use quick_xml::Writer;
 use serde::Deserialize;
 use std::io::Cursor;
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct LocalizedName {
     #[serde(rename = "xml:lang")]
     pub lang: String,
@@ -24,7 +24,7 @@ impl LocalizedName {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct LocalizedUri {
     #[serde(rename = "xml:lang")]
     pub lang: String,

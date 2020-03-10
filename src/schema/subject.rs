@@ -36,7 +36,7 @@ impl<'a> SubjectType<'a> {
 const NAME: &str = "saml2:Subject";
 const SCHEMA:(&str, &str) = ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion");
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Subject {
     #[serde(rename = "NameID")]
     pub name_id: Option<SubjectNameID>,
@@ -97,7 +97,7 @@ impl SubjectNameID {
 
 const SUBJECT_CONFIRMATION_NAME: &str = "saml2:SubjectConfirmation";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct SubjectConfirmation {
     #[serde(rename = "Method")]
     pub method: Option<String>,
@@ -133,7 +133,7 @@ impl SubjectConfirmation {
 }
 const SUBJECT_CONFIRMATION_DATA_NAME: &str = "saml2:SubjectConfirmationData";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct SubjectConfirmationData {
     #[serde(rename = "NotBefore")]
     pub not_before: Option<chrono::DateTime<Utc>>,

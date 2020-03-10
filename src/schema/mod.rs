@@ -21,7 +21,7 @@ use quick_xml::events::{BytesEnd, BytesStart, Event};
 use quick_xml::Writer;
 use std::io::Cursor;
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct LogoutRequest {
     #[serde(rename = "ID")]
     pub id: Option<String>,
@@ -39,7 +39,7 @@ pub struct LogoutRequest {
     pub session_index: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Assertion {
     #[serde(rename = "ID")]
     pub id: String,
@@ -66,7 +66,7 @@ impl Assertion {
         "saml2:Assertion"
     }
 
-    fn schema() -> &'static[(&'static str, &'static str)] {
+    fn schema() -> &'static [(&'static str, &'static str)] {
         &[
             ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion"),
             ("xmlns:xsd", "http://www.w3.org/2001/XMLSchema"),
@@ -124,7 +124,7 @@ impl Assertion {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AttributeStatement {
     #[serde(rename = "Attribute", default)]
     pub attributes: Vec<Attribute>,
@@ -135,10 +135,8 @@ impl AttributeStatement {
         "saml2:AttributeStatement"
     }
 
-    fn schema() -> &'static[(&'static str, &'static str)] {
-        &[
-            ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion"),
-        ]
+    fn schema() -> &'static [(&'static str, &'static str)] {
+        &[("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion")]
     }
 
     pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
@@ -161,7 +159,7 @@ impl AttributeStatement {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AuthnStatement {
     #[serde(rename = "AuthnInstant")]
     pub authn_instant: Option<chrono::DateTime<Utc>>,
@@ -192,7 +190,8 @@ impl AuthnStatement {
         if let Some(instant) = &self.authn_instant {
             root.push_attribute((
                 "AuthnInstant",
-                instant.to_rfc3339_opts(SecondsFormat::Millis, true)
+                instant
+                    .to_rfc3339_opts(SecondsFormat::Millis, true)
                     .as_ref(),
             ));
         }
@@ -200,7 +199,8 @@ impl AuthnStatement {
         if let Some(not_after) = &self.session_not_on_or_after {
             root.push_attribute((
                 "SessionNotOnOrAfter",
-                not_after.to_rfc3339_opts(SecondsFormat::Millis, true)
+                not_after
+                    .to_rfc3339_opts(SecondsFormat::Millis, true)
                     .as_ref(),
             ));
         }
@@ -216,10 +216,9 @@ impl AuthnStatement {
         writer.write_event(Event::End(BytesEnd::borrowed(Self::name().as_bytes())))?;
         Ok(String::from_utf8(write_buf)?)
     }
-
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct SubjectLocality {
     #[serde(rename = "Address")]
     pub address: Option<String>,
@@ -227,7 +226,7 @@ pub struct SubjectLocality {
     pub dns_name: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AuthnContext {
     #[serde(rename = "AuthnContextClassRef")]
     pub value: Option<AuthnContextClassRef>,
@@ -281,7 +280,7 @@ impl AuthnContextClassRef {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Status {
     #[serde(rename = "StatusCode")]
     pub status_code: StatusCode,
@@ -296,7 +295,6 @@ impl Status {
         "saml2p:Status"
     }
     pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
         let root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
@@ -308,8 +306,7 @@ impl Status {
     }
 }
 
-
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct StatusCode {
     #[serde(rename = "Value")]
     pub value: Option<String>,
@@ -333,20 +330,19 @@ impl StatusCode {
     }
 }
 
-
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct StatusMessage {
     #[serde(rename = "Value")]
     pub value: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct StatusDetail {
     #[serde(rename = "Children")]
     pub children: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct LogoutResponse {
     #[serde(rename = "ID")]
     pub id: Option<String>,

@@ -6,7 +6,7 @@ use std::io::Cursor;
 
 const NAME: &str = "md:Organization";
 
-#[derive(Clone, Debug, Deserialize, Default)]
+#[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Organization {
     #[serde(rename = "OrganizationName")]
     pub organization_names: Option<Vec<LocalizedName>>,

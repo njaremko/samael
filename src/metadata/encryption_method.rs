@@ -5,7 +5,7 @@ use std::io::Cursor;
 
 const NAME: &str = "md:EncryptionMethod";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct EncryptionMethod {
     #[serde(rename = "Algorithm")]
     pub algorithm: String,

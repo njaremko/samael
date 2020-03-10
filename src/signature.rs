@@ -7,7 +7,7 @@ use std::io::Cursor;
 const NAME: &str = "ds:Signature";
 const SCHEMA:(&str, &str) = ("xmlns:ds", "http://www.w3.org/2000/09/xmldsig#");
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Signature {
     #[serde(rename = "Id")]
     pub id: Option<String>,
@@ -43,7 +43,7 @@ impl Signature {
 
 const SIGNATURE_VALUE_NAME: &str = "ds:SignatureValue";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct SignatureValue {
     #[serde(rename = "ID")]
     pub id: Option<String>,
@@ -73,7 +73,7 @@ impl SignatureValue {
 
 const SIGNED_INFO_NAME: &str = "ds:SignedInfo";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct SignedInfo {
     #[serde(rename = "ID")]
     pub id: Option<String>,
@@ -106,7 +106,7 @@ impl SignedInfo {
 
 const CANONICALIZATION_METHOD: &str = "ds:CanonicalizationMethod";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct CanonicalizationMethod {
     #[serde(rename = "Algorithm")]
     pub algorithm: String,
@@ -129,7 +129,7 @@ impl CanonicalizationMethod {
 const SIGNATURE_METHOD_NAME: &str = "ds:SignatureMethod";
 const HMAC_OUTPUT_LENGTH_NAME: &str = "ds:HMACOutputLength";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct SignatureMethod {
     #[serde(rename = "Algorithm")]
     pub algorithm: String,
@@ -181,7 +181,7 @@ const TRANSFORMS_NAME: &str = "ds:Transforms";
 const TRANSFORM_NAME: &str = "ds:Transform";
 const XPATH_NAME: &str = "ds:XPath";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Transform {
     #[serde(rename = "Algorithm")]
     pub algorithm: String,
@@ -216,7 +216,7 @@ impl Transform {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Transforms {
     #[serde(rename = "Transform")]
     pub transforms: Vec<Transform>,
@@ -238,7 +238,7 @@ impl Transforms {
 
 const DIGEST_METHOD: &str = "ds:DigestMethod";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct DigestMethod {
     #[serde(rename = "Algorithm")]
     pub algorithm: String,
@@ -257,7 +257,7 @@ impl DigestMethod {
 
 const DIGEST_VALUE_NAME: &str = "ds:DigestValue";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct DigestValue {
     #[serde(rename = "$value")]
     pub base64_content: String,
@@ -279,7 +279,7 @@ impl DigestValue {
 
 const REFERENCE_NAME: &str = "ds:Reference";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Reference {
     #[serde(rename = "Transforms")]
     pub transforms: Option<Transforms>,

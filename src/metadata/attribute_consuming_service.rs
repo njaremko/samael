@@ -7,7 +7,7 @@ use std::io::Cursor;
 
 const NAME: &str = "md:AttributeConsumingService";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AttributeConsumingService {
     pub index: usize,
     #[serde(rename = "isDefault")]
@@ -52,7 +52,7 @@ impl AttributeConsumingService {
 
 const REQUESTED_ATTRIBUTE_NAME: &str = "md:RequestedAttribute";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct RequestedAttribute {
     #[serde(rename = "FriendlyName")]
     pub friendly_name: Option<String>,

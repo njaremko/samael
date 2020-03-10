@@ -7,7 +7,7 @@ use std::io::Cursor;
 
 const NAME: &str = "md:KeyDescriptor";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct KeyDescriptor {
     #[serde(rename = "use")]
     pub key_use: Option<String>,

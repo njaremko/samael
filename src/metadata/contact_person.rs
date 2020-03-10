@@ -26,7 +26,7 @@ impl ContactType {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Default)]
+#[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct ContactPerson {
     #[serde(rename = "contactType")]
     pub contact_type: Option<String>,

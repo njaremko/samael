@@ -36,7 +36,7 @@ pub const HTTP_POST_BINDING: &str = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-P
 // HTTP_REDIRECT_BINDING is the official URN for the HTTP-Redirect binding (transport)
 pub const HTTP_REDIRECT_BINDING: &str = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub enum NameIdFormat {
     UnspecifiedNameIDFormat,
     TransientNameIDFormat,
@@ -63,7 +63,7 @@ impl NameIdFormat {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Default)]
+#[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct RoleDescriptor {
     #[serde(rename = "ID")]
     pub id: Option<String>,
@@ -85,7 +85,7 @@ pub struct RoleDescriptor {
     pub contact_people: Vec<ContactPerson>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct SSODescriptor {
     #[serde(rename = "ID")]
     pub id: Option<String>,
@@ -116,7 +116,7 @@ pub struct SSODescriptor {
     pub name_id_formats: Vec<String>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct IdpSsoDescriptor {
     #[serde(rename = "ID")]
     pub id: Option<String>,
@@ -158,7 +158,7 @@ pub struct IdpSsoDescriptor {
     pub attributes: Vec<Attribute>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AuthnAuthorityDescriptors {
     #[serde(rename = "ID")]
     pub id: Option<String>,
@@ -187,7 +187,7 @@ pub struct AuthnAuthorityDescriptors {
     pub name_id_formats: Vec<String>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AttributeAuthorityDescriptors {
     #[serde(rename = "ID")]
     pub id: Option<String>,
@@ -220,7 +220,7 @@ pub struct AttributeAuthorityDescriptors {
     pub attributes: Vec<Attribute>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct PdpDescriptors {
     #[serde(rename = "ID")]
     pub id: Option<String>,

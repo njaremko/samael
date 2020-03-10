@@ -11,7 +11,7 @@ use std::io::Cursor;
 const NAME: &str = "saml2p:Response";
 const SCHEMA:(&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Response {
     #[serde(rename = "ID")]
     pub id: String,

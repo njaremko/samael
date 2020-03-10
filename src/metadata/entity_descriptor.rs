@@ -11,7 +11,7 @@ use snafu::Snafu;
 use std::io::Cursor;
 use std::str::FromStr;
 
-#[derive(Clone, Debug, Deserialize, Default)]
+#[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 #[serde(rename = "md:EntityDescriptor")]
 pub struct EntityDescriptor {
     #[serde(rename = "entityID")]

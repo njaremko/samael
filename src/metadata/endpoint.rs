@@ -3,7 +3,7 @@ use quick_xml::Writer;
 use serde::Deserialize;
 use std::io::Cursor;
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Endpoint {
     #[serde(rename = "Binding")]
     pub binding: String,
@@ -29,7 +29,7 @@ impl Endpoint {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Default)]
+#[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct IndexedEndpoint {
     #[serde(rename = "Binding")]
     pub binding: String,

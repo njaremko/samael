@@ -6,7 +6,7 @@ use std::io::Cursor;
 
 const NAME: &str = "saml2:Conditions";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Conditions {
     #[serde(rename = "NotBefore")]
     pub not_before: Option<DateTime<Utc>>,
@@ -58,7 +58,7 @@ impl Conditions {
 const AUDIENCE_RESTRICTION_NAME: &str = "saml2:AudienceRestriction";
 const AUDIENCE_NAME: &str = "saml2:Audience";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AudienceRestriction {
     #[serde(rename = "Audience")]
     pub audience: Vec<String>,
@@ -88,12 +88,12 @@ impl AudienceRestriction {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct OneTimeUse {}
 
 const PROXY_RESTRICTION_NAME: &str = "saml2:ProxyRestriction";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct ProxyRestriction {
     #[serde(rename = "Count")]
     pub count: Option<usize>,

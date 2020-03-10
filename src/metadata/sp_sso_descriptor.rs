@@ -11,7 +11,7 @@ use std::io::Cursor;
 
 const NAME: &str = "md:SPSSODescriptor";
 
-#[derive(Clone, Debug, Deserialize, Default)]
+#[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct SpSsoDescriptor {
     #[serde(rename = "ID")]
     pub id: Option<String>,

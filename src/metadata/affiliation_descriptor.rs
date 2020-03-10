@@ -2,7 +2,7 @@ use crate::metadata::KeyDescriptor;
 use chrono::prelude::*;
 use serde::Deserialize;
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AffiliationDescriptor {
     #[serde(rename = "affiliationOwnerID")]
     pub affiliation_descriptors: String,

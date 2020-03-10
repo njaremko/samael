@@ -5,7 +5,7 @@ use std::io::Cursor;
 
 const NAME: &str = "ds:KeyInfo";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct KeyInfo {
     #[serde(rename = "Id")]
     pub id: Option<String>,
@@ -34,7 +34,7 @@ impl KeyInfo {
 
 const X509_DATA_NAME: &str = "ds:X509Data";
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct X509Data {
     #[serde(rename = "X509Certificate")]
     pub certificate: Option<String>,
