@@ -33,7 +33,11 @@ impl <'a> UnverifiedAuthnRequest<'a> {
 
     pub fn try_verify_self_signed(self) -> Result<VerifiedAuthnRequest, Error> {
         let cert = self.get_cert_der()?;
-        verify_signed_xml(self.xml.as_bytes(), &cert, Some("ID"))?;
+        self.try_verify_with_cert(&cert)
+    }
+
+    pub fn try_verify_with_cert(self, der_cert: &[u8]) -> Result<VerifiedAuthnRequest, Error> {
+        verify_signed_xml(self.xml.as_bytes(), der_cert, Some("ID"))?;
         Ok(VerifiedAuthnRequest(self.request))
     }
 }
