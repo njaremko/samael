@@ -12,6 +12,7 @@ use flate2::{write::DeflateEncoder, Compression};
 use openssl::pkey::Private;
 use openssl::{rsa, x509};
 use snafu::Snafu;
+use std::fmt::Debug;
 use std::io::Write;
 use url::Url;
 
@@ -27,7 +28,9 @@ pub enum Error {
         sp_acs_url: Option<String>,
     },
     #[snafu(display("SAML Assertion expired at: {}", time))]
-    AssertionExpired { time: String },
+    AssertionExpired {
+        time: String,
+    },
     #[snafu(display(
         "SAML Assertion Issuer does not match IDP entity ID: {:?} != {:?}",
         issuer,
@@ -38,19 +41,27 @@ pub enum Error {
         entity_id: Option<String>,
     },
     #[snafu(display("SAML Assertion Condition expired at: {}", time))]
-    AssertionConditionExpired { time: String },
+    AssertionConditionExpired {
+        time: String,
+    },
     #[snafu(display("SAML Assertion Condition is not valid until: {}", time))]
-    AssertionConditionExpiredBefore { time: String },
+    AssertionConditionExpiredBefore {
+        time: String,
+    },
     #[snafu(display(
         "SAML Assertion Condition has unfulfilled AudienceRequirement: {}",
         requirement
     ))]
-    AssertionConditionAudienceRestrictionFailed { requirement: String },
+    AssertionConditionAudienceRestrictionFailed {
+        requirement: String,
+    },
     #[snafu(display(
         "SAML Response 'InResponseTo' does not match any of the possible request IDs: {:?}",
         possible_ids
     ))]
-    ResponseInResponseToInvalid { possible_ids: Vec<String> },
+    ResponseInResponseToInvalid {
+        possible_ids: Vec<String>,
+    },
     #[snafu(display(
         "SAML Response Issuer does not match IDP entity ID: {:?} != {:?}",
         issuer,
@@ -61,9 +72,13 @@ pub enum Error {
         entity_id: Option<String>,
     },
     #[snafu(display("SAML Response expired at: {}", time))]
-    ResponseExpired { time: String },
+    ResponseExpired {
+        time: String,
+    },
     #[snafu(display("SAML Response StatusCode is not successful: {}", code))]
-    ResponseBadStatusCode { code: String },
+    ResponseBadStatusCode {
+        code: String,
+    },
     #[snafu(display("Encrypted SAML Assertions are not yet supported"))]
     EncryptedAssertionsNotYetSupported,
     #[snafu(display("Signed SAML Assertions are not yet supported"))]
@@ -73,7 +88,9 @@ pub enum Error {
     #[snafu(display("Failed to deserialize SAML response."))]
     DeserializeResponseError,
     #[snafu(display("Failed to parse cert '{}'. Assumed DER format.", cert))]
-    FailedToParseCert { cert: String },
+    FailedToParseCert {
+        cert: String,
+    },
     #[snafu(display("Unexpected Error Occurred!"))]
     UnexpectedError,
 
@@ -255,7 +272,6 @@ impl ServiceProvider {
         None
     }
 
-
     pub fn idp_signing_certs(&self) -> Result<Option<Vec<openssl::x509::X509>>, Error> {
         let mut result = vec![];
         if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
@@ -317,10 +333,10 @@ impl ServiceProvider {
         })
     }
 
-    pub fn parse_response(
+    pub fn parse_response<AsStr: AsRef<str> + Debug>(
         &self,
         encoded_resp: &str,
-        possible_request_ids: &[String],
+        possible_request_ids: &[AsStr],
     ) -> Result<Assertion, Box<dyn std::error::Error>> {
         let bytes = base64::decode(encoded_resp)?;
         let decoded = std::str::from_utf8(&bytes)?;
@@ -328,26 +344,31 @@ impl ServiceProvider {
         Ok(assertion)
     }
 
-    fn parse_xml_response(
+    fn parse_xml_response<AsStr: AsRef<str> + Debug>(
         &self,
         response_xml: &str,
-        possible_request_ids: &[String],
+        possible_request_ids: &[AsStr],
     ) -> Result<Assertion, Error> {
-        let response: Response = response_xml.parse().map_err(|_e| Error::FailedToParseSamlResponse)?;
+        let response: Response = response_xml
+            .parse()
+            .map_err(|_e| Error::FailedToParseSamlResponse)?;
         self.validate_destination(&response)?;
         let mut request_id_valid = false;
         if self.allow_idp_initiated {
             request_id_valid = true;
         } else if let Some(in_response_to) = &response.in_response_to {
             for req_id in possible_request_ids {
-                if req_id == in_response_to {
+                if req_id.as_ref() == in_response_to {
                     request_id_valid = true;
                 }
             }
         }
         if !request_id_valid {
             return Err(Error::ResponseInResponseToInvalid {
-                possible_ids: possible_request_ids.to_vec(),
+                possible_ids: possible_request_ids
+                    .iter()
+                    .map(|e| e.as_ref().to_string())
+                    .collect(),
             });
         }
         if response.issue_instant + self.max_issue_delay < Utc::now() {
@@ -383,10 +404,10 @@ impl ServiceProvider {
         }
     }
 
-    fn validate_assertion(
+    fn validate_assertion<AsStr: AsRef<str> + Debug>(
         &self,
         assertion: &Assertion,
-        _possible_request_ids: &[String],
+        _possible_request_ids: &[AsStr],
     ) -> Result<(), Error> {
         if assertion.issue_instant + self.max_issue_delay < Utc::now() {
             return Err(Error::AssertionExpired {
