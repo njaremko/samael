@@ -19,7 +19,8 @@ pub struct KeyDescriptor {
 
 impl KeyDescriptor {
     pub fn is_signing(&self) -> bool {
-        self.key_use.as_ref()
+        self.key_use
+            .as_ref()
             .map(|u| u == "signing")
             .unwrap_or(false)
     }

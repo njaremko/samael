@@ -15,7 +15,6 @@ pub enum Error {
     MissingAcsUrl,
     NonHttpPostBindingUnsupported,
 
-
     MissingAuthnRequestSubjectNameID,
     MissingAuthnRequestIssuer,
 

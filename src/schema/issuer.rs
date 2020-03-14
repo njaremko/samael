@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::io::Cursor;
 
 const NAME: &str = "saml2:Issuer";
-const SCHEMA:(&str, &str) = ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion");
+const SCHEMA: (&str, &str) = ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion");
 
 #[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Issuer {

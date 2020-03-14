@@ -1,15 +1,14 @@
-use crate::schema::AuthnRequest;
 use crate::crypto::{self, verify_signed_xml};
+use crate::schema::AuthnRequest;
 
 use super::error::Error;
-
 
 pub struct UnverifiedAuthnRequest<'a> {
     pub request: AuthnRequest,
     xml: &'a str,
 }
 
-impl <'a> UnverifiedAuthnRequest<'a> {
+impl<'a> UnverifiedAuthnRequest<'a> {
     pub fn from_xml(xml: &str) -> Result<UnverifiedAuthnRequest, Error> {
         Ok(UnverifiedAuthnRequest {
             request: xml.parse()?,
@@ -18,16 +17,24 @@ impl <'a> UnverifiedAuthnRequest<'a> {
     }
 
     pub fn get_cert_der(&self) -> Result<Vec<u8>, Error> {
-        let x509_cert = self.request
-            .signature.as_ref().ok_or(Error::NoSignature)?
-            .key_info.as_ref().map(|ki| ki.iter().next())
+        let x509_cert = self
+            .request
+            .signature
+            .as_ref()
+            .ok_or(Error::NoSignature)?
+            .key_info
+            .as_ref()
+            .map(|ki| ki.iter().next())
             .unwrap_or(None)
             .ok_or(Error::NoKeyInfo)?
-            .x509_data.as_ref().map(|d| d.certificate.as_ref())
+            .x509_data
+            .as_ref()
+            .map(|d| d.certificate.as_ref())
             .unwrap_or(None)
             .ok_or(Error::NoCertificate)?;
 
-        let x509_cert = crypto::decode_x509_cert(x509_cert.as_str()).map_err(|_| Error::InvalidCertificateEncoding)?;
+        let x509_cert = crypto::decode_x509_cert(x509_cert.as_str())
+            .map_err(|_| Error::InvalidCertificateEncoding)?;
         Ok(x509_cert)
     }
 

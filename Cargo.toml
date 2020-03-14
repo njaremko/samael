@@ -33,4 +33,3 @@ uuid = { version = "0.8.1", features = ["v4"] }
 data-encoding = "2.2.0"
 libc        = {version = "^0.2.66"}
 lazy_static = {version = "^1.4.0"}
-

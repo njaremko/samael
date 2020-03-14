@@ -17,14 +17,15 @@ impl AttributeValue {
     fn schema() -> Vec<(&'static str, &'static str)> {
         vec![
             ("xmlns:xs", "http://www.w3.org/2001/XMLSchema"),
-            ("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+            ("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance"),
         ]
     }
 
     pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        let mut root = BytesStart::borrowed(ATTRIBUTE_VALUE_NAME.as_bytes(), ATTRIBUTE_VALUE_NAME.len());
+        let mut root =
+            BytesStart::borrowed(ATTRIBUTE_VALUE_NAME.as_bytes(), ATTRIBUTE_VALUE_NAME.len());
 
         for attr in Self::schema() {
             root.push_attribute(attr);
@@ -80,7 +81,6 @@ impl Attribute {
         if let Some(name) = &self.friendly_name {
             root.push_attribute(("FriendlyName", name.as_ref()));
         }
-
 
         writer.write_event(Event::Start(root))?;
 

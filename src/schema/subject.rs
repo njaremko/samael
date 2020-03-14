@@ -34,7 +34,7 @@ impl<'a> SubjectType<'a> {
 }
 
 const NAME: &str = "saml2:Subject";
-const SCHEMA:(&str, &str) = ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion");
+const SCHEMA: (&str, &str) = ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion");
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Subject {
@@ -65,7 +65,7 @@ impl Subject {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct SubjectNameID {
     #[serde(rename = "Format")]
     pub format: Option<String>,

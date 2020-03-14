@@ -1,7 +1,7 @@
 use crate::schema::{Conditions, Issuer, NameIdPolicy, Subject};
 use crate::signature::Signature;
 use chrono::prelude::*;
-use quick_xml::events::{BytesEnd, BytesStart, Event, BytesDecl};
+use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
 use snafu::Snafu;
@@ -9,7 +9,7 @@ use std::io::Cursor;
 use std::str::FromStr;
 
 const NAME: &str = "saml2p:AuthnRequest";
-const SCHEMA:(&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
+const SCHEMA: (&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AuthnRequest {
@@ -77,7 +77,9 @@ impl Default for AuthnRequest {
 pub enum Error {
     #[snafu(display("Failed to deserialize AuthnRequest: {:?}", source))]
     #[snafu(context(false))]
-    ParseError { source: quick_xml::DeError },
+    ParseError {
+        source: quick_xml::DeError,
+    },
 
     NoSubjectNameID,
 }
@@ -92,9 +94,12 @@ impl FromStr for AuthnRequest {
 
 impl AuthnRequest {
     pub fn subject_name_id(&self) -> Result<String, Error> {
-        Ok(
-            self.subject.clone().and_then(|s| s.name_id).ok_or(Error::NoSubjectNameID)?.value
-        )
+        Ok(self
+            .subject
+            .clone()
+            .and_then(|s| s.name_id)
+            .ok_or(Error::NoSubjectNameID)?
+            .value)
     }
 
     pub fn issuer_at(&self) -> &DateTime<Utc> {
@@ -108,7 +113,11 @@ impl AuthnRequest {
     pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        writer.write_event(Event::Decl(BytesDecl::new("1.0".as_bytes(), Some("UTF-8".as_bytes()), None)))?;
+        writer.write_event(Event::Decl(BytesDecl::new(
+            "1.0".as_bytes(),
+            Some("UTF-8".as_bytes()),
+            None,
+        )))?;
 
         let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
         root.push_attribute(SCHEMA);

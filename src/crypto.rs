@@ -6,8 +6,6 @@ use crate::xmlsec::XmlSecKeyFormat;
 use crate::xmlsec::XmlSecSignatureContext;
 use libxml::parser::Parser as XmlParser;
 
-
-
 #[derive(Debug, Snafu)]
 pub enum Error {
     InvalidSignature,
@@ -20,7 +18,7 @@ pub enum Error {
     #[snafu(display("xml sec Error: {}", error))]
     XmlSecError {
         error: xmlsec::XmlSecError,
-    }
+    },
 }
 
 impl From<xmlsec::XmlSecError> for Error {
@@ -35,7 +33,7 @@ impl From<libxml::parser::XmlParseError> for Error {
     }
 }
 
-pub fn sign_xml<Bytes: AsRef<[u8]>>(xml: Bytes, private_key_der:&[u8]) -> Result<String, Error> {
+pub fn sign_xml<Bytes: AsRef<[u8]>>(xml: Bytes, private_key_der: &[u8]) -> Result<String, Error> {
     let parser = XmlParser::default();
     let document = parser.parse_string(xml)?;
 
@@ -48,7 +46,11 @@ pub fn sign_xml<Bytes: AsRef<[u8]>>(xml: Bytes, private_key_der:&[u8]) -> Result
     Ok(document.to_string())
 }
 
-pub fn verify_signed_xml<Bytes: AsRef<[u8]>>(xml: Bytes, x509_cert_der: &[u8], id_attribute: Option<&str>) -> Result<(), Error> {
+pub fn verify_signed_xml<Bytes: AsRef<[u8]>>(
+    xml: Bytes,
+    x509_cert_der: &[u8],
+    id_attribute: Option<&str>,
+) -> Result<(), Error> {
     let parser = XmlParser::default();
     let document = parser.parse_string(xml)?;
 

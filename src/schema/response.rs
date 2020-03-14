@@ -1,15 +1,15 @@
 use crate::schema::{Assertion, Issuer, Status};
 use crate::signature::Signature;
 use chrono::prelude::*;
-use serde::{Deserialize};
-use snafu::Snafu;
-use std::str::FromStr;
-use quick_xml::events::{BytesEnd, BytesStart, Event, BytesDecl};
+use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, Event};
 use quick_xml::Writer;
+use serde::Deserialize;
+use snafu::Snafu;
 use std::io::Cursor;
+use std::str::FromStr;
 
 const NAME: &str = "saml2p:Response";
-const SCHEMA:(&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
+const SCHEMA: (&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Response {
@@ -56,7 +56,11 @@ impl Response {
     pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        writer.write_event(Event::Decl(BytesDecl::new("1.0".as_bytes(), Some("UTF-8".as_bytes()), None)))?;
+        writer.write_event(Event::Decl(BytesDecl::new(
+            "1.0".as_bytes(),
+            Some("UTF-8".as_bytes()),
+            None,
+        )))?;
 
         let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
         root.push_attribute(SCHEMA);

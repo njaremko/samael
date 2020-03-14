@@ -5,7 +5,7 @@ use serde::Deserialize;
 use std::io::Cursor;
 
 const NAME: &str = "ds:Signature";
-const SCHEMA:(&str, &str) = ("xmlns:ds", "http://www.w3.org/2000/09/xmldsig#");
+const SCHEMA: (&str, &str) = ("xmlns:ds", "http://www.w3.org/2000/09/xmldsig#");
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Signature {
@@ -142,13 +142,11 @@ impl SignatureMethod {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
 
-
         let mut root = BytesStart::borrowed(
             SIGNATURE_METHOD_NAME.as_bytes(),
             SIGNATURE_METHOD_NAME.len(),
         );
         root.push_attribute(("Algorithm", self.algorithm.as_ref()));
-
 
         if let Some(hmac_output_length) = &self.hmac_output_length {
             writer.write_event(Event::Start(root))?;

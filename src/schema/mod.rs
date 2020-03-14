@@ -253,7 +253,7 @@ impl AuthnContext {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AuthnContextClassRef {
     #[serde(rename = "$value")]
     pub value: Option<String>,
