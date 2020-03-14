@@ -1,7 +1,7 @@
 use crate::metadata::{EntityDescriptor};
 use super::error::Error;
 use crate::crypto;
-use std::str::FromStr;
+
 
 pub struct SPMetadataExtractor(EntityDescriptor);
 

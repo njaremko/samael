@@ -2,7 +2,7 @@ use crate::schema::AuthnRequest;
 use crate::crypto::{self, verify_signed_xml};
 
 use super::error::Error;
-use std::str::FromStr;
+
 
 pub struct UnverifiedAuthnRequest<'a> {
     pub request: AuthnRequest,
