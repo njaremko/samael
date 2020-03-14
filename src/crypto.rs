@@ -2,12 +2,14 @@ use snafu::Snafu;
 
 #[cfg(feature = "xmlsec")]
 use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
+#[cfg(feature = "xmlsec")]
 use libxml::parser::Parser as XmlParser;
 
 #[derive(Debug, Snafu)]
 pub enum Error {
     InvalidSignature,
 
+    #[cfg(feature = "xmlsec")]
     #[snafu(display("xml sec Error: {}", error))]
     XmlParseError {
         error: libxml::parser::XmlParseError,
@@ -27,6 +29,7 @@ impl From<xmlsec::XmlSecError> for Error {
     }
 }
 
+#[cfg(feature = "xmlsec")]
 impl From<libxml::parser::XmlParseError> for Error {
     fn from(error: libxml::parser::XmlParseError) -> Self {
         Error::XmlParseError { error }

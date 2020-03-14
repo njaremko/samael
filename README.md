@@ -13,7 +13,12 @@ Current Features:
 - Verify SAMLRequest (AuthnRequest) message signatures
 - Create signed SAMLResponse (Response) messages
 
-Verifying and Signing SAML messages are adapted from the [rust-xmlsec](https://github.com/voipir/rust-xmlsec) library (bindings to xmlsec1 library).
+The `"xmlsec"` feature flag adds basic support for verifying and signing SAML messages. We're using a modified copy of [rust-xmlsec](https://github.com/voipir/rust-xmlsec) library (bindings to xmlsec1 library).
+
+You'll need to install the following C libs:
+- libxml2
+- openssl
+- xmlsec1 (with openssl statically linked)
 > **NOTE**: this has only been tested using libxml2 ^2.9.10. 
 > The default macOS libxml2 (2.9.4) has known concurrency issues.
     
