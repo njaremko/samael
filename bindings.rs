@@ -65,10 +65,5 @@ fn fetch_xmlsec_config_libs() -> Vec<String> {
 fn args_from_output(args: Vec<u8>) -> Vec<String> {
     let decoded = String::from_utf8(args).expect("Got invalid UTF8 from xmlsec1-config");
 
-    let args = decoded
-        .split_whitespace()
-        .map(|p| p.to_owned())
-        .collect::<Vec<String>>();
-
-    args
+    decoded.split_whitespace().map(|p| p.to_owned()).collect()
 }
