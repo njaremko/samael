@@ -74,20 +74,10 @@ fn init_xmlsec() -> XmlSecResult<()> {
 /// xmlsec-crypto libraries. Use the crypto library name ("openssl",
 /// "nss", etc.) to load corresponding xmlsec-crypto library.
 fn init_crypto_app() -> XmlSecResult<()> {
-    let dynamic_lib = CString::new("openssl").unwrap();
-    let rc = unsafe { bindings::xmlSecCryptoDLLoadLibrary(dynamic_lib.as_ptr() as *const u8) };
+    let rc = unsafe { bindings::xmlSecOpenSSLAppInit(null()) };
 
     if rc < 0 {
-        panic!(
-            "XmlSec failed while loading default crypto backend. \
-                    Make sure that you have it installed and check shread libraries path"
-        );
-    }
-
-    let rc = unsafe { bindings::xmlSecCryptoAppInit(null()) };
-
-    if rc < 0 {
-        Err(XmlSecError::CryptoInitOpenSSLAppError)
+        Err(XmlSecError::OpenSSLInitOpenSSLAppError)
     } else {
         Ok(())
     }
@@ -95,10 +85,10 @@ fn init_crypto_app() -> XmlSecResult<()> {
 
 /// Init xmlsec-crypto library
 fn init_crypto() -> XmlSecResult<()> {
-    let rc = unsafe { bindings::xmlSecCryptoInit() };
+    let rc = unsafe { bindings::xmlSecOpenSSLInit() };
 
     if rc < 0 {
-        Err(XmlSecError::CryptoInitOpenSSLError)
+        Err(XmlSecError::OpenSSLInitOpenSSLError)
     } else {
         Ok(())
     }
@@ -106,12 +96,12 @@ fn init_crypto() -> XmlSecResult<()> {
 
 /// Shutdown xmlsec-crypto library
 fn cleanup_crypto() {
-    unsafe { bindings::xmlSecCryptoShutdown() };
+    unsafe { bindings::xmlSecOpenSSLShutdown() };
 }
 
 /// Shutdown crypto library
 fn cleanup_crypto_app() {
-    unsafe { bindings::xmlSecCryptoAppShutdown() };
+    unsafe { bindings::xmlSecOpenSSLAppShutdown() };
 }
 
 /// Shutdown xmlsec library

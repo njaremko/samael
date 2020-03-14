@@ -39,7 +39,7 @@ impl XmlSecKey {
 
         // Load key from buffer
         let key = unsafe {
-            bindings::xmlSecCryptoAppKeyLoadMemory(
+            bindings::xmlSecOpenSSLAppKeyLoadMemory(
                 buffer.as_ptr(),
                 buffer.len(),
                 format as u32,
