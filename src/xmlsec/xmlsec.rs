@@ -77,7 +77,7 @@ fn init_crypto_app() -> XmlSecResult<()> {
     let rc = unsafe { bindings::xmlSecOpenSSLAppInit(null()) };
 
     if rc < 0 {
-        Err(XmlSecError::OpenSSLInitOpenSSLAppError)
+        Err(XmlSecError::CryptoInitOpenSSLAppError)
     } else {
         Ok(())
     }
@@ -88,7 +88,7 @@ fn init_crypto() -> XmlSecResult<()> {
     let rc = unsafe { bindings::xmlSecOpenSSLInit() };
 
     if rc < 0 {
-        Err(XmlSecError::OpenSSLInitOpenSSLError)
+        Err(XmlSecError::CryptoInitOpenSSLError)
     } else {
         Ok(())
     }
