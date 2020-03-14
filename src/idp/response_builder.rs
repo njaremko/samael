@@ -49,8 +49,8 @@ fn signature_template(ref_id: &str, x509_cert_der: &[u8]) -> Signature {
 
 fn build_conditions(audience: &str) -> Conditions {
     Conditions {
-        not_before: None, //Some(Utc::now().sub(Duration::minutes(1))),
-        not_on_or_after: None,//Some(Utc::now().add(Duration::days(3650))),
+        not_before: None,
+        not_on_or_after: None,
         audience_restrictions: Some(vec![AudienceRestriction {
             audience: vec![audience.to_string()]
         }]),
@@ -62,12 +62,12 @@ fn build_conditions(audience: &str) -> Conditions {
 fn build_authn_statement(class: &str) -> AuthnStatement {
     AuthnStatement {
         authn_instant: Some(Utc::now()),
-        session_index: None,//Some(request.id.clone()),
-        session_not_on_or_after: None,//Some(Utc::now().add(Duration::minutes(10))),
+        session_index: None,
+        session_not_on_or_after: None,
         subject_locality: None,
         authn_context: Some(AuthnContext {
             value: Some(AuthnContextClassRef {
-                value: Some(class.to_string()) //changed from: PasswordProtectedTransport
+                value: Some(class.to_string())
             })
         })
     }
@@ -111,9 +111,10 @@ fn build_assertion(name_id: &str, request_id: &str, issuer: Issuer, recipient: &
             }),
             subject_confirmations: Some(vec![SubjectConfirmation {
                 method: Some("urn:oasis:names:tc:SAML:2.0:cm:bearer".to_string()),
+                name_id: None,
                 subject_confirmation_data: Some(SubjectConfirmationData {
                     not_before: None,
-                    not_on_or_after: None, //Some(Utc::now().add(Duration::days(1))),
+                    not_on_or_after: None,
                     recipient: Some(recipient.to_owned()),
                     in_response_to: Some(request_id.to_owned()),
                     address: None,

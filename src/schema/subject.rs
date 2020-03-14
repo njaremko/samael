@@ -101,8 +101,8 @@ const SUBJECT_CONFIRMATION_NAME: &str = "saml2:SubjectConfirmation";
 pub struct SubjectConfirmation {
     #[serde(rename = "Method")]
     pub method: Option<String>,
-    // #[serde(rename = "NameID")]
-    // pub name_id: Option<String>,
+    #[serde(rename = "NameID")]
+    pub name_id: Option<SubjectNameID>,
     #[serde(rename = "SubjectConfirmationData")]
     pub subject_confirmation_data: Option<SubjectConfirmationData>,
 }
@@ -119,9 +119,9 @@ impl SubjectConfirmation {
             root.push_attribute(("Method", method.as_ref()));
         }
         writer.write_event(Event::Start(root))?;
-        // if let Some(name_id) = &self.name_id {
-        //     writer.write(SubjectType::NameId(name_id).to_xml()?.as_bytes())?;
-        // }
+        if let Some(name_id) = &self.name_id {
+            writer.write(name_id.to_xml()?.as_bytes())?;
+        }
         if let Some(subject_confirmation_data) = &self.subject_confirmation_data {
             writer.write(subject_confirmation_data.to_xml()?.as_bytes())?;
         }

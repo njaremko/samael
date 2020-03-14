@@ -19,7 +19,9 @@ pub struct KeyDescriptor {
 
 impl KeyDescriptor {
     pub fn is_signing(&self) -> bool {
-        self.key_use == Some("signing".to_string())
+        self.key_use.as_ref()
+            .map(|u| u == "signing")
+            .unwrap_or(false)
     }
 
     pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {

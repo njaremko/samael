@@ -21,7 +21,7 @@ pub enum BindType {
 
 impl SPMetadataExtractor {
     pub fn try_from_xml(xml: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        Ok(Self(EntityDescriptor::from_str(xml)?))
+        Ok(Self(xml.parse()?))
     }
 
     pub fn issuer(&self) -> Result<String, Error> {

@@ -30,7 +30,14 @@ fn test_extract_sp() {
 fn test_signed_response() {
     // init our IdP
     let idp = IdentityProvider::from_private_key_der(include_bytes!("../../test_vectors/idp_private_key.der")).expect("failed to create idp");
-    let idp_cert = idp.create_certificate("https://idp.example.com", "https://idp.example.com").expect("idp cert error");
+
+    let params = CertificateParams {
+        common_name: "https://idp.example.com",
+        issuer_name: "https://idp.example.com",
+        days_until_expiration: 3650
+    };
+
+    let idp_cert = idp.create_certificate(&params).expect("idp cert error");
 
     // init an AuthnRequest
     let authn_request_xml = include_str!("../../test_vectors/authn_request.xml");

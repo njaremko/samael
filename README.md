@@ -14,7 +14,7 @@ Current Features:
 - Create signed SAMLResponse (Response) messages
 
 Verifying and Signing SAML messages are adapted from the [rust-xmlsec](https://github.com/voipir/rust-xmlsec) library (bindings to xmlsec1 library).
-> **NOTE**: this has only been tested using libxml2 +2.9.10. 
+> **NOTE**: this has only been tested using libxml2 ^2.9.10. 
 > The default macOS libxml2 (2.9.4) has known concurrency issues.
     
 Here is some sample code using this library:

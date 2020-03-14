@@ -66,8 +66,8 @@ impl Assertion {
         "saml2:Assertion"
     }
 
-    fn schema() -> Vec<(&'static str, &'static str)> {
-        vec![
+    fn schema() -> &'static[(&'static str, &'static str)] {
+        &[
             ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion"),
             ("xmlns:xsd", "http://www.w3.org/2001/XMLSchema"),
         ]
@@ -79,7 +79,7 @@ impl Assertion {
         let mut root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
 
         for attr in Self::schema() {
-            root.push_attribute(attr);
+            root.push_attribute((attr.0, attr.1));
         }
 
         root.push_attribute(("ID", self.id.as_ref()));
@@ -135,8 +135,8 @@ impl AttributeStatement {
         "saml2:AttributeStatement"
     }
 
-    fn schema() -> Vec<(&'static str, &'static str)> {
-        vec![
+    fn schema() -> &'static[(&'static str, &'static str)] {
+        &[
             ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion"),
         ]
     }
@@ -147,7 +147,7 @@ impl AttributeStatement {
         let mut root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
 
         for attr in Self::schema() {
-            root.push_attribute(attr);
+            root.push_attribute((attr.0, attr.1));
         }
 
         writer.write_event(Event::Start(root))?;

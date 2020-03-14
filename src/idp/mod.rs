@@ -17,16 +17,37 @@ use openssl::bn::{BigNum, MsbOption};
 use crate::crypto::{self};
 
 use crate::schema::Response;
-use crate::idp::response_builder::{build_response_template};
-use response_builder::ResponseAttribute;
+use crate::idp::response_builder::{build_response_template, ResponseAttribute};
 
 pub struct IdentityProvider {
     private_key: pkey::PKey<Private>,
 }
 
+pub enum KeyType {
+    Rsa2048,
+    Rsa3072,
+    Rsa4096,
+}
+
+impl KeyType {
+    fn bit_length(&self) -> u32 {
+        match &self {
+            KeyType::Rsa2048 => 2048,
+            KeyType::Rsa3072 => 3072,
+            KeyType::Rsa4096 => 4096
+        }
+    }
+}
+
+pub struct CertificateParams<'a> {
+    pub common_name: &'a str,
+    pub issuer_name: &'a str,
+    pub days_until_expiration: u32,
+}
+
 impl IdentityProvider {
-    pub fn generate_new() -> Result<Self, Error> {
-        let rsa = Rsa::generate(3072)?;
+    pub fn generate_new(key_type: KeyType) -> Result<Self, Error> {
+        let rsa = Rsa::generate(key_type.bit_length())?;
         let private_key = pkey::PKey::from_rsa(rsa)?;
 
         Ok(IdentityProvider {
@@ -48,13 +69,13 @@ impl IdentityProvider {
         Ok(rsa.private_key_to_der()?)
     }
 
-    pub fn create_certificate(&self, common_name: &str, _issuer_name: &str) -> Result<Vec<u8>, Error> {
+    pub fn create_certificate(&self, params: &CertificateParams) -> Result<Vec<u8>, Error> {
         let mut name = x509::X509Name::builder()?;
-        name.append_entry_by_nid(Nid::COMMONNAME, common_name)?;
+        name.append_entry_by_nid(Nid::COMMONNAME, params.common_name)?;
         let name = name.build();
 
         let mut iss = x509::X509Name::builder()?;
-        iss.append_entry_by_nid(Nid::COMMONNAME, common_name)?;
+        iss.append_entry_by_nid(Nid::COMMONNAME, params.issuer_name)?;
         let iss = iss.build();
 
         let mut builder = x509::X509::builder()?;
@@ -74,7 +95,7 @@ impl IdentityProvider {
         let starts = Asn1Time::days_from_now(0)?; // now
         builder.set_not_before(&starts)?;
 
-        let expires = Asn1Time::days_from_now(3650)?; // 10 years
+        let expires = Asn1Time::days_from_now(params.days_until_expiration)?;
         builder.set_not_after(&expires)?;
 
         builder.sign(&self.private_key, openssl::hash::MessageDigest::sha256())?;
