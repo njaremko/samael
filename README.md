@@ -10,7 +10,12 @@ Current Features:
 - SP-initiated SSO Redirect-POST binding 
 - Helpers for validating SAML assertions
     - Encrypted assertions aren't supported yet
-    - SAMLResponse signatures aren't validated yet
+- Verify SAMLRequest (AuthnRequest) message signatures
+- Create signed SAMLResponse (Response) messages
+
+Verifying and Signing SAML messages are adapted from the [rust-xmlsec](https://github.com/voipir/rust-xmlsec) library (bindings to xmlsec1 library).
+> **NOTE**: this has only been tested using libxml2 ^2.9.10. 
+> The default macOS libxml2 (2.9.4) has known concurrency issues.
     
 Here is some sample code using this library:
 ```rust
@@ -71,5 +76,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     warp::serve(saml_routes).run(([127, 0, 0, 1], 8080)).await;
     Ok(())
 }
-
 ```
