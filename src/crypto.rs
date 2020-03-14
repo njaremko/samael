@@ -1,9 +1,7 @@
 use snafu::Snafu;
 
-use crate::xmlsec;
-use crate::xmlsec::XmlSecKey;
-use crate::xmlsec::XmlSecKeyFormat;
-use crate::xmlsec::XmlSecSignatureContext;
+#[cfg(feature = "xmlsec")]
+use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
 use libxml::parser::Parser as XmlParser;
 
 #[derive(Debug, Snafu)]
@@ -15,12 +13,14 @@ pub enum Error {
         error: libxml::parser::XmlParseError,
     },
 
+    #[cfg(feature = "xmlsec")]
     #[snafu(display("xml sec Error: {}", error))]
     XmlSecError {
         error: xmlsec::XmlSecError,
     },
 }
 
+#[cfg(feature = "xmlsec")]
 impl From<xmlsec::XmlSecError> for Error {
     fn from(error: xmlsec::XmlSecError) -> Self {
         Error::XmlSecError { error }
@@ -33,6 +33,7 @@ impl From<libxml::parser::XmlParseError> for Error {
     }
 }
 
+#[cfg(feature = "xmlsec")]
 pub fn sign_xml<Bytes: AsRef<[u8]>>(xml: Bytes, private_key_der: &[u8]) -> Result<String, Error> {
     let parser = XmlParser::default();
     let document = parser.parse_string(xml)?;
@@ -46,6 +47,7 @@ pub fn sign_xml<Bytes: AsRef<[u8]>>(xml: Bytes, private_key_der: &[u8]) -> Resul
     Ok(document.to_string())
 }
 
+#[cfg(feature = "xmlsec")]
 pub fn verify_signed_xml<Bytes: AsRef<[u8]>>(
     xml: Bytes,
     x509_cert_der: &[u8],
