@@ -15,7 +15,7 @@ Current Features:
 
 The `"xmlsec"` feature flag adds basic support for verifying and signing SAML messages. We're using a modified copy of [rust-xmlsec](https://github.com/voipir/rust-xmlsec) library (bindings to xmlsec1 library).
 
-You'll need to install the following C libs:
+If you want to use the `"xmlsec"` feature, you'll need to install the following C libs:
 - libxml2
 - openssl
 - xmlsec1 (with openssl statically linked)
