@@ -39,7 +39,7 @@ pub struct EntityDescriptor {
     #[serde(rename = "AffiliationDescriptor")]
     pub affiliation_descriptors: Option<AffiliationDescriptor>,
     #[serde(rename = "ContactPerson")]
-    pub contact_person: Option<ContactPerson>,
+    pub contact_person: Option<Vec<ContactPerson>>,
     #[serde(rename = "Organization")]
     pub organization: Option<Organization>,
 }
@@ -94,8 +94,10 @@ impl EntityDescriptor {
         if let Some(organization) = &self.organization {
             writer.write(organization.to_xml()?.as_bytes())?;
         }
-        if let Some(contact_person) = &self.contact_person {
-            writer.write(contact_person.to_xml()?.as_bytes())?;
+        if let Some(contact_persons) = &self.contact_person {
+            for contact_person in contact_persons {
+                writer.write(contact_person.to_xml()?.as_bytes())?;
+            }
         }
         writer.write_event(Event::End(BytesEnd::borrowed(root_name.as_bytes())))?;
 

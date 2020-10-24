@@ -226,7 +226,11 @@ impl ServiceProvider {
             entity_id,
             valid_until,
             sp_sso_descriptors: Some(vec![sso_sp_descriptor]),
-            contact_person: self.contact_person.clone(),
+            contact_person: if let Some(contact_person) = &self.contact_person {
+                Some(vec![contact_person.clone()])
+            } else {
+                None
+            },
             ..EntityDescriptor::default()
         })
     }
