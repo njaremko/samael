@@ -91,6 +91,10 @@ impl EntityDescriptor {
             writer.write(descriptor.to_xml()?.as_bytes())?;
         }
 
+        for descriptor in self.idp_sso_descriptors.as_ref().unwrap_or(&vec![]) {
+            writer.write(descriptor.to_xml()?.as_bytes())?;
+        }
+
         if let Some(organization) = &self.organization {
             writer.write(organization.to_xml()?.as_bytes())?;
         }

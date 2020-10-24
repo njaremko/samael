@@ -23,10 +23,14 @@ pub use sp_sso_descriptor::SpSsoDescriptor;
 pub mod de {
     pub use quick_xml::de::*;
 }
+use quick_xml::events::{BytesEnd, BytesStart, Event};
+use quick_xml::Writer;
+use std::io::Cursor;
 
 use serde::Deserialize;
 
 use crate::attribute::Attribute;
+use crate::metadata::helpers::write_plain_element;
 use crate::signature::Signature;
 use chrono::prelude::*;
 
@@ -156,6 +160,77 @@ pub struct IdpSsoDescriptor {
     pub attribute_profiles: Vec<String>,
     #[serde(rename = "Attribute", default)]
     pub attributes: Vec<Attribute>,
+}
+
+const NAME: &str = "md:IdPSSODescriptor";
+
+impl IdpSsoDescriptor {
+    fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+        let mut write_buf = Vec::new();
+        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+        let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
+
+        if let Some(id) = &self.id {
+            root.push_attribute(("ID", id.as_ref()));
+        }
+
+        if let Some(valid_until) = &self.valid_until {
+            root.push_attribute((
+                "validUntil",
+                valid_until
+                    .to_rfc3339_opts(SecondsFormat::Secs, true)
+                    .as_ref(),
+            ));
+        }
+
+        if let Some(cache_duration) = &self.cache_duration {
+            root.push_attribute(("cacheDuration", cache_duration.to_string().as_ref()));
+        }
+
+        if let Some(protocol_support_enumeration) = &self.protocol_support_enumeration {
+            root.push_attribute((
+                "protocolSupportEnumeration",
+                protocol_support_enumeration.as_ref(),
+            ));
+        }
+
+        if let Some(error_url) = &self.error_url {
+            root.push_attribute(("errorURL", error_url.as_ref()));
+        }
+
+        writer.write_event(Event::Start(root))?;
+
+        for descriptor in &self.key_descriptors {
+            writer.write(descriptor.to_xml()?.as_bytes())?;
+        }
+
+        if let Some(organization) = &self.organization {
+            writer.write(organization.to_xml()?.as_bytes())?;
+        }
+
+        for contact in &self.contact_people {
+            writer.write(contact.to_xml()?.as_bytes())?;
+        }
+
+        for service in &self.artifact_resolution_service {
+            writer.write(service.to_xml("md:ArtifactResolutionService")?.as_bytes())?;
+        }
+
+        for service in &self.single_logout_services {
+            writer.write(service.to_xml("md:SingleLogoutService")?.as_bytes())?;
+        }
+
+        for service in &self.manage_name_id_services {
+            writer.write(service.to_xml("md:ManageNameIDService")?.as_bytes())?;
+        }
+
+        for format in &self.name_id_formats {
+            write_plain_element(&mut writer, "md:NameIDFormat", format.as_ref())?;
+        }
+
+        writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
+        Ok(String::from_utf8(write_buf)?)
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
