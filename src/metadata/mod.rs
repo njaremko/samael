@@ -220,6 +220,10 @@ impl IdpSsoDescriptor {
             writer.write(service.to_xml("md:SingleLogoutService")?.as_bytes())?;
         }
 
+        for service in &self.single_sign_on_services {
+            writer.write(service.to_xml("md:SingleSignOnService")?.as_bytes())?;
+        }
+
         for service in &self.manage_name_id_services {
             writer.write(service.to_xml("md:ManageNameIDService")?.as_bytes())?;
         }
