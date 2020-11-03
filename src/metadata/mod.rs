@@ -162,7 +162,7 @@ pub struct IdpSsoDescriptor {
     pub attributes: Vec<Attribute>,
 }
 
-const NAME: &str = "md:IdPSSODescriptor";
+const NAME: &str = "md:IDPSSODescriptor";
 
 impl IdpSsoDescriptor {
     fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
