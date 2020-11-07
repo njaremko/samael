@@ -89,6 +89,13 @@ impl SpSsoDescriptor {
             ));
         }
 
+        if let Some(authn_requests_signed) = &self.authn_requests_signed {
+            root.push_attribute((
+                "AuthnRequestsSigned",
+                authn_requests_signed.to_string().as_ref(),
+            ));
+        }
+
         writer.write_event(Event::Start(root))?;
 
         if let Some(key_descriptors) = &self.key_descriptors {

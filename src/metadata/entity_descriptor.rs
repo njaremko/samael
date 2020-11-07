@@ -76,6 +76,10 @@ impl EntityDescriptor {
                     .as_ref(),
             ))
         }
+        if let Some(cache_duration) = &self.cache_duration {
+            root.push_attribute(("cacheDuration", cache_duration.as_ref()));
+        }
+
         root.push_attribute(("xmlns:md", "urn:oasis:names:tc:SAML:2.0:metadata"));
         root.push_attribute(("xmlns:saml", "urn:oasis:names:tc:SAML:2.0:assertion"));
         root.push_attribute(("xmlns:mdrpi", "urn:oasis:names:tc:SAML:metadata:rpi"));
@@ -98,6 +102,7 @@ impl EntityDescriptor {
         if let Some(organization) = &self.organization {
             writer.write(organization.to_xml()?.as_bytes())?;
         }
+
         if let Some(contact_persons) = &self.contact_person {
             for contact_person in contact_persons {
                 writer.write(contact_person.to_xml()?.as_bytes())?;
