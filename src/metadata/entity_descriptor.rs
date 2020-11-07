@@ -108,3 +108,42 @@ impl EntityDescriptor {
         Ok(String::from_utf8(write_buf)?)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::EntityDescriptor;
+
+    #[test]
+    fn test_sp_entity_descriptor() {
+        let input_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/sp_metadata.xml"
+        ));
+        let entity_descriptor: EntityDescriptor = input_xml
+            .parse()
+            .expect("Failed to parse sp_metadata.xml into an EntityDescriptor");
+        let output_xml = entity_descriptor
+            .to_xml()
+            .expect("Failed to convert EntityDescriptor to xml");
+        let reparsed_entity_descriptor: EntityDescriptor =output_xml.parse().expect("Failed to parse EntityDescriptor");
+
+        assert_eq!(reparsed_entity_descriptor, entity_descriptor);
+    }
+
+    #[test]
+    fn test_idp_entity_descriptor() {
+        let input_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/idp_metadata.xml"
+        ));
+        let entity_descriptor: EntityDescriptor = input_xml
+            .parse()
+            .expect("Failed to parse sp_metadata.xml into an EntityDescriptor");
+        let output_xml = entity_descriptor
+            .to_xml()
+            .expect("Failed to convert EntityDescriptor to xml");
+        let reparsed_entity_descriptor: EntityDescriptor =output_xml.parse().expect("Failed to parse EntityDescriptor");
+
+        assert_eq!(reparsed_entity_descriptor, entity_descriptor);
+    }
+}
