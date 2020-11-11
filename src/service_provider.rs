@@ -561,12 +561,9 @@ impl AuthnRequest {
 
         if let Some(destination) = self.destination.as_ref() {
             let mut url: Url = destination.parse()?;
-            url.set_query(Some(&format!("SAMLRequest={}", &encoded)));
+            url.query_pairs_mut().append_pair("SAMLRequest", &encoded);
             if relay_state != "" {
-                let owned_url = url.to_owned();
-                if let Some(query) = owned_url.query() {
-                    url.set_query(Some(&format!("{}&RelayState={}", query, relay_state)))
-                }
+                url.query_pairs_mut().append_pair("RelayState", relay_state);
             }
             Ok(Some(url))
         } else {
