@@ -39,7 +39,7 @@ pub struct EntityDescriptor {
     #[serde(rename = "AffiliationDescriptor")]
     pub affiliation_descriptors: Option<AffiliationDescriptor>,
     #[serde(rename = "ContactPerson")]
-    pub contact_person: Option<ContactPerson>,
+    pub contact_person: Option<Vec<ContactPerson>>,
     #[serde(rename = "Organization")]
     pub organization: Option<Organization>,
 }
@@ -76,6 +76,10 @@ impl EntityDescriptor {
                     .as_ref(),
             ))
         }
+        if let Some(cache_duration) = &self.cache_duration {
+            root.push_attribute(("cacheDuration", cache_duration.as_ref()));
+        }
+
         root.push_attribute(("xmlns:md", "urn:oasis:names:tc:SAML:2.0:metadata"));
         root.push_attribute(("xmlns:saml", "urn:oasis:names:tc:SAML:2.0:assertion"));
         root.push_attribute(("xmlns:mdrpi", "urn:oasis:names:tc:SAML:metadata:rpi"));
@@ -91,14 +95,60 @@ impl EntityDescriptor {
             writer.write(descriptor.to_xml()?.as_bytes())?;
         }
 
+        for descriptor in self.idp_sso_descriptors.as_ref().unwrap_or(&vec![]) {
+            writer.write(descriptor.to_xml()?.as_bytes())?;
+        }
+
         if let Some(organization) = &self.organization {
             writer.write(organization.to_xml()?.as_bytes())?;
         }
-        if let Some(contact_person) = &self.contact_person {
-            writer.write(contact_person.to_xml()?.as_bytes())?;
+
+        if let Some(contact_persons) = &self.contact_person {
+            for contact_person in contact_persons {
+                writer.write(contact_person.to_xml()?.as_bytes())?;
+            }
         }
         writer.write_event(Event::End(BytesEnd::borrowed(root_name.as_bytes())))?;
 
         Ok(String::from_utf8(write_buf)?)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::EntityDescriptor;
+
+    #[test]
+    fn test_sp_entity_descriptor() {
+        let input_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/sp_metadata.xml"
+        ));
+        let entity_descriptor: EntityDescriptor = input_xml
+            .parse()
+            .expect("Failed to parse sp_metadata.xml into an EntityDescriptor");
+        let output_xml = entity_descriptor
+            .to_xml()
+            .expect("Failed to convert EntityDescriptor to xml");
+        let reparsed_entity_descriptor: EntityDescriptor =output_xml.parse().expect("Failed to parse EntityDescriptor");
+
+        assert_eq!(reparsed_entity_descriptor, entity_descriptor);
+    }
+
+    #[test]
+    fn test_idp_entity_descriptor() {
+        let input_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/idp_metadata.xml"
+        ));
+        let entity_descriptor: EntityDescriptor = input_xml
+            .parse()
+            .expect("Failed to parse sp_metadata.xml into an EntityDescriptor");
+        let output_xml = entity_descriptor
+            .to_xml()
+            .expect("Failed to convert EntityDescriptor to xml");
+        let reparsed_entity_descriptor: EntityDescriptor =output_xml.parse().expect("Failed to parse EntityDescriptor");
+
+        assert_eq!(reparsed_entity_descriptor, entity_descriptor);
     }
 }

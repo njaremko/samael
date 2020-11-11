@@ -128,3 +128,45 @@ fn test_signed_response_threads() {
         .into_iter()
         .for_each(|h| h.join().expect("failed thread"));
 }
+
+#[test]
+fn test_signed_response_fingerprint() {
+    let idp = IdentityProvider::from_private_key_der(include_bytes!(
+        "../../test_vectors/idp_private_key.der"
+    ))
+    .expect("failed to create idp");
+
+    let params = CertificateParams {
+        common_name: "https://idp.example.com",
+        issuer_name: "https://idp.example.com",
+        days_until_expiration: 3650,
+    };
+
+    let idp_cert = idp.create_certificate(&params).expect("idp cert error");
+    let response = idp
+        .sign_authn_response(
+            idp_cert.as_slice(),
+            "testuser@example.com",
+            "https://sp.example.com/audience",
+            "https://sp.example.com/acs",
+            "https://idp.example.com",
+            "",
+            &[],
+        )
+        .expect("failed to created and sign response");
+    let base64_cert = response
+        .signature
+        .unwrap()
+        .key_info
+        .unwrap()
+        .first()
+        .unwrap()
+        .x509_data
+        .clone()
+        .unwrap()
+        .certificate
+        .unwrap();
+    let der_cert =
+        crate::crypto::decode_x509_cert(&base64_cert).expect("failed to decode cert ");
+    assert_eq!(der_cert, idp_cert);
+}

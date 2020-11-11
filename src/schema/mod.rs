@@ -94,16 +94,16 @@ impl Assertion {
         writer.write_event(Event::Start(root))?;
         writer.write(self.issuer.to_xml()?.as_bytes())?;
 
+        if let Some(signature) = &self.signature {
+            writer.write(signature.to_xml()?.as_bytes())?;
+        }
+
         if let Some(subject) = &self.subject {
             writer.write(subject.to_xml()?.as_bytes())?;
         }
 
         if let Some(conditions) = &self.conditions {
             writer.write(conditions.to_xml()?.as_bytes())?;
-        }
-
-        if let Some(signature) = &self.signature {
-            writer.write(signature.to_xml()?.as_bytes())?;
         }
 
         if let Some(statements) = &self.authn_statements {
