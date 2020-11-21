@@ -140,6 +140,29 @@ impl XmlSecSignatureContext {
         let signode = find_signode(root_ptr)?;
         self.verify_node_raw(signode)
     }
+
+    /// Takes a `<dsig:Signature>` [`Node`][xmlnode] and attempts to verify it. For this to work, a XmlSecKey must have
+    /// been previously set with [`insert_key`][inskey].
+    ///
+    /// # Errors
+    ///
+    /// If key has not been previously set, the node is not a signature node or the document is malformed.
+    ///
+    /// [xmlnode]: http://kwarc.github.io/rust-libxml/libxml/tree/document/struct.Node.html
+    /// [inskey]: struct.XmlSecSignatureContext.html#method.insert_key
+    pub fn verify_node(&self, sig_node: &libxml::tree::Node) -> XmlSecResult<bool> {
+        self.key_is_set()?;
+        if let Some(ns) = sig_node.get_namespace() {
+            if ns.get_href() != "http://www.w3.org/2000/09/xmldsig#" || sig_node.get_name() != "Signature" {
+                return Err(XmlSecError::NotASignatureNode);
+            }
+        } else {
+            return Err(XmlSecError::NotASignatureNode);
+        }
+
+        let node_ptr = sig_node.node_ptr();
+        self.verify_node_raw(node_ptr as *mut bindings::xmlNode)
+    }
 }
 
 impl XmlSecSignatureContext {
