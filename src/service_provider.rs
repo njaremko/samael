@@ -428,7 +428,6 @@ impl ServiceProvider {
         if let Some(_encrypted_assertion) = &response.encrypted_assertion {
             Err(Error::EncryptedAssertionsNotYetSupported)
         } else if let Some(assertion) = &response.assertion {
-            //self.validate_signed(&response)?;
             self.validate_assertion(assertion, possible_request_ids)?;
             Ok(assertion.clone())
         } else {
@@ -502,29 +501,6 @@ impl ServiceProvider {
             });
         }
         Ok(())
-    }
-
-    fn validate_signed(&self, response: &Response) -> Result<(), Error> {
-        let mut signed = false;
-        if let Some(signature) = &response.signature {
-            self.validate_signature(signature)?;
-            signed = true;
-        }
-        if let Some(assertion) = &response.assertion {
-            if let Some(signature) = &assertion.signature {
-                self.validate_signature(signature)?;
-                signed = true;
-            }
-        }
-        if signed {
-            Ok(())
-        } else {
-            Err(Error::FailedToValidateSignature)
-        }
-    }
-
-    fn validate_signature(&self, _signature: &Signature) -> Result<(), Error> {
-        Err(Error::SignedAssertionsNotYetSupported)
     }
 
     pub fn make_authentication_request(

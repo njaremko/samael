@@ -12,7 +12,7 @@ use libxml::parser::Parser as XmlParser;
 #[cfg(feature = "xmlsec")]
 const XMLNS_XML_DSIG: &str = "http://www.w3.org/2000/09/xmldsig#";
 #[cfg(feature = "xmlsec")]
-const XMLNS_SIGVER: &str = "https://ondrahosek.com/xmlns/2020/signature-verified";
+const XMLNS_SIGVER: &str = "urn:urn-5:08Z8lPlI4JVjifINTfCtfelirUo";
 #[cfg(feature = "xmlsec")]
 const ATTRIB_SIGVER: &str = "sv";
 #[cfg(feature = "xmlsec")]
@@ -41,9 +41,16 @@ pub enum Error {
         error: xmlsec::XmlSecError,
     },
 
-    #[snafu(display("boxed error: {}", error))]
-    BoxedError {
-        error: Box<(dyn std::error::Error)>,
+    #[cfg(feature = "xmlsec")]
+    #[snafu(display("failed to remove attribute: {}", error))]
+    XmlAttributeRemovalError {
+        error: Box<dyn std::error::Error>
+    },
+
+    #[cfg(feature = "xmlsec")]
+    #[snafu(display("failed to define namespace: {}", error))]
+    XmlNamespaceDefinitionError {
+        error: Box<dyn std::error::Error>
     },
 
     #[cfg(feature = "xmlsec")]
@@ -70,12 +77,6 @@ impl From<xmlsec::XmlSecError> for Error {
 impl From<libxml::parser::XmlParseError> for Error {
     fn from(error: libxml::parser::XmlParseError) -> Self {
         Error::XmlParseError { error }
-    }
-}
-
-impl From<Box<(dyn std::error::Error)>> for Error {
-    fn from(error: Box<(dyn std::error::Error)>) -> Self {
-        Error::BoxedError { error }
     }
 }
 
@@ -136,8 +137,7 @@ fn collect_id_attributes(doc: &mut libxml::tree::Document) -> Result<(), Error> 
     if let Some(root_elem) = doc.get_root_element() {
         nodes_to_visit.push(root_elem);
     }
-    while nodes_to_visit.len() > 0 {
-        let node = nodes_to_visit.pop().unwrap();
+    while let Some(node) = nodes_to_visit.pop() {
         if let Some(id_value) = node.get_attribute(ID_STR) {
             let id_value_cstr = CString::new(id_value).unwrap();
             let node_ptr = node.node_ptr();
@@ -187,7 +187,8 @@ fn find_signature_nodes(node: &libxml::tree::Node) -> Vec<libxml::tree::Node> {
 /// from all elements in the subtree rooted at the given node.
 #[cfg(feature = "xmlsec")]
 pub fn remove_signature_verified_attributes(node: &mut libxml::tree::Node) -> Result<(), Error> {
-    node.remove_attribute_ns(ATTRIB_SIGVER, XMLNS_SIGVER)?;
+    node.remove_attribute_ns(ATTRIB_SIGVER, XMLNS_SIGVER)
+        .map_err(|err| Error::XmlAttributeRemovalError { error: err })?;
     for mut child_elem in node.get_child_elements() {
         remove_signature_verified_attributes(&mut child_elem)?;
     }
@@ -225,8 +226,7 @@ fn get_elements_by_predicate<F: FnMut(&libxml::tree::Node) -> bool>(
     let mut nodes_to_visit = Vec::new();
     let mut nodes = Vec::new();
     nodes_to_visit.push(elem.clone());
-    while nodes_to_visit.len() > 0 {
-        let node = nodes_to_visit.pop().unwrap();
+    while let Some(node) = nodes_to_visit.pop() {
         if pred(&node) {
             nodes.push(node.clone());
         }
@@ -240,13 +240,11 @@ fn get_elements_by_predicate<F: FnMut(&libxml::tree::Node) -> bool>(
 /// rooted at the given node.
 #[cfg(feature = "xmlsec")]
 fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree::Node> {
-    let mut elems = get_elements_by_predicate(elem, |node| {
-        if let Some(node_id) = node.get_attribute("ID") {
-            node_id == id
-        } else {
-            false
-        }
-    });
+    let mut elems = get_elements_by_predicate(elem, |node|
+        node.get_attribute("ID")
+            .map(|node_id| node_id == id)
+            .unwrap_or(false)
+    );
     let elem = elems.drain(..).nth(0);
     elem
 }
@@ -362,8 +360,7 @@ fn place_signature_verified_attributes(
             nodes.push(sig_root_node);
 
             // mark all children
-            while nodes.len() > 0 {
-                let node = nodes.pop().unwrap();
+            while let Some(node) = nodes.pop() {
                 let node_ptr = node.node_ptr() as usize;
                 for child in node.get_child_elements() {
                     nodes.push(child);
@@ -415,32 +412,34 @@ pub(crate) fn reduce_xml_to_signed(
     collect_id_attributes(&mut xml)?;
 
     // verify each signature
-    let mut signature_nodes = find_signature_nodes(&root_elem);
-    for sig_node in signature_nodes.drain(..) {
-        let mut sig_ctx = XmlSecSignatureContext::new()?;
-        let mut verified = false;
-        for openssl_key in certs {
-            let key_data = openssl_key.to_der()?;
-            let key = XmlSecKey::from_memory(&key_data, XmlSecKeyFormat::CertDer)?;
-            sig_ctx.insert_key(key);
-            verified = sig_ctx.verify_node(&sig_node)?;
-            if verified {
-                break;
+    {
+        let mut signature_nodes = find_signature_nodes(&root_elem);
+        for sig_node in signature_nodes.drain(..) {
+            let mut sig_ctx = XmlSecSignatureContext::new()?;
+            let mut verified = false;
+            for openssl_key in certs {
+                let key_data = openssl_key.to_der()?;
+                let key = XmlSecKey::from_memory(&key_data, XmlSecKeyFormat::CertDer)?;
+                sig_ctx.insert_key(key);
+                verified = sig_ctx.verify_node(&sig_node)?;
+                if verified {
+                    break;
+                }
+            }
+
+            if !verified {
+                return Err(Error::InvalidSignature);
             }
         }
-
-        if !verified {
-            return Err(Error::InvalidSignature);
-        }
     }
-    drop(signature_nodes);
 
     // define the "signature verified" namespace
     let sig_ver_ns = libxml::tree::Namespace::new(
         "sv",
         XMLNS_SIGVER,
         &mut root_elem,
-    )?;
+    )
+        .map_err(|err| Error::XmlNamespaceDefinitionError { error: err })?;
 
     // remove all existing "signature verified" attributes
     // (we can't do this before verifying the signatures:
