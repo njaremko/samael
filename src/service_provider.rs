@@ -16,6 +16,14 @@ use std::fmt::Debug;
 use std::io::Write;
 use url::Url;
 
+#[cfg(feature = "xmlsec")]
+use crate::crypto::reduce_xml_to_signed;
+
+#[cfg(not(feature = "xmlsec"))]
+fn reduce_xml_to_signed<T>(xml_str: &str, _keys: &Vec<T>) -> Result<String, Error> {
+    Ok(String::from(xml_str))
+}
+
 #[derive(Debug, Snafu)]
 pub enum Error {
     #[snafu(display(
@@ -293,8 +301,14 @@ impl ServiceProvider {
                             .as_ref()
                             .and_then(|data| data.certificate.as_ref())
                         {
-                            if let Ok(parsed) = openssl::x509::X509::from_der(cert.as_bytes()) {
-                                result.push(parsed)
+                            if let Ok(decoded) = base64::decode(cert.as_bytes()) {
+                                if let Ok(parsed) = openssl::x509::X509::from_der(&decoded) {
+                                    result.push(parsed)
+                                } else {
+                                    return Err(Error::FailedToParseCert {
+                                        cert: cert.to_string(),
+                                    });
+                                }
                             } else {
                                 return Err(Error::FailedToParseCert {
                                     cert: cert.to_string(),
@@ -317,8 +331,14 @@ impl ServiceProvider {
                                 .as_ref()
                                 .and_then(|data| data.certificate.as_ref())
                             {
-                                if let Ok(parsed) = openssl::x509::X509::from_der(cert.as_bytes()) {
-                                    result.push(parsed)
+                                if let Ok(decoded) = base64::decode(cert.as_bytes()) {
+                                    if let Ok(parsed) = openssl::x509::X509::from_der(&decoded) {
+                                        result.push(parsed)
+                                    } else {
+                                        return Err(Error::FailedToParseCert {
+                                            cert: cert.to_string(),
+                                        });
+                                    }
                                 } else {
                                     return Err(Error::FailedToParseCert {
                                         cert: cert.to_string(),
@@ -353,7 +373,15 @@ impl ServiceProvider {
         response_xml: &str,
         possible_request_ids: &[AsStr],
     ) -> Result<Assertion, Error> {
-        let response: Response = response_xml
+        let reduced_xml = if let Some(sign_certs) = self.idp_signing_certs()? {
+            reduce_xml_to_signed(
+                response_xml,
+                &sign_certs,
+            ).map_err(|_e| Error::FailedToValidateSignature)?
+        } else {
+            String::from(response_xml)
+        };
+        let response: Response = reduced_xml
             .parse()
             .map_err(|_e| Error::FailedToParseSamlResponse)?;
         self.validate_destination(&response)?;
@@ -400,7 +428,6 @@ impl ServiceProvider {
         if let Some(_encrypted_assertion) = &response.encrypted_assertion {
             Err(Error::EncryptedAssertionsNotYetSupported)
         } else if let Some(assertion) = &response.assertion {
-            self.validate_signed(&response)?;
             self.validate_assertion(assertion, possible_request_ids)?;
             Ok(assertion.clone())
         } else {
@@ -474,29 +501,6 @@ impl ServiceProvider {
             });
         }
         Ok(())
-    }
-
-    fn validate_signed(&self, response: &Response) -> Result<(), Error> {
-        let mut signed = false;
-        if let Some(signature) = &response.signature {
-            self.validate_signature(signature)?;
-            signed = true;
-        }
-        if let Some(assertion) = &response.assertion {
-            if let Some(signature) = &assertion.signature {
-                self.validate_signature(signature)?;
-                signed = true;
-            }
-        }
-        if signed {
-            Ok(())
-        } else {
-            Err(Error::FailedToValidateSignature)
-        }
-    }
-
-    fn validate_signature(&self, _signature: &Signature) -> Result<(), Error> {
-        Err(Error::SignedAssertionsNotYetSupported)
     }
 
     pub fn make_authentication_request(

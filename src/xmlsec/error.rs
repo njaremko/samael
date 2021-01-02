@@ -23,6 +23,7 @@ pub enum XmlSecError {
 
     RootNotFound,
     NodeNotFound,
+    NotASignatureNode,
 
     SigningError,
     VerifyError,
@@ -49,6 +50,7 @@ impl std::fmt::Display for XmlSecError {
 
             Self::RootNotFound => write!(fmt, "{}", "Failed to find document root"),
             Self::NodeNotFound => write!(fmt, "{}", "Failed to find node"),
+            Self::NotASignatureNode => write!(fmt, "{}", "Node is not a signature node"),
 
             Self::SigningError => write!(
                 fmt,
