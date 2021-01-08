@@ -265,6 +265,7 @@ fn get_node_by_ptr(elem: &libxml::tree::Node, ptr: *const libxml::bindings::xmlN
 struct XPathContext {
     pub pointer: libxml::bindings::xmlXPathContextPtr,
 }
+#[cfg(feature = "xmlsec")]
 impl Drop for XPathContext {
     fn drop(&mut self) { unsafe { libxml::bindings::xmlXPathFreeContext(self.pointer) } }
 }
@@ -273,6 +274,7 @@ impl Drop for XPathContext {
 struct XPathObject {
     pub pointer: libxml::bindings::xmlXPathObjectPtr,
 }
+#[cfg(feature = "xmlsec")]
 impl Drop for XPathObject {
     fn drop(&mut self) { unsafe { libxml::bindings::xmlXPathFreeObject(self.pointer) } }
 }
