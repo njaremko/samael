@@ -9,6 +9,7 @@ use chrono::Utc;
 
 use super::sp_extractor::RequiredAttribute;
 use crate::crypto;
+use crate::idp::ResponseParams;
 
 fn build_conditions(audience: &str) -> Conditions {
     Conditions {
@@ -56,35 +57,55 @@ fn build_attributes(formats_names_values: &[ResponseAttribute]) -> Vec<Attribute
         .collect()
 }
 
-fn build_assertion(
-    name_id: &str,
-    request_id: &str,
-    issuer: Issuer,
-    recipient: &str,
-    audience: &str,
-    attributes: &[ResponseAttribute],
-) -> Assertion {
+fn build_assertion(params: &ResponseParams)
+    -> Assertion
+{
+    let ResponseParams {
+        idp_x509_cert_der: _,
+        subject_name_id,
+        audience,
+        acs_url,
+        issuer,
+        in_response_to_id,
+        attributes,
+        not_before,
+        not_on_or_after
+    } = *params;
+
     let assertion_id = crypto::gen_saml_assertion_id();
+
+    let attribute_statements = if attributes.is_empty() {
+        None
+    } else {
+        Some(vec![
+            AttributeStatement {
+                attributes: build_attributes(attributes)
+            }
+        ])
+    };
 
     Assertion {
         id: assertion_id,
         issue_instant: Utc::now(),
         version: "2.0".to_string(),
-        issuer,
+        issuer: Issuer {
+            value: Some(issuer.to_string()),
+            ..Default::default()
+        },
         signature: None,
         subject: Some(Subject {
             name_id: Some(SubjectNameID {
                 format: Some("urn:oasis:names:tc:SAML:2.0:nameid-format:unspecified".to_string()),
-                value: name_id.to_owned(),
+                value: subject_name_id.to_string(),
             }),
             subject_confirmations: Some(vec![SubjectConfirmation {
                 method: Some("urn:oasis:names:tc:SAML:2.0:cm:bearer".to_string()),
                 name_id: None,
                 subject_confirmation_data: Some(SubjectConfirmationData {
-                    not_before: None,
-                    not_on_or_after: None,
-                    recipient: Some(recipient.to_owned()),
-                    in_response_to: Some(request_id.to_owned()),
+                    not_before,
+                    not_on_or_after,
+                    recipient: Some(acs_url.to_owned()),
+                    in_response_to: Some(in_response_to_id.to_string()),
                     address: None,
                     content: None,
                 }),
@@ -94,23 +115,14 @@ fn build_assertion(
         authn_statements: Some(vec![build_authn_statement(
             "urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified",
         )]),
-        attribute_statements: Some(vec![AttributeStatement {
-            attributes: build_attributes(attributes),
-        }]),
+        attribute_statements,
     }
 }
 
-fn build_response(
-    name_id: &str,
-    issuer: &str,
-    request_id: &str,
-    attributes: &[ResponseAttribute],
-    destination: &str,
-    audience: &str,
-    x509_cert: &[u8],
-) -> Response {
+fn build_response(params: &ResponseParams) -> Response
+{
     let issuer = Issuer {
-        value: Some(issuer.to_string()),
+        value: Some(params.issuer.to_string()),
         ..Default::default()
     };
 
@@ -118,13 +130,13 @@ fn build_response(
 
     Response {
         id: response_id.clone(),
-        in_response_to: Some(request_id.to_owned()),
+        in_response_to: Some(params.in_response_to_id.to_owned()),
         version: "2.0".to_string(),
         issue_instant: Utc::now(),
-        destination: Some(destination.to_string()),
+        destination: Some(params.acs_url.to_string()),
         consent: None,
-        issuer: Some(issuer.clone()),
-        signature: Some(Signature::template(&response_id, x509_cert)),
+        issuer: Some(issuer),
+        signature: Some(Signature::template(&response_id, params.idp_x509_cert_der)),
         status: Some(Status {
             status_code: StatusCode {
                 value: Some("urn:oasis:names:tc:SAML:2.0:status:Success".to_string()),
@@ -133,27 +145,11 @@ fn build_response(
             status_detail: None,
         }),
         encrypted_assertion: None,
-        assertion: Some(build_assertion(
-            name_id,
-            request_id,
-            issuer,
-            destination,
-            audience,
-            attributes,
-        )),
+        assertion: Some(build_assertion(params)),
     }
 }
 
-pub fn build_response_template(
-    cert_der: &[u8],
-    name_id: &str,
-    audience: &str,
-    issuer: &str,
-    acs_url: &str,
-    request_id: &str,
-    attributes: &[ResponseAttribute],
-) -> Response {
-    build_response(
-        name_id, issuer, request_id, attributes, acs_url, audience, cert_der,
-    )
+pub fn build_response_template(params: &ResponseParams) -> Response
+{
+    build_response(params)
 }
