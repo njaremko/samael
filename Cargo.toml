@@ -1,6 +1,6 @@
 [package]
 name = "samael"
-version = "0.0.7"
+version = "0.0.8"
 authors = ["Nathan Jaremko <nathan@jaremko.ca>", "Alex Grinman <me@alexgr.in>"]
 edition = "2018"
 license = "MIT"
@@ -16,22 +16,22 @@ xmlsec = ["libc", "lazy_static", "libxml"]
 
 [build-dependencies]
 pkg-config =  "^0.3.17"
-bindgen    = "^0.51.0"
+bindgen    = "0.59.1"
 
 [dependencies]
 openssl = "0.10"
 openssl-sys = "0.9"
 openssl-probe = "0.1.2"
 url = "2.1.1"
-quick-xml = { version = "0.17.2", features = [ "serialize" ] }
+quick-xml = { version = "0.22.0", features = [ "serialize" ] }
 serde = { version = "1.0", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
-base64 = "0.12"
+base64 = "0.13"
 flate2 = "1.0"
 snafu = "0.6"
-rand = "0.7"
-derive_builder = "0.9.0"
-libxml = { version = "0.2.13", optional = true}
+rand = "0.8.4"
+derive_builder = "0.10.2"
+libxml = { version = "0.3.0", optional = true}
 uuid = { version = "0.8.1", features = ["v4"] }
 data-encoding = "2.2.0"
 libc        = {version = "^0.2.66", optional = true}
