@@ -42,8 +42,8 @@ impl XmlSecContext {
         unsafe {
             libxml::bindings::xmlInitParser();
         }
-
         init_xmlsec()?;
+        init_dll()?;
         init_crypto_app()?;
         init_crypto()?;
 
@@ -56,6 +56,16 @@ impl Drop for XmlSecContext {
         cleanup_crypto();
         cleanup_crypto_app();
         cleanup_xmlsec();
+    }
+}
+
+fn init_dll() -> XmlSecResult<()> {
+    let rc = unsafe { bindings::xmlSecCryptoDLLoadLibrary(null()) };
+
+    if rc < 0 {
+        Err(XmlSecError::XmlSecInitError)
+    } else {
+        Ok(())
     }
 }
 
@@ -74,7 +84,7 @@ fn init_xmlsec() -> XmlSecResult<()> {
 /// xmlsec-crypto libraries. Use the crypto library name ("openssl",
 /// "nss", etc.) to load corresponding xmlsec-crypto library.
 fn init_crypto_app() -> XmlSecResult<()> {
-    let rc = unsafe { bindings::xmlSecOpenSSLAppInit(null()) };
+    let rc = unsafe { bindings::xmlSecCryptoAppInit(null()) };
 
     if rc < 0 {
         Err(XmlSecError::CryptoInitOpenSSLAppError)
@@ -85,7 +95,7 @@ fn init_crypto_app() -> XmlSecResult<()> {
 
 /// Init xmlsec-crypto library
 fn init_crypto() -> XmlSecResult<()> {
-    let rc = unsafe { bindings::xmlSecOpenSSLInit() };
+    let rc = unsafe { bindings::xmlSecCryptoInit() };
 
     if rc < 0 {
         Err(XmlSecError::CryptoInitOpenSSLError)
@@ -96,12 +106,12 @@ fn init_crypto() -> XmlSecResult<()> {
 
 /// Shutdown xmlsec-crypto library
 fn cleanup_crypto() {
-    unsafe { bindings::xmlSecOpenSSLShutdown() };
+    unsafe { bindings::xmlSecCryptoShutdown() };
 }
 
 /// Shutdown crypto library
 fn cleanup_crypto_app() {
-    unsafe { bindings::xmlSecOpenSSLAppShutdown() };
+    unsafe { bindings::xmlSecCryptoAppShutdown() };
 }
 
 /// Shutdown xmlsec library
