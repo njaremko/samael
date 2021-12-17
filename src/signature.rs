@@ -1,4 +1,4 @@
-use crate::key_info::KeyInfo;
+use crate::key_info::{KeyInfo, X509Data};
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
@@ -39,6 +39,16 @@ impl Signature {
         writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
         Ok(String::from_utf8(write_buf)?)
     }
+
+    pub fn add_key_info(&mut self, public_cert_der: &[u8]) -> &mut Self {
+        self.key_info.get_or_insert(Vec::new()).push(KeyInfo {
+            id: None,
+            x509_data: Some(X509Data {
+                certificate: Some(base64::encode(public_cert_der)),
+            }),
+        });
+        self
+    }
 }
 
 const SIGNATURE_VALUE_NAME: &str = "ds:SignatureValue";
@@ -48,7 +58,7 @@ pub struct SignatureValue {
     #[serde(rename = "ID")]
     pub id: Option<String>,
     #[serde(rename = "$value")]
-    pub base64_content: String,
+    pub base64_content: Option<String>,
 }
 
 impl SignatureValue {
@@ -61,9 +71,11 @@ impl SignatureValue {
             root.push_attribute(("Id", id.as_ref()));
         }
         writer.write_event(Event::Start(root))?;
-        writer.write_event(Event::Text(BytesText::from_plain_str(
-            self.base64_content.as_ref(),
-        )))?;
+        if let Some(ref base64_content) = self.base64_content {
+            writer.write_event(Event::Text(BytesText::from_plain_str(
+                base64_content,
+            )))?;
+        }
         writer.write_event(Event::End(BytesEnd::borrowed(
             SIGNATURE_VALUE_NAME.as_bytes(),
         )))?;
@@ -258,7 +270,7 @@ const DIGEST_VALUE_NAME: &str = "ds:DigestValue";
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct DigestValue {
     #[serde(rename = "$value")]
-    pub base64_content: String,
+    pub base64_content: Option<String>,
 }
 
 impl DigestValue {
@@ -267,9 +279,11 @@ impl DigestValue {
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
         let root = BytesStart::borrowed(DIGEST_VALUE_NAME.as_bytes(), DIGEST_VALUE_NAME.len());
         writer.write_event(Event::Start(root))?;
-        writer.write_event(Event::Text(BytesText::from_plain_str(
-            self.base64_content.as_ref(),
-        )))?;
+        if let Some(ref base64_content) = self.base64_content {
+            writer.write_event(Event::Text(BytesText::from_plain_str(
+                base64_content,
+            )))?;
+        }
         writer.write_event(Event::End(BytesEnd::borrowed(DIGEST_VALUE_NAME.as_bytes())))?;
         Ok(String::from_utf8(write_buf)?)
     }
@@ -284,7 +298,7 @@ pub struct Reference {
     #[serde(rename = "DigestMethod")]
     pub digest_method: DigestMethod,
     #[serde(rename = "DigestValue")]
-    pub digest_value: DigestValue,
+    pub digest_value: Option<DigestValue>,
 
     #[serde(rename = "URI")]
     pub uri: Option<String>,
@@ -315,7 +329,9 @@ impl Reference {
         }
 
         writer.write(self.digest_method.to_xml()?.as_bytes())?;
-        writer.write(self.digest_value.to_xml()?.as_bytes())?;
+        if let Some(ref digest_value) = self.digest_value {
+            writer.write(digest_value.to_xml()?.as_bytes())?;
+        }
 
         writer.write_event(Event::End(BytesEnd::borrowed(REFERENCE_NAME.as_bytes())))?;
         Ok(String::from_utf8(write_buf)?)

@@ -43,9 +43,9 @@ fn signature_template(ref_id: &str, x509_cert_der: &[u8]) -> Signature {
                 digest_method: DigestMethod {
                     algorithm: "http://www.w3.org/2000/09/xmldsig#sha1".to_string(),
                 },
-                digest_value: DigestValue {
-                    base64_content: "".to_string(),
-                },
+                digest_value: Some(DigestValue {
+                    base64_content: Some("".to_string()),
+                }),
                 uri: Some(format!("#{}", ref_id)),
                 reference_type: None,
                 id: None,
@@ -53,7 +53,7 @@ fn signature_template(ref_id: &str, x509_cert_der: &[u8]) -> Signature {
         },
         signature_value: SignatureValue {
             id: None,
-            base64_content: "".to_string(),
+            base64_content: Some("".to_string()),
         },
         key_info: Some(vec![KeyInfo {
             id: None,

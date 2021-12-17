@@ -1,6 +1,5 @@
 use crate::metadata::{Endpoint, IndexedEndpoint, KeyDescriptor, NameIdFormat, SpSsoDescriptor};
 use crate::schema::{Assertion, Response};
-use crate::signature::Signature;
 use crate::{
     key_info::{KeyInfo, X509Data},
     metadata::{ContactPerson, EncryptionMethod, EntityDescriptor, HTTP_POST_BINDING},
@@ -89,8 +88,6 @@ pub enum Error {
     },
     #[snafu(display("Encrypted SAML Assertions are not yet supported"))]
     EncryptedAssertionsNotYetSupported,
-    #[snafu(display("Signed SAML Assertions are not yet supported"))]
-    SignedAssertionsNotYetSupported,
     #[snafu(display("SAML Response and all assertions must be signed"))]
     FailedToValidateSignature,
     #[snafu(display("Failed to deserialize SAML response."))]
@@ -368,7 +365,7 @@ impl ServiceProvider {
         Ok(assertion)
     }
 
-    fn parse_xml_response<AsStr: AsRef<str> + Debug>(
+    pub fn parse_xml_response<AsStr: AsRef<str> + Debug>(
         &self,
         response_xml: &str,
         possible_request_ids: &[AsStr],
