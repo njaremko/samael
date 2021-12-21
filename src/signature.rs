@@ -20,6 +20,58 @@ pub struct Signature {
 }
 
 impl Signature {
+    pub fn template(ref_id: &str, x509_cert_der: &[u8]) -> Self {
+        Signature {
+            id: None,
+            signed_info: SignedInfo {
+                id: None,
+                canonicalization_method: CanonicalizationMethod {
+                    algorithm: "http://www.w3.org/2001/10/xml-exc-c14n#".to_string(),
+                },
+                signature_method: SignatureMethod {
+                    algorithm: "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256".to_string(),
+                    hmac_output_length: None,
+                },
+                reference: vec![Reference {
+                    transforms: Some(Transforms {
+                        transforms: vec![
+                            Transform {
+                                algorithm: "http://www.w3.org/2000/09/xmldsig#enveloped-signature"
+                                    .to_string(),
+                                xpath: None,
+                            },
+                            Transform {
+                                algorithm: "http://www.w3.org/2001/10/xml-exc-c14n#".to_string(),
+                                xpath: None,
+                            },
+                        ],
+                    }),
+                    digest_method: DigestMethod {
+                        algorithm: "http://www.w3.org/2000/09/xmldsig#sha1".to_string(),
+                    },
+                    digest_value: Some(DigestValue {
+                        base64_content: Some("".to_string()),
+                    }),
+                    uri: Some(format!("#{}", ref_id)),
+                    reference_type: None,
+                    id: None,
+                }],
+            },
+            signature_value: SignatureValue {
+                id: None,
+                base64_content: Some("".to_string()),
+            },
+            key_info: Some(vec![KeyInfo {
+                id: None,
+                x509_data: Some(X509Data {
+                    certificate: Some(
+                        crate::crypto::mime_encode_x509_cert(x509_cert_der)
+                    ),
+                }),
+            }]),
+        }
+    }
+
     pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
