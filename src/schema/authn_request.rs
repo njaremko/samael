@@ -249,7 +249,6 @@ mod test {
         Ok(())
     }
 
-    #[cfg(feature = "xmlsec")]
     pub fn verify_signed_redirect_url(
         signed_authn_redirect_url: &url::Url,
         public_key_pem: &[u8],
@@ -300,7 +299,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "xmlsec")]
     pub fn test_redirect_signature() -> Result<(), Box<dyn std::error::Error>> {
         let private_key = include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -334,7 +332,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "xmlsec")]
     pub fn test_redirect_signature_with_relaystate() -> Result<(), Box<dyn std::error::Error>> {
         let private_key = include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
