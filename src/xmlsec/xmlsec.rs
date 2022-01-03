@@ -7,7 +7,6 @@ use lazy_static::lazy_static;
 
 use super::error::XmlSecError;
 use super::XmlSecResult;
-use std::ffi::CString;
 use std::ptr::null;
 use std::sync::Mutex;
 

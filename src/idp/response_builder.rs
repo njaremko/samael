@@ -1,68 +1,14 @@
 use crate::attribute::{Attribute, AttributeValue};
-use crate::key_info::{KeyInfo, X509Data};
 use crate::schema::{
     Assertion, AttributeStatement, AudienceRestriction, AuthnContext, AuthnContextClassRef,
     AuthnStatement, Conditions, Issuer, Response, Status, StatusCode, Subject, SubjectConfirmation,
     SubjectConfirmationData, SubjectNameID,
 };
-use crate::signature::{
-    CanonicalizationMethod, DigestMethod, DigestValue, Reference, Signature, SignatureMethod,
-    SignatureValue, SignedInfo, Transform, Transforms,
-};
+use crate::signature::Signature;
 use chrono::Utc;
 
 use super::sp_extractor::RequiredAttribute;
 use crate::crypto;
-
-fn signature_template(ref_id: &str, x509_cert_der: &[u8]) -> Signature {
-    Signature {
-        id: None,
-        signed_info: SignedInfo {
-            id: None,
-            canonicalization_method: CanonicalizationMethod {
-                algorithm: "http://www.w3.org/2001/10/xml-exc-c14n#".to_string(),
-            },
-            signature_method: SignatureMethod {
-                algorithm: "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256".to_string(),
-                hmac_output_length: None,
-            },
-            reference: vec![Reference {
-                transforms: Some(Transforms {
-                    transforms: vec![
-                        Transform {
-                            algorithm: "http://www.w3.org/2000/09/xmldsig#enveloped-signature"
-                                .to_string(),
-                            xpath: None,
-                        },
-                        Transform {
-                            algorithm: "http://www.w3.org/2001/10/xml-exc-c14n#".to_string(),
-                            xpath: None,
-                        },
-                    ],
-                }),
-                digest_method: DigestMethod {
-                    algorithm: "http://www.w3.org/2000/09/xmldsig#sha1".to_string(),
-                },
-                digest_value: DigestValue {
-                    base64_content: "".to_string(),
-                },
-                uri: Some(format!("#{}", ref_id)),
-                reference_type: None,
-                id: None,
-            }],
-        },
-        signature_value: SignatureValue {
-            id: None,
-            base64_content: "".to_string(),
-        },
-        key_info: Some(vec![KeyInfo {
-            id: None,
-            x509_data: Some(X509Data {
-                certificate: Some(crypto::mime_encode_x509_cert(x509_cert_der)),
-            }),
-        }]),
-    }
-}
 
 fn build_conditions(audience: &str) -> Conditions {
     Conditions {
@@ -178,7 +124,7 @@ fn build_response(
         destination: Some(destination.to_string()),
         consent: None,
         issuer: Some(issuer.clone()),
-        signature: Some(signature_template(&response_id, x509_cert)),
+        signature: Some(Signature::template(&response_id, x509_cert)),
         status: Status {
             status_code: StatusCode {
                 value: Some("urn:oasis:names:tc:SAML:2.0:status:Success".to_string()),

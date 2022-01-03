@@ -8,6 +8,9 @@ use snafu::Snafu;
 use std::io::Cursor;
 use std::str::FromStr;
 
+#[cfg(feature = "xmlsec")]
+use crate::crypto;
+
 const NAME: &str = "saml2p:AuthnRequest";
 const SCHEMA: (&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
 
@@ -187,4 +190,63 @@ impl AuthnRequest {
         writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
         Ok(String::from_utf8(write_buf)?)
     }
+
+    pub fn add_key_info(&mut self, public_cert_der: &[u8]) -> &mut Self {
+        if let Some(ref mut signature) = self.signature {
+            signature.add_key_info(public_cert_der);
+        }
+        self
+    }
+
+    #[cfg(feature = "xmlsec")]
+    pub fn to_signed_xml(&self,
+        private_key_der: &[u8],
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        crypto::sign_xml(self.to_xml()?, private_key_der)
+            .map_err(|crypto_error|
+                Box::new(crypto_error) as Box<dyn std::error::Error>
+            )
+    }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    #[cfg(feature = "xmlsec")]
+    pub fn test_signed_authn() -> Result<(), Box<dyn std::error::Error>> {
+        let private_key = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/private.der"
+        ));
+
+        let public_cert = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/public.der"
+        ));
+
+
+        let authn_request_sign_template = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/authn_request_sign_template.xml"
+        ));
+
+        let signed_authn_request =
+            authn_request_sign_template
+                .parse::<AuthnRequest>()?
+                .add_key_info(public_cert)
+                .to_signed_xml(private_key)?;
+
+        assert!(
+            crate::crypto::verify_signed_xml(
+                &signed_authn_request,
+                &public_cert[..],
+                Some("ID"),
+            ).is_ok()
+        );
+
+        Ok(())
+    }
+}
+
