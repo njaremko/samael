@@ -212,6 +212,7 @@ impl AuthnRequest {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::collections::HashMap;
 
     #[test]
     #[cfg(feature = "xmlsec")]
@@ -225,7 +226,6 @@ mod test {
             env!("CARGO_MANIFEST_DIR"),
             "/test_vectors/public.der"
         ));
-
 
         let authn_request_sign_template = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -248,5 +248,122 @@ mod test {
 
         Ok(())
     }
-}
 
+    #[cfg(feature = "xmlsec")]
+    pub fn verify_signed_redirect_url(
+        signed_authn_redirect_url: &url::Url,
+        public_key_pem: &[u8],
+    ) -> Result<bool, Box<dyn std::error::Error>> {
+        // Should look like:
+        //
+        // http://idp.example.com/SSOService.php?SAMLRequest=...&SigAlg=...&Signature=...
+        //
+        // Remove Signature, then verify percent encoded query string using
+        // openssl bindings.
+
+        let query_params =
+            signed_authn_redirect_url
+                .query_pairs()
+                .into_owned()
+                .collect::<HashMap<String, String>>();
+        let signature: &String = &query_params["Signature"];
+
+        let mut verify_url = url::Url::parse(
+            format!("{}://{}",
+                signed_authn_redirect_url.scheme(),
+                signed_authn_redirect_url.host_str().unwrap(),
+            ).as_str(),
+        )?;
+
+        for key in vec!["SAMLRequest", "RelayState", "SigAlg"] {
+            if query_params.contains_key(key) {
+                verify_url.query_pairs_mut().append_pair(
+                    key,
+                    &query_params[key],
+                );
+            }
+        }
+
+        let signed_string: String = verify_url.query().unwrap().to_string();
+
+        let public = openssl::rsa::Rsa::public_key_from_pem(public_key_pem)?;
+        let keypair = openssl::pkey::PKey::from_rsa(public)?;
+
+        let mut verifier = openssl::sign::Verifier::new(
+            openssl::hash::MessageDigest::sha256(),
+            &keypair,
+        ).unwrap();
+        verifier.update(&signed_string.as_bytes()).unwrap();
+
+        let signature_bytes = base64::decode(signature)?;
+        Ok(verifier.verify(&signature_bytes).unwrap())
+    }
+
+    #[test]
+    #[cfg(feature = "xmlsec")]
+    pub fn test_redirect_signature() -> Result<(), Box<dyn std::error::Error>> {
+        let private_key = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/private.der"
+        ));
+
+        let public_key = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/public_key.pem"
+        ));
+
+        let authn_request_sign_template = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/authn_request_sign_template.xml"
+        ));
+
+        let signed_authn_redirect_url =
+            authn_request_sign_template
+                .parse::<AuthnRequest>()?
+                .signed_redirect(&"", private_key)?
+                .unwrap();
+
+        assert!(
+            verify_signed_redirect_url(
+                &signed_authn_redirect_url,
+                &public_key[..],
+            )?
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "xmlsec")]
+    pub fn test_redirect_signature_with_relaystate() -> Result<(), Box<dyn std::error::Error>> {
+        let private_key = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/private.der"
+        ));
+
+        let public_key = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/public_key.pem"
+        ));
+
+        let authn_request_sign_template = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/authn_request_sign_template.xml"
+        ));
+
+        let signed_authn_redirect_url =
+            authn_request_sign_template
+                .parse::<AuthnRequest>()?
+                .signed_redirect(&"some_relay_state_here", private_key)?
+                .unwrap();
+
+        assert!(
+            verify_signed_redirect_url(
+                &signed_authn_redirect_url,
+                &public_key[..],
+            )?
+        );
+
+        Ok(())
+    }
+}

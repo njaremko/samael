@@ -575,4 +575,62 @@ impl AuthnRequest {
             Ok(None)
         }
     }
+
+    pub fn signed_redirect(
+        &self,
+        relay_state: &str,
+        private_key_der: &[u8],
+    ) -> Result<Option<Url>, Box<dyn std::error::Error>> {
+        let unsigned_url = self.redirect(relay_state)?;
+
+        if unsigned_url.is_none() {
+            return Ok(unsigned_url);
+        }
+
+        let mut unsigned_url = unsigned_url.unwrap();
+
+        // Refer to section 3.4.4.1 (page 17) of
+        //
+        // https://docs.oasis-open.org/security/saml/v2.0/saml-bindings-2.0-os.pdf
+        //
+        // Note: the spec says to remove the Signature related XML elements
+        // from the document but leaving them in usually works too.
+
+        // Use rsa-sha256 when signing (see RFC 4051 for choices)
+        unsigned_url.query_pairs_mut().append_pair(
+            "SigAlg",
+            &"http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+        );
+
+        // Sign *only* the existing url's encoded query parameters:
+        //
+        // http://some.idp.com?SAMLRequest=value&RelayState=value&SigAlg=value
+        //                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        //
+        // then add the "Signature" query parameter afterwards.
+        let string_to_sign: String =
+            unsigned_url
+                .query()
+                .ok_or(Error::UnexpectedError)?
+                .to_string();
+
+        // Use openssl's bindings to sign
+        let pkey = openssl::rsa::Rsa::private_key_from_der(&private_key_der)?;
+        let pkey = openssl::pkey::PKey::from_rsa(pkey)?;
+
+        let mut signer = openssl::sign::Signer::new(
+            openssl::hash::MessageDigest::sha256(),
+            &pkey.as_ref(),
+        )?;
+
+        signer.update(string_to_sign.as_bytes())?;
+
+        unsigned_url.query_pairs_mut().append_pair(
+            "Signature",
+            &base64::encode(signer.sign_to_vec()?),
+        );
+
+        // Past this point, it's a signed url :)
+        Ok(Some(unsigned_url))
+    }
 }
