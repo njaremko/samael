@@ -1,3 +1,4 @@
+use crate::crypto;
 use crate::metadata::{Endpoint, IndexedEndpoint, KeyDescriptor, NameIdFormat, SpSsoDescriptor};
 use crate::schema::{Assertion, Response};
 use crate::{
@@ -178,7 +179,7 @@ impl ServiceProvider {
                 key_info: KeyInfo {
                     id: None,
                     x509_data: Some(X509Data {
-                        certificate: Some(base64::encode(&cert_bytes)),
+                        certificates: vec![base64::encode(&cert_bytes)],
                     }),
                 },
             });
@@ -187,7 +188,7 @@ impl ServiceProvider {
                 key_info: KeyInfo {
                     id: None,
                     x509_data: Some(X509Data {
-                        certificate: Some(base64::encode(&cert_bytes)),
+                        certificates: vec![base64::encode(&cert_bytes)],
                     }),
                 },
                 encryption_methods: Some(vec![
@@ -292,26 +293,7 @@ impl ServiceProvider {
                         .filter(|key_use| *key_use == "signing")
                         .is_some()
                     {
-                        if let Some(cert) = key_descriptor
-                            .key_info
-                            .x509_data
-                            .as_ref()
-                            .and_then(|data| data.certificate.as_ref())
-                        {
-                            if let Ok(decoded) = base64::decode(cert.as_bytes()) {
-                                if let Ok(parsed) = openssl::x509::X509::from_der(&decoded) {
-                                    result.push(parsed)
-                                } else {
-                                    return Err(Error::FailedToParseCert {
-                                        cert: cert.to_string(),
-                                    });
-                                }
-                            } else {
-                                return Err(Error::FailedToParseCert {
-                                    cert: cert.to_string(),
-                                });
-                            }
-                        }
+                        result.append(&mut parse_certificates(key_descriptor)?);
                     }
                 }
             }
@@ -322,26 +304,7 @@ impl ServiceProvider {
                         if key_descriptor.key_use == None
                             || key_descriptor.key_use == Some("".to_string())
                         {
-                            if let Some(cert) = key_descriptor
-                                .key_info
-                                .x509_data
-                                .as_ref()
-                                .and_then(|data| data.certificate.as_ref())
-                            {
-                                if let Ok(decoded) = base64::decode(cert.as_bytes()) {
-                                    if let Ok(parsed) = openssl::x509::X509::from_der(&decoded) {
-                                        result.push(parsed)
-                                    } else {
-                                        return Err(Error::FailedToParseCert {
-                                            cert: cert.to_string(),
-                                        });
-                                    }
-                                } else {
-                                    return Err(Error::FailedToParseCert {
-                                        cert: cert.to_string(),
-                                    });
-                                }
-                            }
+                            result.append(&mut parse_certificates(key_descriptor)?);
                         }
                     }
                 }
@@ -373,7 +336,7 @@ impl ServiceProvider {
         let reduced_xml = if let Some(sign_certs) = self.idp_signing_certs()? {
             reduce_xml_to_signed(
                 response_xml,
-                &sign_certs,
+                &sign_certs
             ).map_err(|_e| Error::FailedToValidateSignature)?
         } else {
             String::from(response_xml)
@@ -531,6 +494,27 @@ impl ServiceProvider {
             ..AuthnRequest::default()
         })
     }
+}
+
+fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<x509::X509>, Error> {
+    key_descriptor
+        .key_info
+        .x509_data
+        .as_ref()
+        .map(|data| {
+            data.certificates
+                .iter()
+                .map(|cert| {
+                    crypto::decode_x509_cert(cert)
+                        .ok()
+                        .and_then(|decoded| openssl::x509::X509::from_der(&decoded).ok())
+                        .ok_or_else(|| Error::FailedToParseCert {
+                            cert: cert.to_string(),
+                        })
+                })
+                .collect::<Result<Vec<_>, _>>()
+        })
+        .unwrap_or(Ok(vec![]))
 }
 
 impl AuthnRequest {
