@@ -2,7 +2,7 @@
 name = "samael"
 version = "0.0.8"
 authors = ["Nathan Jaremko <nathan@jaremko.ca>", "Alex Grinman <me@alexgr.in>"]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/njaremko/samael"
