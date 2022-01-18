@@ -91,7 +91,7 @@ impl FromStr for AuthnRequest {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(quick_xml::de::from_str(&s)?)
+        Ok(quick_xml::de::from_str(s)?)
     }
 }
 
@@ -210,8 +210,6 @@ impl AuthnRequest {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-
     #[test]
     #[cfg(feature = "xmlsec")]
     pub fn test_signed_authn() -> Result<(), Box<dyn std::error::Error>> {
@@ -231,7 +229,7 @@ mod test {
         ));
 
         let signed_authn_request = authn_request_sign_template
-            .parse::<AuthnRequest>()?
+            .parse::<super::AuthnRequest>()?
             .add_key_info(public_cert)
             .to_signed_xml(private_key)?;
 

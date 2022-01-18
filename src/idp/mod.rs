@@ -100,6 +100,7 @@ impl IdentityProvider {
         Ok(certificate.to_der()?)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn sign_authn_response(
         &self,
         idp_x509_cert_der: &[u8],

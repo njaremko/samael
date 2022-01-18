@@ -95,7 +95,7 @@ fn test_signed_response() {
             "https://sp.example.com/audience",
             "https://sp.example.com/acs",
             "https://idp.example.com",
-            &verified.id.as_str(),
+            verified.id.as_str(),
             &attrs,
         )
         .expect("failed to created and sign response");
@@ -122,9 +122,9 @@ fn test_signed_response_threads() {
 
     let mut handles = vec![];
     for _ in 0..4 {
-        handles.push(std::thread::spawn(|| test_self_signed_authn_request()));
-        handles.push(std::thread::spawn(|| test_extract_sp()));
-        handles.push(std::thread::spawn(move || verify()));
+        handles.push(std::thread::spawn(test_self_signed_authn_request));
+        handles.push(std::thread::spawn(test_extract_sp));
+        handles.push(std::thread::spawn(verify));
     }
 
     handles
@@ -198,7 +198,7 @@ fn test_do_not_accept_unsigned_response() {
         "signing"
     );
     assert!(
-        sp.idp_metadata.idp_sso_descriptors.as_ref().unwrap()[0].key_descriptors[0]
+        !sp.idp_metadata.idp_sso_descriptors.as_ref().unwrap()[0].key_descriptors[0]
             .key_info
             .x509_data
             .as_ref()
@@ -206,8 +206,7 @@ fn test_do_not_accept_unsigned_response() {
             .certificates
             .first()
             .unwrap()
-            .len()
-            > 0
+            .is_empty()
     );
 
     let unsigned_response_xml = include_str!(concat!(
@@ -218,15 +217,10 @@ fn test_do_not_accept_unsigned_response() {
     let resp = sp.parse_xml_response(unsigned_response_xml, &[""]);
     assert!(resp.is_err());
 
-    let err = resp.err().unwrap();
-    match err {
-        crate::service_provider::Error::FailedToParseSamlResponse => {
-            // ok
-        }
-        _ => {
-            assert!(false);
-        }
-    }
+    assert!(matches!(
+        resp.err().unwrap(),
+        crate::service_provider::Error::FailedToParseSamlResponse
+    ));
 }
 
 #[test]
@@ -249,16 +243,10 @@ fn test_do_not_accept_signed_with_wrong_key() {
     let resp = sp.parse_xml_response(wrong_cert_signed_response_xml, &[""]);
     assert!(resp.is_err());
 
-    let err = resp.err().unwrap();
-
-    match err {
-        crate::service_provider::Error::FailedToValidateSignature => {
-            // ok
-        }
-        _ => {
-            assert!(false);
-        }
-    }
+    assert!(matches!(
+        resp.err().unwrap(),
+        crate::service_provider::Error::FailedToValidateSignature
+    ));
 }
 
 #[test]

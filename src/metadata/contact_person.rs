@@ -54,13 +54,13 @@ impl ContactPerson {
 
         self.company
             .as_ref()
-            .map(|company| write_plain_element(&mut writer, "md:Company", &company));
+            .map(|company| write_plain_element(&mut writer, "md:Company", company));
         self.sur_name
             .as_ref()
-            .map(|sur_name| write_plain_element(&mut writer, "md:SurName", &sur_name));
+            .map(|sur_name| write_plain_element(&mut writer, "md:SurName", sur_name));
         self.given_name
             .as_ref()
-            .map(|given_name| write_plain_element(&mut writer, "md:GivenName", &given_name));
+            .map(|given_name| write_plain_element(&mut writer, "md:GivenName", given_name));
 
         if let Some(email_addresses) = &self.email_addresses {
             for email in email_addresses {
