@@ -28,7 +28,7 @@ serde = { version = "1.0", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
 base64 = "0.13"
 flate2 = "1.0"
-snafu = "0.6"
+snafu = "0.7"
 rand = "0.8.4"
 derive_builder = "0.10.2"
 libxml = { version = "0.3.0", optional = true}
