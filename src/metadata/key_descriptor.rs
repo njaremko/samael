@@ -1,9 +1,10 @@
 use crate::key_info::KeyInfo;
 use crate::metadata::EncryptionMethod;
+use crate::ToXml;
 use quick_xml::events::{BytesEnd, BytesStart, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
-use std::io::Cursor;
+use std::io::Write;
 
 const NAME: &str = "md:KeyDescriptor";
 
@@ -24,25 +25,18 @@ impl KeyDescriptor {
             .map(|u| u == "signing")
             .unwrap_or(false)
     }
+}
 
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for KeyDescriptor {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
         if let Some(key_use) = &self.key_use {
             root.push_attribute(("use", key_use.as_ref()));
         }
         writer.write_event(Event::Start(root))?;
-
-        writer.write(self.key_info.to_xml()?.as_bytes())?;
-
-        if let Some(encryption_methods) = &self.encryption_methods {
-            for method in encryption_methods {
-                writer.write(method.to_xml()?.as_bytes())?;
-            }
-        }
-
+        self.key_info.to_xml(writer)?;
+        self.encryption_methods.to_xml(writer)?;
         writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }

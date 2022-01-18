@@ -69,6 +69,8 @@ impl std::ops::Deref for VerifiedAuthnRequest {
 #[cfg(test)]
 mod test {
     use super::UnverifiedAuthnRequest;
+    use crate::ToXml;
+
     #[test]
     fn test_request_deserialize_and_serialize() {
         let authn_request_xml = include_str!("../../test_vectors/authn_request.xml");
@@ -78,7 +80,7 @@ mod test {
             .try_verify_self_signed()
             .expect("failed to verify self signed signature");
         let verified_request_xml = expected_verified
-            .to_xml()
+            .as_xml()
             .expect("Failed to serialize verified authn request");
         let reparsed_unverified =
             UnverifiedAuthnRequest::from_xml(&verified_request_xml).expect("failed to parse");

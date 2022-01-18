@@ -25,13 +25,14 @@ pub mod de {
 }
 use quick_xml::events::{BytesEnd, BytesStart, Event};
 use quick_xml::Writer;
-use std::io::Cursor;
+use std::io::Write;
 
 use serde::Deserialize;
 
 use crate::attribute::Attribute;
 use crate::metadata::helpers::write_plain_element;
 use crate::signature::Signature;
+use crate::ToXml;
 use chrono::prelude::*;
 
 // HTTP_POST_BINDING is the official URN for the HTTP-POST binding (transport)
@@ -164,10 +165,8 @@ pub struct IdpSsoDescriptor {
 
 const NAME: &str = "md:IDPSSODescriptor";
 
-impl IdpSsoDescriptor {
-    fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for IdpSsoDescriptor {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
 
         if let Some(id) = &self.id {
@@ -199,41 +198,26 @@ impl IdpSsoDescriptor {
         }
 
         writer.write_event(Event::Start(root))?;
-
-        for descriptor in &self.key_descriptors {
-            writer.write(descriptor.to_xml()?.as_bytes())?;
-        }
-
-        if let Some(organization) = &self.organization {
-            writer.write(organization.to_xml()?.as_bytes())?;
-        }
-
-        for contact in &self.contact_people {
-            writer.write(contact.to_xml()?.as_bytes())?;
-        }
-
+        self.key_descriptors.to_xml(writer)?;
+        self.organization.to_xml(writer)?;
+        self.contact_people.to_xml(writer)?;
         for service in &self.artifact_resolution_service {
-            writer.write(service.to_xml("md:ArtifactResolutionService")?.as_bytes())?;
+            service.to_xml(writer, "md:ArtifactResolutionService")?;
         }
-
         for service in &self.single_logout_services {
-            writer.write(service.to_xml("md:SingleLogoutService")?.as_bytes())?;
+            service.to_xml(writer, "md:SingleLogoutService")?;
         }
-
         for service in &self.single_sign_on_services {
-            writer.write(service.to_xml("md:SingleSignOnService")?.as_bytes())?;
+            service.to_xml(writer, "md:SingleSignOnService")?;
         }
-
         for service in &self.manage_name_id_services {
-            writer.write(service.to_xml("md:ManageNameIDService")?.as_bytes())?;
+            service.to_xml(writer, "md:ManageNameIDService")?;
         }
-
         for format in &self.name_id_formats {
-            write_plain_element(&mut writer, "md:NameIDFormat", format.as_ref())?;
+            write_plain_element(writer, "md:NameIDFormat", format.as_ref())?;
         }
-
         writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 

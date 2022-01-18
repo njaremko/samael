@@ -1,11 +1,12 @@
 use crate::schema::{Assertion, Issuer, Status};
 use crate::signature::Signature;
+use crate::ToXml;
 use chrono::prelude::*;
 use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
 use snafu::Snafu;
-use std::io::Cursor;
+use std::io::Write;
 use std::str::FromStr;
 
 const NAME: &str = "saml2p:Response";
@@ -52,10 +53,8 @@ impl FromStr for Response {
     }
 }
 
-impl Response {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for Response {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         writer.write_event(Event::Decl(BytesDecl::new(
             "1.0".as_bytes(),
             Some("UTF-8".as_bytes()),
@@ -84,18 +83,10 @@ impl Response {
 
         writer.write_event(Event::Start(root))?;
 
-        if let Some(issuer) = &self.issuer {
-            writer.write(issuer.to_xml()?.as_bytes())?;
-        }
-        if let Some(signature) = &self.signature {
-            writer.write(signature.to_xml()?.as_bytes())?;
-        }
-
-        writer.write(self.status.to_xml()?.as_bytes())?;
-
-        if let Some(assertion) = &self.assertion {
-            writer.write(assertion.to_xml()?.as_bytes())?;
-        }
+        self.issuer.to_xml(writer)?;
+        self.signature.to_xml(writer)?;
+        self.status.to_xml(writer)?;
+        self.assertion.to_xml(writer)?;
 
         // TODO: encrypted assertion
         // if let Some(assertion) = &self.encrypted_assertion {
@@ -103,12 +94,14 @@ impl Response {
         // }
 
         writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod test {
+    use crate::ToXml;
+
     use super::Response;
 
     #[test]
@@ -120,7 +113,7 @@ mod test {
         let expected_response: Response =
             response_xml.parse().expect("failed to parse response.xml");
         let serialized_response = expected_response
-            .to_xml()
+            .as_xml()
             .expect("failed to convert response to xml");
         let actual_response: Response = serialized_response
             .parse()
@@ -139,7 +132,7 @@ mod test {
             .parse()
             .expect("failed to parse response_signed_assertion.xml");
         let serialized_response = expected_response
-            .to_xml()
+            .as_xml()
             .expect("failed to convert response to xml");
         let actual_response: Response = serialized_response
             .parse()
@@ -158,7 +151,7 @@ mod test {
             .parse()
             .expect("failed to parse response_signed.xml");
         let serialized_response = expected_response
-            .to_xml()
+            .as_xml()
             .expect("failed to convert response to xml");
         let actual_response: Response = serialized_response
             .parse()

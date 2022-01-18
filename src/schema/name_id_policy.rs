@@ -1,7 +1,9 @@
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
-use std::io::Cursor;
+use std::io::Write;
+
+use crate::ToXml;
 
 const NAME: &str = "saml2p:NameIDPolicy";
 
@@ -15,10 +17,8 @@ pub struct NameIdPolicy {
     pub allow_create: Option<bool>,
 }
 
-impl NameIdPolicy {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for NameIdPolicy {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
         if let Some(format) = &self.format {
             root.push_attribute(("Format", format.as_ref()));
@@ -30,6 +30,6 @@ impl NameIdPolicy {
             root.push_attribute(("AllowCreate", allow_create.to_string().as_ref()));
         }
         writer.write_event(Event::Empty(root))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }

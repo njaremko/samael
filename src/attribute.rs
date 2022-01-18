@@ -1,7 +1,9 @@
 use quick_xml::events::{BytesEnd, BytesStart, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
-use std::io::Cursor;
+use std::io::Write;
+
+use crate::ToXml;
 
 const ATTRIBUTE_VALUE_NAME: &str = "saml2:AttributeValue";
 
@@ -20,10 +22,10 @@ impl AttributeValue {
             ("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance"),
         ]
     }
+}
 
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for AttributeValue {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root =
             BytesStart::borrowed(ATTRIBUTE_VALUE_NAME.as_bytes(), ATTRIBUTE_VALUE_NAME.len());
 
@@ -44,7 +46,7 @@ impl AttributeValue {
         writer.write_event(Event::End(BytesEnd::borrowed(
             ATTRIBUTE_VALUE_NAME.as_bytes(),
         )))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -64,10 +66,10 @@ impl Attribute {
     fn name() -> &'static str {
         "saml2:Attribute"
     }
+}
 
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for Attribute {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
 
         if let Some(name) = &self.name {
@@ -83,12 +85,8 @@ impl Attribute {
         }
 
         writer.write_event(Event::Start(root))?;
-
-        for val in &self.values {
-            writer.write(val.to_xml()?.as_bytes())?;
-        }
-
+        self.values.to_xml(writer)?;
         writer.write_event(Event::End(BytesEnd::borrowed(Self::name().as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }

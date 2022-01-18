@@ -3,12 +3,13 @@ use crate::metadata::{
     IdpSsoDescriptor, Organization, PdpDescriptors, RoleDescriptor, SpSsoDescriptor,
 };
 use crate::signature::Signature;
+use crate::ToXml;
 use chrono::prelude::*;
 use quick_xml::events::{BytesEnd, BytesStart, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
 use snafu::Snafu;
-use std::io::Cursor;
+use std::io::Write;
 use std::str::FromStr;
 
 #[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
@@ -59,10 +60,8 @@ impl FromStr for EntityDescriptor {
     }
 }
 
-impl EntityDescriptor {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for EntityDescriptor {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let root_name = "md:EntityDescriptor";
         let mut root = BytesStart::borrowed(root_name.as_bytes(), root_name.len());
         if let Some(entity_id) = &self.entity_id {
@@ -91,31 +90,20 @@ impl EntityDescriptor {
         ));
         root.push_attribute(("xmlns:ds", "http://www.w3.org/2000/09/xmldsig#"));
         writer.write_event(Event::Start(root))?;
-        for descriptor in self.sp_sso_descriptors.as_ref().unwrap_or(&vec![]) {
-            writer.write(descriptor.to_xml()?.as_bytes())?;
-        }
-
-        for descriptor in self.idp_sso_descriptors.as_ref().unwrap_or(&vec![]) {
-            writer.write(descriptor.to_xml()?.as_bytes())?;
-        }
-
-        if let Some(organization) = &self.organization {
-            writer.write(organization.to_xml()?.as_bytes())?;
-        }
-
-        if let Some(contact_persons) = &self.contact_person {
-            for contact_person in contact_persons {
-                writer.write(contact_person.to_xml()?.as_bytes())?;
-            }
-        }
+        self.sp_sso_descriptors.to_xml(writer)?;
+        self.idp_sso_descriptors.to_xml(writer)?;
+        self.organization.to_xml(writer)?;
+        self.contact_person.to_xml(writer)?;
         writer.write_event(Event::End(BytesEnd::borrowed(root_name.as_bytes())))?;
 
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod test {
+    use crate::ToXml;
+
     use super::EntityDescriptor;
 
     #[test]
@@ -128,7 +116,7 @@ mod test {
             .parse()
             .expect("Failed to parse sp_metadata.xml into an EntityDescriptor");
         let output_xml = entity_descriptor
-            .to_xml()
+            .as_xml()
             .expect("Failed to convert EntityDescriptor to xml");
         let reparsed_entity_descriptor: EntityDescriptor = output_xml
             .parse()
@@ -147,7 +135,7 @@ mod test {
             .parse()
             .expect("Failed to parse sp_metadata.xml into an EntityDescriptor");
         let output_xml = entity_descriptor
-            .to_xml()
+            .as_xml()
             .expect("Failed to convert EntityDescriptor to xml");
         let reparsed_entity_descriptor: EntityDescriptor = output_xml
             .parse()

@@ -101,7 +101,7 @@ fn test_signed_response() {
         .expect("failed to created and sign response");
 
     let out_xml = out_response
-        .to_xml()
+        .as_xml()
         .expect("failed to serialize response xml");
     verify_signed_xml(out_xml.as_bytes(), idp_cert.as_slice(), Some("ID"))
         .expect("verification failed");

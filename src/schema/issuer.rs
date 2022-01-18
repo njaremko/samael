@@ -1,7 +1,9 @@
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
-use std::io::Cursor;
+use std::io::Write;
+
+use crate::ToXml;
 
 const NAME: &str = "saml2:Issuer";
 const SCHEMA: (&str, &str) = ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion");
@@ -20,10 +22,8 @@ pub struct Issuer {
     pub value: Option<String>,
 }
 
-impl Issuer {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for Issuer {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
         root.push_attribute(SCHEMA);
 
@@ -44,6 +44,6 @@ impl Issuer {
             writer.write_event(Event::Text(BytesText::from_plain_str(value.as_ref())))?;
         }
         writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }

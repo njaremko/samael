@@ -14,12 +14,13 @@ pub use subject::*;
 
 use crate::attribute::Attribute;
 use crate::signature::Signature;
+use crate::ToXml;
 use chrono::prelude::*;
 use serde::Deserialize;
 
 use quick_xml::events::{BytesEnd, BytesStart, Event};
 use quick_xml::Writer;
-use std::io::Cursor;
+use std::io::Write;
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct LogoutRequest {
@@ -72,10 +73,10 @@ impl Assertion {
             ("xmlns:xsd", "http://www.w3.org/2001/XMLSchema"),
         ]
     }
+}
 
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for Assertion {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
 
         for attr in Self::schema() {
@@ -92,35 +93,16 @@ impl Assertion {
         ));
 
         writer.write_event(Event::Start(root))?;
-        writer.write(self.issuer.to_xml()?.as_bytes())?;
-
-        if let Some(signature) = &self.signature {
-            writer.write(signature.to_xml()?.as_bytes())?;
-        }
-
-        if let Some(subject) = &self.subject {
-            writer.write(subject.to_xml()?.as_bytes())?;
-        }
-
-        if let Some(conditions) = &self.conditions {
-            writer.write(conditions.to_xml()?.as_bytes())?;
-        }
-
-        if let Some(statements) = &self.authn_statements {
-            for statement in statements {
-                writer.write(statement.to_xml()?.as_bytes())?;
-            }
-        }
-
-        if let Some(statements) = &self.attribute_statements {
-            for statement in statements {
-                writer.write(statement.to_xml()?.as_bytes())?;
-            }
-        }
+        self.issuer.to_xml(writer)?;
+        self.signature.to_xml(writer)?;
+        self.subject.to_xml(writer)?;
+        self.conditions.to_xml(writer)?;
+        self.authn_statements.to_xml(writer)?;
+        self.attribute_statements.to_xml(writer)?;
 
         //TODO: attributeStatement
         writer.write_event(Event::End(BytesEnd::borrowed(Self::name().as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -138,10 +120,10 @@ impl AttributeStatement {
     fn schema() -> &'static [(&'static str, &'static str)] {
         &[("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion")]
     }
+}
 
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for AttributeStatement {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
 
         for attr in Self::schema() {
@@ -149,13 +131,9 @@ impl AttributeStatement {
         }
 
         writer.write_event(Event::Start(root))?;
-
-        for attr in &self.attributes {
-            writer.write(attr.to_xml()?.as_bytes())?;
-        }
-
+        self.attributes.to_xml(writer)?;
         writer.write_event(Event::End(BytesEnd::borrowed(Self::name().as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -177,10 +155,10 @@ impl AuthnStatement {
     fn name() -> &'static str {
         "saml2:AuthnStatement"
     }
+}
 
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for AuthnStatement {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
 
         if let Some(session) = &self.session_index {
@@ -209,12 +187,10 @@ impl AuthnStatement {
 
         writer.write_event(Event::Start(root))?;
 
-        if let Some(context) = &self.authn_context {
-            writer.write(context.to_xml()?.as_bytes())?;
-        }
+        self.authn_context.to_xml(writer)?;
 
         writer.write_event(Event::End(BytesEnd::borrowed(Self::name().as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -236,20 +212,18 @@ impl AuthnContext {
     fn name() -> &'static str {
         "saml2:AuthnContext"
     }
+}
 
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+impl ToXml for AuthnContext {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(value) = &self.value {
-            let mut write_buf = Vec::new();
-            let mut writer = Writer::new(Cursor::new(&mut write_buf));
             let root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
 
             writer.write_event(Event::Start(root))?;
-            writer.write(value.to_xml()?.as_bytes())?;
+            value.to_xml(writer)?;
             writer.write_event(Event::End(BytesEnd::borrowed(Self::name().as_bytes())))?;
-            Ok(String::from_utf8(write_buf)?)
-        } else {
-            Ok(String::new())
         }
+        Ok(())
     }
 }
 
@@ -263,20 +237,18 @@ impl AuthnContextClassRef {
     fn name() -> &'static str {
         "saml2:AuthnContextClassRef"
     }
+}
 
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+impl ToXml for AuthnContextClassRef {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(value) = &self.value {
-            let mut write_buf = Vec::new();
-            let mut writer = Writer::new(Cursor::new(&mut write_buf));
             let root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
 
             writer.write_event(Event::Start(root))?;
             writer.write(value.as_bytes())?;
             writer.write_event(Event::End(BytesEnd::borrowed(Self::name().as_bytes())))?;
-            Ok(String::from_utf8(write_buf)?)
-        } else {
-            Ok(String::new())
         }
+        Ok(())
     }
 }
 
@@ -294,15 +266,16 @@ impl Status {
     fn name() -> &'static str {
         "saml2p:Status"
     }
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+}
+
+impl ToXml for Status {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
 
         writer.write_event(Event::Start(root))?;
-        writer.write(self.status_code.to_xml()?.as_bytes())?;
+        self.status_code.to_xml(writer)?;
         writer.write_event(Event::End(BytesEnd::borrowed(Self::name().as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -316,9 +289,10 @@ impl StatusCode {
     fn name() -> &'static str {
         "saml2p:StatusCode"
     }
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+}
+
+impl ToXml for StatusCode {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
 
         if let Some(value) = &self.value {
@@ -326,7 +300,7 @@ impl StatusCode {
         }
 
         writer.write_event(Event::Empty(root))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 

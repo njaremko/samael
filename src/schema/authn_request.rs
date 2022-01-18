@@ -1,11 +1,12 @@
 use crate::schema::{Conditions, Issuer, NameIdPolicy, Subject};
 use crate::signature::Signature;
+use crate::ToXml;
 use chrono::prelude::*;
 use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
 use snafu::Snafu;
-use std::io::Cursor;
+use std::io::Write;
 use std::str::FromStr;
 
 #[cfg(feature = "xmlsec")]
@@ -113,9 +114,25 @@ impl AuthnRequest {
         self.issuer.clone().and_then(|iss| iss.value)
     }
 
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+    pub fn add_key_info(&mut self, public_cert_der: &[u8]) -> &mut Self {
+        if let Some(ref mut signature) = self.signature {
+            signature.add_key_info(public_cert_der);
+        }
+        self
+    }
+
+    #[cfg(feature = "xmlsec")]
+    pub fn to_signed_xml(
+        &self,
+        private_key_der: &[u8],
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        crypto::sign_xml(self.as_xml()?, private_key_der)
+            .map_err(|crypto_error| Box::new(crypto_error) as Box<dyn std::error::Error>)
+    }
+}
+
+impl ToXml for AuthnRequest {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         writer.write_event(Event::Decl(BytesDecl::new(
             "1.0".as_bytes(),
             Some("UTF-8".as_bytes()),
@@ -171,40 +188,14 @@ impl AuthnRequest {
         }
         writer.write_event(Event::Start(root))?;
 
-        if let Some(issuer) = &self.issuer {
-            writer.write(issuer.to_xml()?.as_bytes())?;
-        }
-        if let Some(signature) = &self.signature {
-            writer.write(signature.to_xml()?.as_bytes())?;
-        }
-        if let Some(subject) = &self.subject {
-            writer.write(subject.to_xml()?.as_bytes())?;
-        }
-        if let Some(name_id_policy) = &self.name_id_policy {
-            writer.write(name_id_policy.to_xml()?.as_bytes())?;
-        }
-        if let Some(conditions) = &self.conditions {
-            writer.write(conditions.to_xml()?.as_bytes())?;
-        }
+        self.issuer.to_xml(writer)?;
+        self.signature.to_xml(writer)?;
+        self.subject.to_xml(writer)?;
+        self.name_id_policy.to_xml(writer)?;
+        self.conditions.to_xml(writer)?;
 
         writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
-    }
-
-    pub fn add_key_info(&mut self, public_cert_der: &[u8]) -> &mut Self {
-        if let Some(ref mut signature) = self.signature {
-            signature.add_key_info(public_cert_der);
-        }
-        self
-    }
-
-    #[cfg(feature = "xmlsec")]
-    pub fn to_signed_xml(
-        &self,
-        private_key_der: &[u8],
-    ) -> Result<String, Box<dyn std::error::Error>> {
-        crypto::sign_xml(self.to_xml()?, private_key_der)
-            .map_err(|crypto_error| Box::new(crypto_error) as Box<dyn std::error::Error>)
+        Ok(())
     }
 }
 

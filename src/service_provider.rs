@@ -1,6 +1,6 @@
-use crate::crypto;
 use crate::metadata::{Endpoint, IndexedEndpoint, KeyDescriptor, NameIdFormat, SpSsoDescriptor};
 use crate::schema::{Assertion, Response};
+use crate::{crypto, ToXml};
 use crate::{
     key_info::{KeyInfo, X509Data},
     metadata::{ContactPerson, EncryptionMethod, EntityDescriptor, HTTP_POST_BINDING},
@@ -512,7 +512,7 @@ fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<x509::X509>,
 
 impl AuthnRequest {
     pub fn post(&self, relay_state: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let encoded = base64::encode(self.to_xml()?.as_bytes());
+        let encoded = base64::encode(self.as_xml()?.as_bytes());
         if let Some(dest) = &self.destination {
             Ok(Some(format!(
                 r#"
@@ -537,7 +537,7 @@ impl AuthnRequest {
         let mut compressed_buf = vec![];
         {
             let mut encoder = DeflateEncoder::new(&mut compressed_buf, Compression::default());
-            encoder.write_all(self.to_xml()?.as_bytes())?;
+            encoder.write_all(self.as_xml()?.as_bytes())?;
         }
         let encoded = base64::encode(&compressed_buf);
 
