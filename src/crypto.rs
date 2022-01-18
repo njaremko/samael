@@ -44,13 +44,13 @@ pub enum Error {
     #[cfg(feature = "xmlsec")]
     #[snafu(display("failed to remove attribute: {}", error))]
     XmlAttributeRemovalError {
-        error: Box<dyn std::error::Error>
+        error: Box<dyn std::error::Error>,
     },
 
     #[cfg(feature = "xmlsec")]
     #[snafu(display("failed to define namespace: {}", error))]
     XmlNamespaceDefinitionError {
-        error: Box<dyn std::error::Error>
+        error: Box<dyn std::error::Error>,
     },
 
     #[cfg(feature = "xmlsec")]
@@ -142,16 +142,14 @@ fn collect_id_attributes(doc: &mut libxml::tree::Document) -> Result<(), Error> 
             let id_value_cstr = CString::new(id_value).unwrap();
             let node_ptr = node.node_ptr();
             unsafe {
-                let attr = libxml::bindings::xmlHasProp(
-                    node_ptr,
-                    id_attr_name.as_ptr() as *const u8,
-                );
+                let attr =
+                    libxml::bindings::xmlHasProp(node_ptr, id_attr_name.as_ptr() as *const u8);
                 assert!(!attr.is_null());
                 libxml::bindings::xmlAddID(
                     std::ptr::null_mut(),
                     doc.doc_ptr(),
                     id_value_cstr.as_ptr() as *const u8,
-                    attr
+                    attr,
                 );
             }
         }
@@ -197,7 +195,11 @@ pub fn remove_signature_verified_attributes(node: &mut libxml::tree::Node) -> Re
 
 /// Obtains the first child element of the given node that has the given name and namespace.
 #[cfg(feature = "xmlsec")]
-fn get_first_child_name_ns(node: &libxml::tree::Node, name: &str, ns: &str) -> Option<libxml::tree::Node> {
+fn get_first_child_name_ns(
+    node: &libxml::tree::Node,
+    name: &str,
+    ns: &str,
+) -> Option<libxml::tree::Node> {
     let mut found_node = None;
     for child in node.get_child_elements() {
         if let Some(child_ns) = child.get_namespace() {
@@ -240,11 +242,11 @@ fn get_elements_by_predicate<F: FnMut(&libxml::tree::Node) -> bool>(
 /// rooted at the given node.
 #[cfg(feature = "xmlsec")]
 fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree::Node> {
-    let mut elems = get_elements_by_predicate(elem, |node|
+    let mut elems = get_elements_by_predicate(elem, |node| {
         node.get_attribute("ID")
             .map(|node_id| node_id == id)
             .unwrap_or(false)
-    );
+    });
     let elem = elems.drain(..).nth(0);
     elem
 }
@@ -252,7 +254,10 @@ fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree
 /// Searches for and returns the element with the given pointer value from the subtree rooted at the
 /// given node.
 #[cfg(feature = "xmlsec")]
-fn get_node_by_ptr(elem: &libxml::tree::Node, ptr: *const libxml::bindings::xmlNode) -> Option<libxml::tree::Node> {
+fn get_node_by_ptr(
+    elem: &libxml::tree::Node,
+    ptr: *const libxml::bindings::xmlNode,
+) -> Option<libxml::tree::Node> {
     let mut elems = get_elements_by_predicate(elem, |node| {
         let node_ptr = node.node_ptr() as *const _;
         node_ptr == ptr
@@ -267,7 +272,9 @@ struct XPathContext {
 }
 #[cfg(feature = "xmlsec")]
 impl Drop for XPathContext {
-    fn drop(&mut self) { unsafe { libxml::bindings::xmlXPathFreeContext(self.pointer) } }
+    fn drop(&mut self) {
+        unsafe { libxml::bindings::xmlXPathFreeContext(self.pointer) }
+    }
 }
 
 #[cfg(feature = "xmlsec")]
@@ -276,13 +283,18 @@ struct XPathObject {
 }
 #[cfg(feature = "xmlsec")]
 impl Drop for XPathObject {
-    fn drop(&mut self) { unsafe { libxml::bindings::xmlXPathFreeObject(self.pointer) } }
+    fn drop(&mut self) {
+        unsafe { libxml::bindings::xmlXPathFreeObject(self.pointer) }
+    }
 }
 
 /// Searches for and returns the element at the root of the subtree signed by the given signature
 /// node.
 #[cfg(feature = "xmlsec")]
-fn get_signed_node(signature_node: &libxml::tree::Node, doc: &libxml::tree::Document) -> Option<libxml::tree::Node> {
+fn get_signed_node(
+    signature_node: &libxml::tree::Node,
+    doc: &libxml::tree::Document,
+) -> Option<libxml::tree::Node> {
     let object_elem_opt = get_first_child_name_ns(signature_node, "Object", XMLNS_XML_DSIG);
     if let Some(object_elem) = object_elem_opt {
         return Some(object_elem);
@@ -330,9 +342,12 @@ fn get_signed_node(signature_node: &libxml::tree::Node, doc: &libxml::tree::Docu
 
                     // go through the nodes and find them in the document
                     for i in 0..nodeset_count {
-                        let node_ptr_ptr = unsafe { (*obj_nodeset).nodeTab.offset(i.try_into().unwrap()) };
+                        let node_ptr_ptr =
+                            unsafe { (*obj_nodeset).nodeTab.offset(i.try_into().unwrap()) };
                         let node_ptr = unsafe { *node_ptr_ptr };
-                        if let Some(node) = get_node_by_ptr(&doc.get_root_element().unwrap(), node_ptr) {
+                        if let Some(node) =
+                            get_node_by_ptr(&doc.get_root_element().unwrap(), node_ptr)
+                        {
                             return Some(node);
                         }
                     }
@@ -380,7 +395,8 @@ fn place_signature_verified_attributes(
     }
     drop(root_elem);
     for node in ptr_to_required_node.values_mut() {
-        node.set_attribute_ns(ATTRIB_SIGVER, VALUE_SIGVER, ns).unwrap();
+        node.set_attribute_ns(ATTRIB_SIGVER, VALUE_SIGVER, ns)
+            .unwrap();
     }
 }
 
@@ -436,11 +452,7 @@ pub(crate) fn reduce_xml_to_signed(
     }
 
     // define the "signature verified" namespace
-    let sig_ver_ns = libxml::tree::Namespace::new(
-        "sv",
-        XMLNS_SIGVER,
-        &mut root_elem,
-    )
+    let sig_ver_ns = libxml::tree::Namespace::new("sv", XMLNS_SIGVER, &mut root_elem)
         .map_err(|err| Error::XmlNamespaceDefinitionError { error: err })?;
 
     // remove all existing "signature verified" attributes

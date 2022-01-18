@@ -117,35 +117,52 @@ mod test {
             env!("CARGO_MANIFEST_DIR"),
             "/test_vectors/response.xml",
         ));
-        let expected_response: Response = response_xml.parse().expect("failed to parse response.xml");
-        let serialized_response = expected_response.to_xml().expect("failed to convert response to xml");
-        let actual_response: Response = serialized_response.parse().expect("failed to re-parse response");
+        let expected_response: Response =
+            response_xml.parse().expect("failed to parse response.xml");
+        let serialized_response = expected_response
+            .to_xml()
+            .expect("failed to convert response to xml");
+        let actual_response: Response = serialized_response
+            .parse()
+            .expect("failed to re-parse response");
 
         assert_eq!(expected_response, actual_response);
     }
 
     #[test]
     fn test_deserialize_serialize_response_with_signed_assertion() {
-                let response_xml = include_str!(concat!(
+        let response_xml = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_vectors/response_signed_assertion.xml",
         ));
-        let expected_response: Response = response_xml.parse().expect("failed to parse response_signed_assertion.xml");
-        let serialized_response = expected_response.to_xml().expect("failed to convert response to xml");
-        let actual_response: Response = serialized_response.parse().expect("failed to re-parse response");
+        let expected_response: Response = response_xml
+            .parse()
+            .expect("failed to parse response_signed_assertion.xml");
+        let serialized_response = expected_response
+            .to_xml()
+            .expect("failed to convert response to xml");
+        let actual_response: Response = serialized_response
+            .parse()
+            .expect("failed to re-parse response");
 
         assert_eq!(expected_response, actual_response);
     }
 
     #[test]
     fn test_deserialize_serialize_signed_response() {
-                let response_xml = include_str!(concat!(
+        let response_xml = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_vectors/response_signed.xml",
         ));
-        let expected_response: Response = response_xml.parse().expect("failed to parse response_signed.xml");
-        let serialized_response = expected_response.to_xml().expect("failed to convert response to xml");
-        let actual_response: Response = serialized_response.parse().expect("failed to re-parse response");
+        let expected_response: Response = response_xml
+            .parse()
+            .expect("failed to parse response_signed.xml");
+        let serialized_response = expected_response
+            .to_xml()
+            .expect("failed to convert response to xml");
+        let actual_response: Response = serialized_response
+            .parse()
+            .expect("failed to re-parse response");
 
         assert_eq!(expected_response, actual_response);
     }

@@ -1,4 +1,3 @@
-
 use super::*;
 use chrono::prelude::*;
 
@@ -6,7 +5,6 @@ use crate::crypto::verify_signed_xml;
 use crate::idp::sp_extractor::{RequiredAttribute, SPMetadataExtractor};
 use crate::idp::verified_request::UnverifiedAuthnRequest;
 use crate::service_provider::ServiceProvider;
-
 
 #[test]
 fn test_self_signed_authn_request() {
@@ -173,8 +171,7 @@ fn test_signed_response_fingerprint() {
         .first()
         .cloned()
         .unwrap();
-    let der_cert =
-        crate::crypto::decode_x509_cert(&base64_cert).expect("failed to decode cert ");
+    let der_cert = crate::crypto::decode_x509_cert(&base64_cert).expect("failed to decode cert ");
     assert_eq!(der_cert, idp_cert);
 }
 
@@ -193,16 +190,25 @@ fn test_do_not_accept_unsigned_response() {
     };
 
     // Assert that this descriptor has a signing cert
-    assert_eq!(sp.idp_metadata.
-        idp_sso_descriptors.as_ref().unwrap()[0]
-        .key_descriptors[0]
-        .key_use.as_ref().unwrap(), "signing");
-    assert!(sp.idp_metadata.
-        idp_sso_descriptors.as_ref().unwrap()[0]
-        .key_descriptors[0]
-        .key_info
-        .x509_data.as_ref().unwrap()
-        .certificates.first().unwrap().len() > 0);
+    assert_eq!(
+        sp.idp_metadata.idp_sso_descriptors.as_ref().unwrap()[0].key_descriptors[0]
+            .key_use
+            .as_ref()
+            .unwrap(),
+        "signing"
+    );
+    assert!(
+        sp.idp_metadata.idp_sso_descriptors.as_ref().unwrap()[0].key_descriptors[0]
+            .key_info
+            .x509_data
+            .as_ref()
+            .unwrap()
+            .certificates
+            .first()
+            .unwrap()
+            .len()
+            > 0
+    );
 
     let unsigned_response_xml = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -216,7 +222,7 @@ fn test_do_not_accept_unsigned_response() {
     match err {
         crate::service_provider::Error::FailedToParseSamlResponse => {
             // ok
-        },
+        }
         _ => {
             assert!(false);
         }
@@ -248,7 +254,7 @@ fn test_do_not_accept_signed_with_wrong_key() {
     match err {
         crate::service_provider::Error::FailedToValidateSignature => {
             // ok
-        },
+        }
         _ => {
             assert!(false);
         }
@@ -281,7 +287,7 @@ fn test_accept_signed_with_correct_key_idp() {
 
     let resp = sp.parse_xml_response(
         wrong_cert_signed_response_xml,
-        &["ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"]
+        &["ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"],
     );
 
     assert!(resp.is_ok());
@@ -312,7 +318,7 @@ fn test_accept_signed_with_correct_key_idp_2() {
 
     let resp = sp.parse_xml_response(
         wrong_cert_signed_response_xml,
-        &["ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"]
+        &["ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"],
     );
 
     assert!(resp.is_ok());
