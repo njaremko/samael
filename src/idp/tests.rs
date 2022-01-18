@@ -1,4 +1,3 @@
-
 use super::*;
 use chrono::prelude::*;
 
@@ -6,7 +5,6 @@ use crate::crypto::verify_signed_xml;
 use crate::idp::sp_extractor::{RequiredAttribute, SPMetadataExtractor};
 use crate::idp::verified_request::UnverifiedAuthnRequest;
 use crate::service_provider::ServiceProvider;
-
 
 #[test]
 fn test_self_signed_authn_request() {
@@ -97,13 +95,13 @@ fn test_signed_response() {
             "https://sp.example.com/audience",
             "https://sp.example.com/acs",
             "https://idp.example.com",
-            &verified.id.as_str(),
+            verified.id.as_str(),
             &attrs,
         )
         .expect("failed to created and sign response");
 
     let out_xml = out_response
-        .to_xml()
+        .as_xml()
         .expect("failed to serialize response xml");
     verify_signed_xml(out_xml.as_bytes(), idp_cert.as_slice(), Some("ID"))
         .expect("verification failed");
@@ -124,9 +122,9 @@ fn test_signed_response_threads() {
 
     let mut handles = vec![];
     for _ in 0..4 {
-        handles.push(std::thread::spawn(|| test_self_signed_authn_request()));
-        handles.push(std::thread::spawn(|| test_extract_sp()));
-        handles.push(std::thread::spawn(move || verify()));
+        handles.push(std::thread::spawn(test_self_signed_authn_request));
+        handles.push(std::thread::spawn(test_extract_sp));
+        handles.push(std::thread::spawn(verify));
     }
 
     handles
@@ -169,10 +167,11 @@ fn test_signed_response_fingerprint() {
         .x509_data
         .clone()
         .unwrap()
-        .certificate
+        .certificates
+        .first()
+        .cloned()
         .unwrap();
-    let der_cert =
-        crate::crypto::decode_x509_cert(&base64_cert).expect("failed to decode cert ");
+    let der_cert = crate::crypto::decode_x509_cert(&base64_cert).expect("failed to decode cert ");
     assert_eq!(der_cert, idp_cert);
 }
 
@@ -191,16 +190,24 @@ fn test_do_not_accept_unsigned_response() {
     };
 
     // Assert that this descriptor has a signing cert
-    assert_eq!(sp.idp_metadata.
-        idp_sso_descriptors.as_ref().unwrap()[0]
-        .key_descriptors[0]
-        .key_use.as_ref().unwrap(), "signing");
-    assert!(sp.idp_metadata.
-        idp_sso_descriptors.as_ref().unwrap()[0]
-        .key_descriptors[0]
-        .key_info
-        .x509_data.as_ref().unwrap()
-        .certificate.as_ref().unwrap().len() > 0);
+    assert_eq!(
+        sp.idp_metadata.idp_sso_descriptors.as_ref().unwrap()[0].key_descriptors[0]
+            .key_use
+            .as_ref()
+            .unwrap(),
+        "signing"
+    );
+    assert!(
+        !sp.idp_metadata.idp_sso_descriptors.as_ref().unwrap()[0].key_descriptors[0]
+            .key_info
+            .x509_data
+            .as_ref()
+            .unwrap()
+            .certificates
+            .first()
+            .unwrap()
+            .is_empty()
+    );
 
     let unsigned_response_xml = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -210,15 +217,10 @@ fn test_do_not_accept_unsigned_response() {
     let resp = sp.parse_xml_response(unsigned_response_xml, &[""]);
     assert!(resp.is_err());
 
-    let err = resp.err().unwrap();
-    match err {
-        crate::service_provider::Error::FailedToParseSamlResponse => {
-            // ok
-        },
-        _ => {
-            assert!(false);
-        }
-    }
+    assert!(matches!(
+        resp.err().unwrap(),
+        crate::service_provider::Error::FailedToParseSamlResponse
+    ));
 }
 
 #[test]
@@ -241,16 +243,10 @@ fn test_do_not_accept_signed_with_wrong_key() {
     let resp = sp.parse_xml_response(wrong_cert_signed_response_xml, &[""]);
     assert!(resp.is_err());
 
-    let err = resp.err().unwrap();
-
-    match err {
-        crate::service_provider::Error::FailedToValidateSignature => {
-            // ok
-        },
-        _ => {
-            assert!(false);
-        }
-    }
+    assert!(matches!(
+        resp.err().unwrap(),
+        crate::service_provider::Error::FailedToValidateSignature
+    ));
 }
 
 #[test]
@@ -279,7 +275,7 @@ fn test_accept_signed_with_correct_key_idp() {
 
     let resp = sp.parse_xml_response(
         wrong_cert_signed_response_xml,
-        &["ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"]
+        &["ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"],
     );
 
     assert!(resp.is_ok());
@@ -310,7 +306,7 @@ fn test_accept_signed_with_correct_key_idp_2() {
 
     let resp = sp.parse_xml_response(
         wrong_cert_signed_response_xml,
-        &["ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"]
+        &["ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"],
     );
 
     assert!(resp.is_ok());

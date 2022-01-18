@@ -64,7 +64,7 @@ impl SPMetadataExtractor {
                     })
                     .collect()
             })
-            .unwrap_or(vec![])
+            .unwrap_or_default()
     }
 
     pub fn verification_cert(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
@@ -81,15 +81,13 @@ impl SPMetadataExtractor {
                     let data = kd
                         .iter()
                         .filter(|d| d.is_signing())
-                        .map(|d| {
+                        .flat_map(|d| {
                             d.key_info
                                 .x509_data
-                                .as_ref()
-                                .map(|d| d.certificate.as_ref())
-                                .unwrap_or(None)
+                                .iter()
+                                .flat_map(|d| d.certificates.iter())
                         })
                         .next()
-                        .unwrap_or(None)
                         .ok_or(Error::NoCertificate)?;
 
                     return Ok(crypto::decode_x509_cert(data.as_str())?);

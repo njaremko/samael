@@ -2,68 +2,45 @@
 //! XmlSec High Level Error handling
 //!
 
+use snafu::Snafu;
+
 /// Wrapper project-wide Result typealias.
 pub type XmlSecResult<T> = Result<T, XmlSecError>;
 
 /// Wrapper project-wide Errors enumeration.
 #[allow(missing_docs)]
-#[derive(Debug)]
+#[derive(Debug, Snafu)]
 pub enum XmlSecError {
+    #[snafu(display("Internal XmlSec Init Error"))]
     XmlSecInitError,
+    #[snafu(display("Internal XmlSec Context Error"))]
     ContextInitError,
+    #[snafu(display("Internal XmlSec Crypto OpenSSL Init Error"))]
     CryptoInitOpenSSLError,
+    #[snafu(display("Internal XmlSec Crypto OpenSSLApp Init Error"))]
     CryptoInitOpenSSLAppError,
 
+    #[snafu(display("Input value is not a valid string"))]
     InvalidInputString,
 
+    #[snafu(display("Key could not be set"))]
     SetKeyError,
+    #[snafu(display("Key has not yet been loaded and is required"))]
     KeyNotLoaded,
+    #[snafu(display("Failed to load key"))]
     KeyLoadError,
+    #[snafu(display("Failed to load certificate"))]
     CertLoadError,
 
+    #[snafu(display("Failed to find document root"))]
     RootNotFound,
+    #[snafu(display("Failed to find node"))]
     NodeNotFound,
+    #[snafu(display("Node is not a signature node"))]
     NotASignatureNode,
 
+    #[snafu(display("An error has occurred while attempting to sign document"))]
     SigningError,
+    #[snafu(display("Verification failed"))]
     VerifyError,
-}
-
-impl std::fmt::Display for XmlSecError {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::XmlSecInitError => write!(fmt, "{}", "Internal XmlSec Init Error"),
-            Self::CryptoInitOpenSSLError => {
-                write!(fmt, "{}", "Internal XmlSec Crypto OpenSSL Init Error")
-            }
-            Self::CryptoInitOpenSSLAppError => {
-                write!(fmt, "{}", "Internal XmlSec Crypto OpenSSLApp Init Error")
-            }
-            Self::ContextInitError => write!(fmt, "{}", "Internal XmlSec Context Error"),
-
-            Self::InvalidInputString => write!(fmt, "{}", "Input value is not a valid string"),
-
-            Self::SetKeyError => write!(fmt, "{}", "Key could not be set"),
-            Self::KeyNotLoaded => write!(fmt, "{}", "Key has not yet been loaded and is required"),
-            Self::KeyLoadError => write!(fmt, "{}", "Failed to load key"),
-            Self::CertLoadError => write!(fmt, "{}", "Failed to load certificate"),
-
-            Self::RootNotFound => write!(fmt, "{}", "Failed to find document root"),
-            Self::NodeNotFound => write!(fmt, "{}", "Failed to find node"),
-            Self::NotASignatureNode => write!(fmt, "{}", "Node is not a signature node"),
-
-            Self::SigningError => write!(
-                fmt,
-                "{}",
-                "An error has ocurred while attemting to sign document"
-            ),
-            Self::VerifyError => write!(fmt, "{}", "Verification failed"),
-        }
-    }
-}
-
-impl std::error::Error for XmlSecError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
-    }
 }

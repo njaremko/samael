@@ -3,11 +3,12 @@ use crate::metadata::{
     AttributeConsumingService, ContactPerson, Endpoint, IndexedEndpoint, KeyDescriptor,
     Organization,
 };
+use crate::ToXml;
 use chrono::prelude::*;
 use quick_xml::events::{BytesEnd, BytesStart, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
-use std::io::Cursor;
+use std::io::Write;
 
 const NAME: &str = "md:SPSSODescriptor";
 
@@ -48,10 +49,8 @@ pub struct SpSsoDescriptor {
     pub attribute_consuming_services: Option<Vec<AttributeConsumingService>>,
 }
 
-impl SpSsoDescriptor {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for SpSsoDescriptor {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
 
         if let Some(id) = &self.id {
@@ -97,58 +96,34 @@ impl SpSsoDescriptor {
         }
 
         writer.write_event(Event::Start(root))?;
-
-        if let Some(key_descriptors) = &self.key_descriptors {
-            for descriptor in key_descriptors {
-                writer.write(descriptor.to_xml()?.as_bytes())?;
-            }
-        }
-
-        if let Some(organization) = &self.organization {
-            writer.write(organization.to_xml()?.as_bytes())?;
-        }
-
-        if let Some(contact_people) = &self.contact_people {
-            for contact in contact_people {
-                writer.write(contact.to_xml()?.as_bytes())?;
-            }
-        }
-
+        self.key_descriptors.to_xml(writer)?;
+        self.organization.to_xml(writer)?;
+        self.contact_people.to_xml(writer)?;
         if let Some(artifact_resolution_service) = &self.artifact_resolution_service {
             for service in artifact_resolution_service {
-                writer.write(service.to_xml("md:ArtifactResolutionService")?.as_bytes())?;
+                service.to_xml(writer, "md:ArtifactResolutionService")?;
             }
         }
-
         if let Some(single_logout_services) = &self.single_logout_services {
             for service in single_logout_services {
-                writer.write(service.to_xml("md:SingleLogoutService")?.as_bytes())?;
+                service.to_xml(writer, "md:SingleLogoutService")?;
             }
         }
-
         if let Some(manage_name_id_services) = &self.manage_name_id_services {
             for service in manage_name_id_services {
-                writer.write(service.to_xml("md:ManageNameIDService")?.as_bytes())?;
+                service.to_xml(writer, "md:ManageNameIDService")?;
             }
         }
-
         if let Some(name_id_formats) = &self.name_id_formats {
             for format in name_id_formats {
-                write_plain_element(&mut writer, "md:NameIDFormat", format.as_ref())?;
+                write_plain_element(writer, "md:NameIDFormat", format.as_ref())?;
             }
         }
-
         for service in &self.assertion_consumer_services {
-            writer.write(service.to_xml("md:AssertionConsumerService")?.as_bytes())?;
+            service.to_xml(writer, "md:AssertionConsumerService")?;
         }
-
-        if let Some(attribute_consuming_services) = &self.attribute_consuming_services {
-            for service in attribute_consuming_services {
-                writer.write(service.to_xml()?.as_bytes())?;
-            }
-        }
-
+        self.attribute_consuming_services.to_xml(writer)?;
         writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }

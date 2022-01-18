@@ -2,7 +2,9 @@ use chrono::prelude::*;
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
-use std::io::Cursor;
+use std::io::Write;
+
+use crate::ToXml;
 
 const NAME: &str = "saml2:Conditions";
 
@@ -20,10 +22,8 @@ pub struct Conditions {
     pub proxy_restriction: Option<ProxyRestriction>,
 }
 
-impl Conditions {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for Conditions {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
         if let Some(not_before) = &self.not_before {
             root.push_attribute((
@@ -42,16 +42,10 @@ impl Conditions {
             ));
         }
         writer.write_event(Event::Start(root))?;
-        if let Some(audience_restrictions) = &self.audience_restrictions {
-            for restriction in audience_restrictions {
-                writer.write(restriction.to_xml()?.as_bytes())?;
-            }
-        }
-        if let Some(proxy_restriction) = &self.proxy_restriction {
-            writer.write(proxy_restriction.to_xml()?.as_bytes())?;
-        }
+        self.audience_restrictions.to_xml(writer)?;
+        self.proxy_restriction.to_xml(writer)?;
         writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -64,10 +58,8 @@ pub struct AudienceRestriction {
     pub audience: Vec<String>,
 }
 
-impl AudienceRestriction {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for AudienceRestriction {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let root = BytesStart::borrowed(
             AUDIENCE_RESTRICTION_NAME.as_bytes(),
             AUDIENCE_RESTRICTION_NAME.len(),
@@ -84,7 +76,7 @@ impl AudienceRestriction {
         writer.write_event(Event::End(BytesEnd::borrowed(
             AUDIENCE_RESTRICTION_NAME.as_bytes(),
         )))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -101,10 +93,8 @@ pub struct ProxyRestriction {
     pub audiences: Option<Vec<String>>,
 }
 
-impl ProxyRestriction {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for ProxyRestriction {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(
             PROXY_RESTRICTION_NAME.as_bytes(),
             PROXY_RESTRICTION_NAME.len(),
@@ -126,6 +116,6 @@ impl ProxyRestriction {
         writer.write_event(Event::End(BytesEnd::borrowed(
             PROXY_RESTRICTION_NAME.as_bytes(),
         )))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }

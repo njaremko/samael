@@ -1,9 +1,10 @@
 use crate::attribute::AttributeValue;
 use crate::metadata::LocalizedName;
+use crate::ToXml;
 use quick_xml::events::{BytesEnd, BytesStart, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
-use std::io::Cursor;
+use std::io::Write;
 
 const NAME: &str = "md:AttributeConsumingService";
 
@@ -20,10 +21,8 @@ pub struct AttributeConsumingService {
     pub request_attributes: Vec<RequestedAttribute>,
 }
 
-impl AttributeConsumingService {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for AttributeConsumingService {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
 
         root.push_attribute(("index", self.index.to_string().as_ref()));
@@ -33,20 +32,17 @@ impl AttributeConsumingService {
         writer.write_event(Event::Start(root))?;
 
         for name in &self.service_names {
-            writer.write(name.to_xml("md:ServiceName")?.as_bytes())?;
+            name.to_xml(writer, "md:ServiceName")?;
         }
-
         if let Some(service_descriptions) = &self.service_descriptions {
             for name in service_descriptions {
-                writer.write(name.to_xml("md:ServiceDescription")?.as_bytes())?;
+                name.to_xml(writer, "md:ServiceDescription")?;
             }
         }
-        for request_attributes in &self.request_attributes {
-            writer.write(request_attributes.to_xml()?.as_bytes())?;
-        }
+        self.request_attributes.to_xml(writer)?;
 
         writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -66,10 +62,8 @@ pub struct RequestedAttribute {
     pub is_required: Option<bool>,
 }
 
-impl RequestedAttribute {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for RequestedAttribute {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(
             REQUESTED_ATTRIBUTE_NAME.as_bytes(),
             REQUESTED_ATTRIBUTE_NAME.len(),
@@ -85,16 +79,10 @@ impl RequestedAttribute {
             root.push_attribute(("isRequired", is_required.to_string().as_ref()));
         }
         writer.write_event(Event::Start(root))?;
-
-        if let Some(values) = &self.values {
-            for value in values {
-                writer.write(value.to_xml()?.as_bytes())?;
-            }
-        }
-
+        self.values.to_xml(writer)?;
         writer.write_event(Event::End(BytesEnd::borrowed(
             REQUESTED_ATTRIBUTE_NAME.as_bytes(),
         )))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }

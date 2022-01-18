@@ -31,7 +31,7 @@ fn main() {
                 .header("bindings.h")
                 .clang_args(fetch_xmlsec_config_flags())
                 .clang_args(fetch_xmlsec_config_libs())
-                .layout_tests(true)
+                .layout_tests(false)
                 .rustfmt_bindings(true)
                 .generate_comments(true);
 

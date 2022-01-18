@@ -1,8 +1,9 @@
 use crate::key_info::{KeyInfo, X509Data};
+use crate::ToXml;
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
-use std::io::Cursor;
+use std::io::Write;
 
 const NAME: &str = "ds:Signature";
 const SCHEMA: (&str, &str) = ("xmlns:ds", "http://www.w3.org/2000/09/xmldsig#");
@@ -64,42 +65,36 @@ impl Signature {
             key_info: Some(vec![KeyInfo {
                 id: None,
                 x509_data: Some(X509Data {
-                    certificate: Some(
-                        crate::crypto::mime_encode_x509_cert(x509_cert_der)
-                    ),
+                    certificates: vec![crate::crypto::mime_encode_x509_cert(x509_cert_der)],
                 }),
             }]),
         }
-    }
-
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
-        root.push_attribute(SCHEMA);
-        if let Some(id) = &self.id {
-            root.push_attribute(("Id", id.as_ref()));
-        }
-        writer.write_event(Event::Start(root))?;
-        writer.write(self.signed_info.to_xml()?.as_bytes())?;
-        writer.write(self.signature_value.to_xml()?.as_bytes())?;
-        if let Some(key_infos) = &self.key_info {
-            for key_info in key_infos {
-                writer.write(key_info.to_xml()?.as_bytes())?;
-            }
-        }
-        writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
     }
 
     pub fn add_key_info(&mut self, public_cert_der: &[u8]) -> &mut Self {
         self.key_info.get_or_insert(Vec::new()).push(KeyInfo {
             id: None,
             x509_data: Some(X509Data {
-                certificate: Some(base64::encode(public_cert_der)),
+                certificates: vec![base64::encode(public_cert_der)],
             }),
         });
         self
+    }
+}
+
+impl ToXml for Signature {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
+        let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
+        root.push_attribute(SCHEMA);
+        if let Some(id) = &self.id {
+            root.push_attribute(("Id", id.as_ref()));
+        }
+        writer.write_event(Event::Start(root))?;
+        self.signed_info.to_xml(writer)?;
+        self.signature_value.to_xml(writer)?;
+        self.key_info.to_xml(writer)?;
+        writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
+        Ok(())
     }
 }
 
@@ -113,10 +108,8 @@ pub struct SignatureValue {
     pub base64_content: Option<String>,
 }
 
-impl SignatureValue {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for SignatureValue {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root =
             BytesStart::borrowed(SIGNATURE_VALUE_NAME.as_bytes(), SIGNATURE_VALUE_NAME.len());
         if let Some(id) = &self.id {
@@ -124,14 +117,12 @@ impl SignatureValue {
         }
         writer.write_event(Event::Start(root))?;
         if let Some(ref base64_content) = self.base64_content {
-            writer.write_event(Event::Text(BytesText::from_plain_str(
-                base64_content,
-            )))?;
+            writer.write_event(Event::Text(BytesText::from_plain_str(base64_content)))?;
         }
         writer.write_event(Event::End(BytesEnd::borrowed(
             SIGNATURE_VALUE_NAME.as_bytes(),
         )))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -149,22 +140,18 @@ pub struct SignedInfo {
     pub reference: Vec<Reference>,
 }
 
-impl SignedInfo {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for SignedInfo {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(SIGNED_INFO_NAME.as_bytes(), SIGNED_INFO_NAME.len());
         if let Some(id) = &self.id {
             root.push_attribute(("Id", id.as_ref()));
         }
         writer.write_event(Event::Start(root))?;
-        writer.write(self.canonicalization_method.to_xml()?.as_bytes())?;
-        writer.write(self.signature_method.to_xml()?.as_bytes())?;
-        for reference in &self.reference {
-            writer.write(reference.to_xml()?.as_bytes())?;
-        }
+        self.canonicalization_method.to_xml(writer)?;
+        self.signature_method.to_xml(writer)?;
+        self.reference.to_xml(writer)?;
         writer.write_event(Event::End(BytesEnd::borrowed(SIGNED_INFO_NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -176,17 +163,15 @@ pub struct CanonicalizationMethod {
     pub algorithm: String,
 }
 
-impl CanonicalizationMethod {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for CanonicalizationMethod {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(
             CANONICALIZATION_METHOD.as_bytes(),
             CANONICALIZATION_METHOD.len(),
         );
         root.push_attribute(("Algorithm", self.algorithm.as_ref()));
         writer.write_event(Event::Empty(root))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -201,11 +186,8 @@ pub struct SignatureMethod {
     pub hmac_output_length: Option<usize>,
 }
 
-impl SignatureMethod {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
-
+impl ToXml for SignatureMethod {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(
             SIGNATURE_METHOD_NAME.as_bytes(),
             SIGNATURE_METHOD_NAME.len(),
@@ -235,7 +217,7 @@ impl SignatureMethod {
             writer.write_event(Event::Empty(root))?;
         }
 
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -251,10 +233,8 @@ pub struct Transform {
     pub xpath: Option<String>,
 }
 
-impl Transform {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for Transform {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(TRANSFORM_NAME.as_bytes(), TRANSFORM_NAME.len());
         root.push_attribute(("Algorithm", self.algorithm.as_ref()));
 
@@ -274,7 +254,7 @@ impl Transform {
             writer.write_event(Event::Empty(root))?;
         }
 
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -284,17 +264,13 @@ pub struct Transforms {
     pub transforms: Vec<Transform>,
 }
 
-impl Transforms {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for Transforms {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let root = BytesStart::borrowed(TRANSFORMS_NAME.as_bytes(), TRANSFORMS_NAME.len());
         writer.write_event(Event::Start(root))?;
-        for transform in &self.transforms {
-            writer.write(transform.to_xml()?.as_bytes())?;
-        }
+        self.transforms.to_xml(writer)?;
         writer.write_event(Event::End(BytesEnd::borrowed(TRANSFORMS_NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -306,14 +282,12 @@ pub struct DigestMethod {
     pub algorithm: String,
 }
 
-impl DigestMethod {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for DigestMethod {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(DIGEST_METHOD.as_bytes(), DIGEST_METHOD.len());
         root.push_attribute(("Algorithm", self.algorithm.as_ref()));
         writer.write_event(Event::Empty(root))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -325,19 +299,15 @@ pub struct DigestValue {
     pub base64_content: Option<String>,
 }
 
-impl DigestValue {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for DigestValue {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let root = BytesStart::borrowed(DIGEST_VALUE_NAME.as_bytes(), DIGEST_VALUE_NAME.len());
         writer.write_event(Event::Start(root))?;
         if let Some(ref base64_content) = self.base64_content {
-            writer.write_event(Event::Text(BytesText::from_plain_str(
-                base64_content,
-            )))?;
+            writer.write_event(Event::Text(BytesText::from_plain_str(base64_content)))?;
         }
         writer.write_event(Event::End(BytesEnd::borrowed(DIGEST_VALUE_NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }
 
@@ -360,10 +330,8 @@ pub struct Reference {
     pub id: Option<String>,
 }
 
-impl Reference {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+impl ToXml for Reference {
+    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
         let mut root = BytesStart::borrowed(REFERENCE_NAME.as_bytes(), REFERENCE_NAME.len());
         if let Some(id) = &self.id {
             root.push_attribute(("Id", id.as_ref()));
@@ -375,17 +343,10 @@ impl Reference {
             root.push_attribute(("Type", reference_type.as_ref()));
         }
         writer.write_event(Event::Start(root))?;
-
-        if let Some(transforms) = &self.transforms {
-            writer.write(transforms.to_xml()?.as_bytes())?;
-        }
-
-        writer.write(self.digest_method.to_xml()?.as_bytes())?;
-        if let Some(ref digest_value) = self.digest_value {
-            writer.write(digest_value.to_xml()?.as_bytes())?;
-        }
-
+        self.transforms.to_xml(writer)?;
+        self.digest_method.to_xml(writer)?;
+        self.digest_value.to_xml(writer)?;
         writer.write_event(Event::End(BytesEnd::borrowed(REFERENCE_NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(())
     }
 }

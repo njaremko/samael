@@ -53,13 +53,13 @@ impl XmlSecKey {
             return Err(XmlSecError::KeyLoadError);
         }
 
-        Ok(Self { 0: key })
+        Ok(Self(key))
     }
 
     /// Create from raw pointer to an underlying xmlsec key structure. Henceforth its lifetime will be managed by this
     /// object.
     pub unsafe fn from_ptr(ptr: *mut bindings::xmlSecKey) -> Self {
-        Self { 0: ptr }
+        Self(ptr)
     }
 
     /// Leak the internal resource. This is needed by [`XmlSecSignatureContext`][sigctx], since xmlsec takes over the
@@ -88,7 +88,7 @@ impl Clone for XmlSecKey {
     fn clone(&self) -> Self {
         let new = unsafe { bindings::xmlSecKeyDuplicate(self.0) };
 
-        Self { 0: new }
+        Self(new)
     }
 }
 

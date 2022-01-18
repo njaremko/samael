@@ -1,5 +1,6 @@
 use crate::metadata::{Endpoint, IndexedEndpoint, KeyDescriptor, NameIdFormat, SpSsoDescriptor};
 use crate::schema::{Assertion, Response};
+use crate::{crypto, ToXml};
 use crate::{
     key_info::{KeyInfo, X509Data},
     metadata::{ContactPerson, EncryptionMethod, EntityDescriptor, HTTP_POST_BINDING},
@@ -19,7 +20,7 @@ use url::Url;
 use crate::crypto::reduce_xml_to_signed;
 
 #[cfg(not(feature = "xmlsec"))]
-fn reduce_xml_to_signed<T>(xml_str: &str, _keys: &Vec<T>) -> Result<String, Error> {
+fn reduce_xml_to_signed<T>(xml_str: &str, _keys: &[T]) -> Result<String, Error> {
     Ok(String::from(xml_str))
 }
 
@@ -178,7 +179,7 @@ impl ServiceProvider {
                 key_info: KeyInfo {
                     id: None,
                     x509_data: Some(X509Data {
-                        certificate: Some(base64::encode(&cert_bytes)),
+                        certificates: vec![base64::encode(&cert_bytes)],
                     }),
                 },
             });
@@ -187,7 +188,7 @@ impl ServiceProvider {
                 key_info: KeyInfo {
                     id: None,
                     x509_data: Some(X509Data {
-                        certificate: Some(base64::encode(&cert_bytes)),
+                        certificates: vec![base64::encode(&cert_bytes)],
                     }),
                 },
                 encryption_methods: Some(vec![
@@ -231,11 +232,7 @@ impl ServiceProvider {
             entity_id,
             valid_until,
             sp_sso_descriptors: Some(vec![sso_sp_descriptor]),
-            contact_person: if let Some(contact_person) = &self.contact_person {
-                Some(vec![contact_person.clone()])
-            } else {
-                None
-            },
+            contact_person: self.contact_person.clone().map(|person| vec![person]),
             ..EntityDescriptor::default()
         })
     }
@@ -292,26 +289,7 @@ impl ServiceProvider {
                         .filter(|key_use| *key_use == "signing")
                         .is_some()
                     {
-                        if let Some(cert) = key_descriptor
-                            .key_info
-                            .x509_data
-                            .as_ref()
-                            .and_then(|data| data.certificate.as_ref())
-                        {
-                            if let Ok(decoded) = base64::decode(cert.as_bytes()) {
-                                if let Ok(parsed) = openssl::x509::X509::from_der(&decoded) {
-                                    result.push(parsed)
-                                } else {
-                                    return Err(Error::FailedToParseCert {
-                                        cert: cert.to_string(),
-                                    });
-                                }
-                            } else {
-                                return Err(Error::FailedToParseCert {
-                                    cert: cert.to_string(),
-                                });
-                            }
-                        }
+                        result.append(&mut parse_certificates(key_descriptor)?);
                     }
                 }
             }
@@ -322,26 +300,7 @@ impl ServiceProvider {
                         if key_descriptor.key_use == None
                             || key_descriptor.key_use == Some("".to_string())
                         {
-                            if let Some(cert) = key_descriptor
-                                .key_info
-                                .x509_data
-                                .as_ref()
-                                .and_then(|data| data.certificate.as_ref())
-                            {
-                                if let Ok(decoded) = base64::decode(cert.as_bytes()) {
-                                    if let Ok(parsed) = openssl::x509::X509::from_der(&decoded) {
-                                        result.push(parsed)
-                                    } else {
-                                        return Err(Error::FailedToParseCert {
-                                            cert: cert.to_string(),
-                                        });
-                                    }
-                                } else {
-                                    return Err(Error::FailedToParseCert {
-                                        cert: cert.to_string(),
-                                    });
-                                }
-                            }
+                            result.append(&mut parse_certificates(key_descriptor)?);
                         }
                     }
                 }
@@ -371,10 +330,8 @@ impl ServiceProvider {
         possible_request_ids: &[AsStr],
     ) -> Result<Assertion, Error> {
         let reduced_xml = if let Some(sign_certs) = self.idp_signing_certs()? {
-            reduce_xml_to_signed(
-                response_xml,
-                &sign_certs,
-            ).map_err(|_e| Error::FailedToValidateSignature)?
+            reduce_xml_to_signed(response_xml, &sign_certs)
+                .map_err(|_e| Error::FailedToValidateSignature)?
         } else {
             String::from(response_xml)
         };
@@ -489,8 +446,7 @@ impl ServiceProvider {
 
     fn validate_destination(&self, response: &Response) -> Result<(), Error> {
         if (response.signature.is_some() || response.destination.is_some())
-            && response.destination.as_ref().map(String::as_str)
-                != self.acs_url.as_ref().map(String::as_str)
+            && response.destination.as_deref() != self.acs_url.as_deref()
         {
             return Err(Error::DestinationValidationError {
                 response_destination: response.destination.clone(),
@@ -533,9 +489,30 @@ impl ServiceProvider {
     }
 }
 
+fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<x509::X509>, Error> {
+    key_descriptor
+        .key_info
+        .x509_data
+        .as_ref()
+        .map(|data| {
+            data.certificates
+                .iter()
+                .map(|cert| {
+                    crypto::decode_x509_cert(cert)
+                        .ok()
+                        .and_then(|decoded| openssl::x509::X509::from_der(&decoded).ok())
+                        .ok_or_else(|| Error::FailedToParseCert {
+                            cert: cert.to_string(),
+                        })
+                })
+                .collect::<Result<Vec<_>, _>>()
+        })
+        .unwrap_or(Ok(vec![]))
+}
+
 impl AuthnRequest {
     pub fn post(&self, relay_state: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let encoded = base64::encode(self.to_xml()?.as_bytes());
+        let encoded = base64::encode(self.as_xml()?.as_bytes());
         if let Some(dest) = &self.destination {
             Ok(Some(format!(
                 r#"
@@ -560,14 +537,14 @@ impl AuthnRequest {
         let mut compressed_buf = vec![];
         {
             let mut encoder = DeflateEncoder::new(&mut compressed_buf, Compression::default());
-            encoder.write_all(self.to_xml()?.as_bytes())?;
+            encoder.write_all(self.as_xml()?.as_bytes())?;
         }
         let encoded = base64::encode(&compressed_buf);
 
         if let Some(destination) = self.destination.as_ref() {
             let mut url: Url = destination.parse()?;
             url.query_pairs_mut().append_pair("SAMLRequest", &encoded);
-            if relay_state != "" {
+            if !relay_state.is_empty() {
                 url.query_pairs_mut().append_pair("RelayState", relay_state);
             }
             Ok(Some(url))
