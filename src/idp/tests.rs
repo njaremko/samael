@@ -169,7 +169,9 @@ fn test_signed_response_fingerprint() {
         .x509_data
         .clone()
         .unwrap()
-        .certificate
+        .certificates
+        .first()
+        .cloned()
         .unwrap();
     let der_cert =
         crate::crypto::decode_x509_cert(&base64_cert).expect("failed to decode cert ");
@@ -200,7 +202,7 @@ fn test_do_not_accept_unsigned_response() {
         .key_descriptors[0]
         .key_info
         .x509_data.as_ref().unwrap()
-        .certificate.as_ref().unwrap().len() > 0);
+        .certificates.first().unwrap().len() > 0);
 
     let unsigned_response_xml = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
