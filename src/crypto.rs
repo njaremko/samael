@@ -211,7 +211,7 @@ fn get_first_child_name_ns(
         }
 
         if child.get_name() == name {
-            found_node = Some(child.clone());
+            found_node = Some(child);
             break;
         }
     }
@@ -240,6 +240,7 @@ fn get_elements_by_predicate<F: FnMut(&libxml::tree::Node) -> bool>(
 
 /// Searches for and returns the element with the given value of the `ID` attribute from the subtree
 /// rooted at the given node.
+#[allow(unused)]
 #[cfg(feature = "xmlsec")]
 fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree::Node> {
     let mut elems = get_elements_by_predicate(elem, |node| {
@@ -247,7 +248,7 @@ fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree
             .map(|node_id| node_id == id)
             .unwrap_or(false)
     });
-    let elem = elems.drain(..).nth(0);
+    let elem = elems.drain(..).next();
     elem
 }
 
@@ -262,7 +263,7 @@ fn get_node_by_ptr(
         let node_ptr = node.node_ptr() as *const _;
         node_ptr == ptr
     });
-    let elem = elems.drain(..).nth(0);
+    let elem = elems.drain(..).next();
     elem
 }
 
@@ -305,9 +306,9 @@ fn get_signed_node(
         let ref_elem_opt = get_first_child_name_ns(&sig_info_elem, "Reference", XMLNS_XML_DSIG);
         if let Some(ref_elem) = ref_elem_opt {
             if let Some(uri) = ref_elem.get_attribute("URI") {
-                if uri.starts_with('#') {
+                if let Some(uri) = uri.strip_prefix('#') {
                     // prepare a XPointer context
-                    let c_uri = CString::new(&uri[1..]).unwrap();
+                    let c_uri = CString::new(uri).unwrap();
                     let ctx_ptr = unsafe {
                         libxml::bindings::xmlXPtrNewContext(
                             doc.doc_ptr(),
@@ -482,9 +483,7 @@ pub(crate) fn reduce_xml_to_signed(
 // strip out 76-width format and decode base64
 pub fn decode_x509_cert(x509_cert: &str) -> Result<Vec<u8>, base64::DecodeError> {
     let stripped = x509_cert
-        .as_bytes()
-        .to_vec()
-        .into_iter()
+        .bytes()
         .filter(|b| !b" \n\t\r\x0b\x0c".contains(b))
         .collect::<Vec<u8>>();
 
@@ -497,9 +496,9 @@ pub fn mime_encode_x509_cert(x509_cert_der: &[u8]) -> String {
 }
 
 pub fn gen_saml_response_id() -> String {
-    format!("id{}", uuid::Uuid::new_v4().to_string())
+    format!("id{}", uuid::Uuid::new_v4())
 }
 
 pub fn gen_saml_assertion_id() -> String {
-    format!("_{}", uuid::Uuid::new_v4().to_string())
+    format!("_{}", uuid::Uuid::new_v4())
 }

@@ -232,11 +232,7 @@ impl ServiceProvider {
             entity_id,
             valid_until,
             sp_sso_descriptors: Some(vec![sso_sp_descriptor]),
-            contact_person: if let Some(contact_person) = &self.contact_person {
-                Some(vec![contact_person.clone()])
-            } else {
-                None
-            },
+            contact_person: self.contact_person.clone().map(|person| vec![person]),
             ..EntityDescriptor::default()
         })
     }
@@ -450,8 +446,7 @@ impl ServiceProvider {
 
     fn validate_destination(&self, response: &Response) -> Result<(), Error> {
         if (response.signature.is_some() || response.destination.is_some())
-            && response.destination.as_ref().map(String::as_str)
-                != self.acs_url.as_ref().map(String::as_str)
+            && response.destination.as_deref() != self.acs_url.as_deref()
         {
             return Err(Error::DestinationValidationError {
                 response_destination: response.destination.clone(),
@@ -549,7 +544,7 @@ impl AuthnRequest {
         if let Some(destination) = self.destination.as_ref() {
             let mut url: Url = destination.parse()?;
             url.query_pairs_mut().append_pair("SAMLRequest", &encoded);
-            if relay_state != "" {
+            if !relay_state.is_empty() {
                 url.query_pairs_mut().append_pair("RelayState", relay_state);
             }
             Ok(Some(url))

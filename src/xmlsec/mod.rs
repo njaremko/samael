@@ -17,6 +17,7 @@ pub use libxml::tree::node::Node as XmlNode;
 mod error;
 mod keys;
 mod xmldsig;
+#[allow(clippy::module_inception)]
 mod xmlsec;
 
 // exports
