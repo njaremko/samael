@@ -394,7 +394,7 @@ dependencies = [
 [[package]]
 name = "libxml"
 version = "0.3.0"
-source = "git+https://github.com/spd-mfa/rust-libxml?rev=7ea237326685f4faaf203db7bcaa355322987ff9#7ea237326685f4faaf203db7bcaa355322987ff9"
+source = "git+https://github.com/KWARC/rust-libxml?rev=2c669a9ba51600664317463de6af0f5db37f4b92#2c669a9ba51600664317463de6af0f5db37f4b92"
 dependencies = [
  "libc",
  "pkg-config",
