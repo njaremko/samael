@@ -4,9 +4,7 @@ mod contact_person;
 mod encryption_method;
 mod endpoint;
 mod entity_descriptor;
-mod helpers;
 mod key_descriptor;
-mod localized;
 mod organization;
 mod sp_sso_descriptor;
 
@@ -15,25 +13,15 @@ pub use attribute_consuming_service::AttributeConsumingService;
 pub use contact_person::*;
 pub use encryption_method::EncryptionMethod;
 pub use endpoint::*;
-pub use entity_descriptor::EntityDescriptor;
+pub use entity_descriptor::{EntitiesDescriptor, EntityDescriptor};
 pub use key_descriptor::KeyDescriptor;
-pub use localized::*;
 pub use organization::Organization;
 pub use sp_sso_descriptor::SpSsoDescriptor;
-pub mod de {
-    pub use quick_xml::de::*;
-}
-use quick_xml::events::{BytesEnd, BytesStart, Event};
-use quick_xml::Writer;
-use std::io::Write;
-
-use serde::Deserialize;
+use yaserde_derive::{YaDeserialize, YaSerialize};
 
 use crate::attribute::Attribute;
-use crate::metadata::helpers::write_plain_element;
 use crate::signature::Signature;
-use crate::ToXml;
-use chrono::prelude::*;
+use crate::utils::UtcDateTime;
 
 // HTTP_POST_BINDING is the official URN for the HTTP-POST binding (transport)
 pub const HTTP_POST_BINDING: &str = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST";
@@ -41,7 +29,7 @@ pub const HTTP_POST_BINDING: &str = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-P
 // HTTP_REDIRECT_BINDING is the official URN for the HTTP-Redirect binding (transport)
 pub const HTTP_REDIRECT_BINDING: &str = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect";
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub enum NameIdFormat {
     UnspecifiedNameIDFormat,
     TransientNameIDFormat,
@@ -68,246 +56,191 @@ impl NameIdFormat {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(
+    Clone, Debug, YaDeserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize,
+)]
+#[yaserde(namespace = "md: urn:oasis:names:tc:SAML:2.0:metadata")]
 pub struct RoleDescriptor {
-    #[serde(rename = "ID")]
+    #[yaserde(attribute, rename = "ID")]
     pub id: Option<String>,
-    #[serde(rename = "validUntil")]
-    pub valid_until: Option<chrono::DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
-    pub cache_duration: Option<usize>,
-    #[serde(rename = "protocolSupportEnumeration")]
-    pub protocol_support_enumeration: Option<String>,
-    #[serde(rename = "errorURL")]
+    #[yaserde(attribute, rename = "validUntil")]
+    pub valid_until: Option<UtcDateTime>,
+    #[yaserde(attribute, rename = "cacheDuration")]
+    pub cache_duration: Option<u32>,
+    #[yaserde(attribute, rename = "protocolSupportEnumeration")]
+    pub protocol_support_enumeration: String,
+    #[yaserde(attribute, rename = "errorURL")]
     pub error_url: Option<String>,
-    #[serde(rename = "Signature")]
+    #[yaserde(rename = "Signature", prefix = "ds")]
     pub signature: Option<Signature>,
-    #[serde(rename = "KeyDescriptor", default)]
+    #[yaserde(rename = "KeyDescriptor", prefix = "md", default)]
     pub key_descriptors: Vec<KeyDescriptor>,
-    #[serde(rename = "Organization")]
+    #[yaserde(rename = "Organization", prefix = "md")]
     pub organization: Option<Organization>,
-    #[serde(rename = "ContactPerson", default)]
+    #[yaserde(rename = "ContactPerson", prefix = "md", default)]
     pub contact_people: Vec<ContactPerson>,
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub struct SSODescriptor {
-    #[serde(rename = "ID")]
-    pub id: Option<String>,
-    #[serde(rename = "validUntil")]
-    pub valid_until: Option<chrono::DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
-    pub cache_duration: Option<usize>,
-    #[serde(rename = "protocolSupportEnumeration")]
-    pub protocol_support_enumeration: Option<String>,
-    #[serde(rename = "errorURL")]
-    pub error_url: Option<String>,
-    #[serde(rename = "Signature")]
-    pub signature: Option<Signature>,
-    #[serde(rename = "KeyDescriptor", default)]
-    pub key_descriptors: Vec<KeyDescriptor>,
-    #[serde(rename = "Organization")]
-    pub organization: Option<Organization>,
-    #[serde(rename = "ContactPerson", default)]
-    pub contact_people: Vec<ContactPerson>,
-    // ^- RoleDescriptor
-    #[serde(rename = "ArtifactResolutionService", default)]
-    pub artifact_resolution_service: Vec<IndexedEndpoint>,
-    #[serde(rename = "SingleLogoutService", default)]
-    pub single_logout_services: Vec<Endpoint>,
-    #[serde(rename = "ManageNameIDService", default)]
-    pub manage_name_id_services: Vec<Endpoint>,
-    #[serde(rename = "NameIDFormat", default)]
-    pub name_id_formats: Vec<String>,
-}
-
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, YaDeserialize, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize)]
+#[yaserde(
+    namespace = "ds: http://www.w3.org/2000/09/xmldsig#",
+    namespace = "md: urn:oasis:names:tc:SAML:2.0:metadata",
+    namespace = "saml: urn:oasis:names:tc:SAML:2.0:assertion"
+)]
 pub struct IdpSsoDescriptor {
-    #[serde(rename = "ID")]
+    #[yaserde(attribute, rename = "ID")]
     pub id: Option<String>,
-    #[serde(rename = "validUntil")]
-    pub valid_until: Option<chrono::DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
-    pub cache_duration: Option<usize>,
-    #[serde(rename = "protocolSupportEnumeration")]
-    pub protocol_support_enumeration: Option<String>,
-    #[serde(rename = "errorURL")]
+    #[yaserde(attribute, rename = "validUntil")]
+    pub valid_until: Option<UtcDateTime>,
+    #[yaserde(attribute, rename = "cacheDuration")]
+    pub cache_duration: Option<String>,
+    #[yaserde(attribute, rename = "protocolSupportEnumeration")]
+    pub protocol_support_enumeration: String,
+    #[yaserde(attribute, rename = "errorURL")]
     pub error_url: Option<String>,
-    pub signature: Option<String>,
-    #[serde(rename = "KeyDescriptor", default)]
-    pub key_descriptors: Vec<KeyDescriptor>,
-    #[serde(rename = "Organization")]
-    pub organization: Option<Organization>,
-    #[serde(rename = "ContactPerson", default)]
-    pub contact_people: Vec<ContactPerson>,
-    #[serde(rename = "ArtifactResolutionService", default)]
-    pub artifact_resolution_service: Vec<IndexedEndpoint>,
-    #[serde(rename = "SingleLogoutService", default)]
-    pub single_logout_services: Vec<Endpoint>,
-    #[serde(rename = "ManageNameIDService", default)]
-    pub manage_name_id_services: Vec<Endpoint>,
-    #[serde(rename = "NameIDFormat", default)]
-    pub name_id_formats: Vec<String>,
-    // ^-SSODescriptor
-    #[serde(rename = "WantAuthnRequestsSigned")]
+    #[yaserde(attribute, rename = "WantAuthnRequestsSigned")]
     pub want_authn_requests_signed: Option<bool>,
-    #[serde(rename = "SingleSignOnService", default)]
+    #[yaserde(rename = "Signature", namespace = "ds")]
+    pub signature: Option<String>,
+    #[yaserde(rename = "KeyDescriptor", prefix = "md", default)]
+    pub key_descriptors: Vec<KeyDescriptor>,
+    #[yaserde(rename = "Organization", prefix = "md")]
+    pub organization: Option<Organization>,
+    #[yaserde(rename = "ContactPerson", prefix = "md", default)]
+    pub contact_people: Vec<ContactPerson>,
+    #[yaserde(rename = "ArtifactResolutionService", prefix = "md", default)]
+    pub artifact_resolution_services: Vec<IndexedEndpoint>,
+    #[yaserde(rename = "SingleLogoutService", prefix = "md", default)]
+    pub single_logout_services: Vec<Endpoint>,
+    #[yaserde(rename = "ManageNameIDService", prefix = "md", default)]
+    pub manage_name_id_services: Vec<Endpoint>,
+    #[yaserde(rename = "NameIDFormat", prefix = "md", default)]
+    pub name_id_formats: Vec<String>,
+    #[yaserde(rename = "SingleSignOnService", prefix = "md")]
     pub single_sign_on_services: Vec<Endpoint>,
-    #[serde(rename = "NameIDMappingService", default)]
+    #[yaserde(rename = "NameIDMappingService", prefix = "md", default)]
     pub name_id_mapping_services: Vec<Endpoint>,
-    #[serde(rename = "AssertionIDRequestService", default)]
+    #[yaserde(rename = "AssertionIDRequestService", prefix = "md", default)]
     pub assertion_id_request_services: Vec<Endpoint>,
-    #[serde(rename = "AttributeProfile", default)]
+    #[yaserde(rename = "AttributeProfile", prefix = "md", default)]
     pub attribute_profiles: Vec<String>,
-    #[serde(rename = "Attribute", default)]
+    #[yaserde(rename = "Attribute", prefix = "saml", default)]
     pub attributes: Vec<Attribute>,
 }
 
-const NAME: &str = "md:IDPSSODescriptor";
-
-impl ToXml for IdpSsoDescriptor {
-    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
-        let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
-
-        if let Some(id) = &self.id {
-            root.push_attribute(("ID", id.as_ref()));
-        }
-
-        if let Some(valid_until) = &self.valid_until {
-            root.push_attribute((
-                "validUntil",
-                valid_until
-                    .to_rfc3339_opts(SecondsFormat::Secs, true)
-                    .as_ref(),
-            ));
-        }
-
-        if let Some(cache_duration) = &self.cache_duration {
-            root.push_attribute(("cacheDuration", cache_duration.to_string().as_ref()));
-        }
-
-        if let Some(protocol_support_enumeration) = &self.protocol_support_enumeration {
-            root.push_attribute((
-                "protocolSupportEnumeration",
-                protocol_support_enumeration.as_ref(),
-            ));
-        }
-
-        if let Some(error_url) = &self.error_url {
-            root.push_attribute(("errorURL", error_url.as_ref()));
-        }
-
-        writer.write_event(Event::Start(root))?;
-        self.key_descriptors.to_xml(writer)?;
-        self.organization.to_xml(writer)?;
-        self.contact_people.to_xml(writer)?;
-        for service in &self.artifact_resolution_service {
-            service.to_xml(writer, "md:ArtifactResolutionService")?;
-        }
-        for service in &self.single_logout_services {
-            service.to_xml(writer, "md:SingleLogoutService")?;
-        }
-        for service in &self.single_sign_on_services {
-            service.to_xml(writer, "md:SingleSignOnService")?;
-        }
-        for service in &self.manage_name_id_services {
-            service.to_xml(writer, "md:ManageNameIDService")?;
-        }
-        for format in &self.name_id_formats {
-            write_plain_element(writer, "md:NameIDFormat", format.as_ref())?;
-        }
-        writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(())
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, YaDeserialize, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize)]
+#[yaserde(
+    namespace = "ds: http://www.w3.org/2000/09/xmldsig#",
+    namespace = "md: urn:oasis:names:tc:SAML:2.0:metadata"
+)]
 pub struct AuthnAuthorityDescriptors {
-    #[serde(rename = "ID")]
+    #[yaserde(attribute, rename = "ID")]
     pub id: Option<String>,
-    #[serde(rename = "validUntil")]
-    pub valid_until: Option<chrono::DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
-    pub cache_duration: Option<usize>,
-    #[serde(rename = "protocolSupportEnumeration")]
-    pub protocol_support_enumeration: Option<String>,
-    #[serde(rename = "errorURL")]
+    #[yaserde(attribute, rename = "validUntil")]
+    pub valid_until: Option<UtcDateTime>,
+    #[yaserde(attribute, rename = "cacheDuration")]
+    pub cache_duration: Option<String>,
+    #[yaserde(attribute, rename = "protocolSupportEnumeration")]
+    pub protocol_support_enumeration: String,
+    #[yaserde(attribute, rename = "errorURL")]
     pub error_url: Option<String>,
-    #[serde(rename = "Signature")]
+    #[yaserde(rename = "Signature", prefix = "ds")]
     pub signature: Option<Signature>,
-    #[serde(rename = "KeyDescriptor", default)]
+    #[yaserde(rename = "KeyDescriptor", prefix = "md", default)]
     pub key_descriptors: Vec<KeyDescriptor>,
-    #[serde(rename = "Organization")]
+    #[yaserde(rename = "Organization", prefix = "md")]
     pub organization: Option<Organization>,
-    #[serde(rename = "ContactPerson", default)]
+    #[yaserde(rename = "ContactPerson", prefix = "md", default)]
     pub contact_people: Vec<ContactPerson>,
-    // ^- RoleDescriptor
-    #[serde(rename = "AuthnQueryService", default)]
+    #[yaserde(rename = "AuthnQueryService", prefix = "md")]
     pub authn_query_services: Vec<Endpoint>,
-    #[serde(rename = "AssertionIDRequestService", default)]
+    #[yaserde(rename = "AssertionIDRequestService", prefix = "md", default)]
     pub assertion_id_request_services: Vec<Endpoint>,
-    #[serde(rename = "NameIDFormat", default)]
+    #[yaserde(rename = "NameIDFormat", prefix = "md", default)]
     pub name_id_formats: Vec<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, YaDeserialize, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize)]
+#[yaserde(
+    namespace = "ds: http://www.w3.org/2000/09/xmldsig#",
+    namespace = "md: urn:oasis:names:tc:SAML:2.0:metadata",
+    namespace = "saml: urn:oasis:names:tc:SAML:2.0:assertion"
+)]
 pub struct AttributeAuthorityDescriptors {
-    #[serde(rename = "ID")]
+    #[yaserde(attribute, rename = "ID")]
     pub id: Option<String>,
-    #[serde(rename = "validUntil")]
-    pub valid_until: Option<chrono::DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
-    pub cache_duration: Option<usize>,
-    #[serde(rename = "protocolSupportEnumeration")]
-    pub protocol_support_enumeration: Option<String>,
-    #[serde(rename = "errorURL")]
+    #[yaserde(attribute, rename = "validUntil")]
+    pub valid_until: Option<UtcDateTime>,
+    #[yaserde(attribute, rename = "cacheDuration")]
+    pub cache_duration: Option<String>,
+    #[yaserde(attribute, rename = "protocolSupportEnumeration")]
+    pub protocol_support_enumeration: String,
+    #[yaserde(attribute, rename = "errorURL")]
     pub error_url: Option<String>,
-    #[serde(rename = "Signature")]
+    #[yaserde(rename = "Signature", prefix = "ds")]
     pub signature: Option<Signature>,
-    #[serde(rename = "KeyDescriptor", default)]
+    #[yaserde(rename = "KeyDescriptor", prefix = "md", default)]
     pub key_descriptors: Vec<KeyDescriptor>,
-    #[serde(rename = "Organization")]
+    #[yaserde(rename = "Organization", prefix = "md")]
     pub organization: Option<Organization>,
-    #[serde(rename = "ContactPerson", default)]
+    #[yaserde(rename = "ContactPerson", prefix = "md", default)]
     pub contact_people: Vec<ContactPerson>,
-    // ^- RoleDescriptor
-    #[serde(rename = "AttributeService", default)]
+    #[yaserde(rename = "AttributeService", prefix = "md")]
     pub attribute_services: Vec<Endpoint>,
-    #[serde(rename = "AssertionIDRequestService", default)]
+    #[yaserde(rename = "AssertionIDRequestService", prefix = "md", default)]
     pub assertion_id_request_services: Vec<Endpoint>,
-    #[serde(rename = "NameIDFormat", default)]
+    #[yaserde(rename = "NameIDFormat", prefix = "md", default)]
     pub name_id_formats: Vec<String>,
-    #[serde(rename = "AttributeProfile", default)]
+    #[yaserde(rename = "AttributeProfile", prefix = "md", default)]
     pub attribute_profiles: Vec<String>,
-    #[serde(rename = "Attribute", default)]
+    #[yaserde(rename = "Attribute", prefix = "saml", default)]
     pub attributes: Vec<Attribute>,
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub struct PdpDescriptors {
-    #[serde(rename = "ID")]
+#[derive(Clone, Debug, YaDeserialize, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize)]
+#[yaserde(
+    namespace = "ds: http://www.w3.org/2000/09/xmldsig#",
+    namespace = "md: urn:oasis:names:tc:SAML:2.0:metadata"
+)]
+pub struct PdpDescriptor {
+    #[yaserde(attribute, rename = "ID")]
     pub id: Option<String>,
-    #[serde(rename = "validUntil")]
-    pub valid_until: Option<chrono::DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
-    pub cache_duration: Option<usize>,
-    #[serde(rename = "protocolSupportEnumeration")]
-    pub protocol_support_enumeration: Option<String>,
-    #[serde(rename = "errorURL")]
+    #[yaserde(attribute, rename = "validUntil")]
+    pub valid_until: Option<UtcDateTime>,
+    #[yaserde(attribute, rename = "cacheDuration")]
+    pub cache_duration: Option<String>,
+    #[yaserde(attribute, rename = "protocolSupportEnumeration")]
+    pub protocol_support_enumeration: String,
+    #[yaserde(attribute, rename = "errorURL")]
     pub error_url: Option<String>,
-    #[serde(rename = "Signature")]
+    #[yaserde(rename = "Signature", prefix = "ds")]
     pub signature: Option<Signature>,
-    #[serde(rename = "KeyDescriptor", default)]
+    #[yaserde(rename = "KeyDescriptor", prefix = "md", default)]
     pub key_descriptors: Vec<KeyDescriptor>,
-    #[serde(rename = "Organization")]
+    #[yaserde(rename = "Organization", prefix = "md")]
     pub organization: Option<Organization>,
-    #[serde(rename = "ContactPerson", default)]
+    #[yaserde(rename = "ContactPerson", prefix = "md", default)]
     pub contact_people: Vec<ContactPerson>,
-    // ^- RoleDescriptor
-    #[serde(rename = "AuthzService", default)]
+    #[yaserde(rename = "AuthzService", prefix = "md")]
     pub authz_services: Vec<Endpoint>,
-    #[serde(rename = "AssertionIDRequestService", default)]
+    #[yaserde(rename = "AssertionIDRequestService", prefix = "md", default)]
     pub assertion_id_request_services: Vec<Endpoint>,
-    #[serde(rename = "NameIDFormat", default)]
+    #[yaserde(rename = "NameIDFormat", prefix = "md", default)]
     pub name_id_formats: Vec<String>,
+}
+
+#[derive(Debug, Clone, YaDeserialize, YaSerialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+pub struct LocalizedName {
+    #[yaserde(attribute, prefix = "xml")]
+    lang: Option<String>,
+    #[yaserde(text)]
+    value: String,
+}
+
+#[derive(Debug, Clone, YaDeserialize, YaSerialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+pub struct LocalizedUri {
+    #[yaserde(attribute, prefix = "xml")]
+    lang: Option<String>,
+    #[yaserde(text)]
+    value: String,
 }

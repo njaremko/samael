@@ -1,107 +1,59 @@
-use crate::schema::{Assertion, Issuer, Status};
+use crate::schema::{Assertion, EncryptedAssertion, Issuer, Status};
 use crate::signature::Signature;
-use crate::ToXml;
-use chrono::prelude::*;
-use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, Event};
-use quick_xml::Writer;
-use serde::Deserialize;
+use crate::utils::UtcDateTime;
 use snafu::Snafu;
-use std::io::Write;
 use std::str::FromStr;
+use yaserde_derive::{YaDeserialize, YaSerialize};
 
-const NAME: &str = "saml2p:Response";
-const SCHEMA: (&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
-
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, YaDeserialize, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize)]
+#[yaserde(
+    root
+    prefix = "samlp",
+    namespace = "ds: http://www.w3.org/2000/09/xmldsig#",
+    namespace = "saml: urn:oasis:names:tc:SAML:2.0:assertion",
+    namespace = "samlp: urn:oasis:names:tc:SAML:2.0:protocol",
+)]
 pub struct Response {
-    #[serde(rename = "ID")]
+    #[yaserde(attribute, rename = "ID")]
     pub id: String,
-    #[serde(rename = "InResponseTo")]
+    #[yaserde(attribute, rename = "InResponseTo")]
     pub in_response_to: Option<String>,
-    #[serde(rename = "Version")]
+    #[yaserde(attribute, rename = "Version")]
     pub version: String,
-    #[serde(rename = "IssueInstant")]
-    pub issue_instant: DateTime<Utc>,
-    #[serde(rename = "Destination")]
+    #[yaserde(attribute, rename = "IssueInstant")]
+    pub issue_instant: UtcDateTime,
+    #[yaserde(attribute, rename = "Destination")]
     pub destination: Option<String>,
-    #[serde(rename = "Consent")]
+    #[yaserde(attribute, rename = "Consent")]
     pub consent: Option<String>,
-    #[serde(rename = "Issuer")]
+    #[yaserde(rename = "Issuer", prefix = "saml")]
     pub issuer: Option<Issuer>,
-    #[serde(rename = "Signature")]
+    #[yaserde(rename = "Signature", prefix = "ds")]
     pub signature: Option<Signature>,
-    #[serde(rename = "Status")]
+    #[yaserde(rename = "Status", prefix = "samlp")]
     pub status: Status,
-    #[serde(rename = "EncryptedAssertion")]
-    pub encrypted_assertion: Option<String>,
-    #[serde(rename = "Assertion")]
+    #[yaserde(rename = "Assertion", prefix = "saml")]
     pub assertion: Option<Assertion>,
+    #[yaserde(rename = "EncryptedAssertion", prefix = "saml")]
+    pub encrypted_assertion: Option<EncryptedAssertion>,
 }
 
 #[derive(Debug, Snafu)]
 pub enum Error {
-    #[snafu(display("Failed to deserialize SAMLResponse: {:?}", source))]
-    #[snafu(context(false))]
-    ParseError { source: quick_xml::DeError },
+    #[snafu(display("Failed to deserialize SAMLResponse: {message:?}"))]
+    ParseError { message: String },
 }
 
 impl FromStr for Response {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(quick_xml::de::from_str(s)?)
-    }
-}
-
-impl ToXml for Response {
-    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
-        writer.write_event(Event::Decl(BytesDecl::new(
-            "1.0".as_bytes(),
-            Some("UTF-8".as_bytes()),
-            None,
-        )))?;
-
-        let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
-        root.push_attribute(SCHEMA);
-        root.push_attribute(("ID", self.id.as_ref()));
-        if let Some(resp_to) = &self.in_response_to {
-            root.push_attribute(("InResponseTo", resp_to.as_ref()));
-        }
-        root.push_attribute(("Version", self.version.as_ref()));
-        root.push_attribute((
-            "IssueInstant",
-            self.issue_instant
-                .to_rfc3339_opts(SecondsFormat::Millis, true)
-                .as_ref(),
-        ));
-        if let Some(destination) = &self.destination {
-            root.push_attribute(("Destination", destination.as_ref()));
-        }
-        if let Some(consent) = &self.consent {
-            root.push_attribute(("Consent", consent.as_ref()));
-        }
-
-        writer.write_event(Event::Start(root))?;
-
-        self.issuer.to_xml(writer)?;
-        self.signature.to_xml(writer)?;
-        self.status.to_xml(writer)?;
-        self.assertion.to_xml(writer)?;
-
-        // TODO: encrypted assertion
-        // if let Some(assertion) = &self.encrypted_assertion {
-        //     writer.write(assertion.to_xml()?.as_bytes())?;
-        // }
-
-        writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(())
+        yaserde::de::from_str(s).map_err(|message| Error::ParseError { message })
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::ToXml;
-
     use super::Response;
 
     #[test]
@@ -112,9 +64,8 @@ mod test {
         ));
         let expected_response: Response =
             response_xml.parse().expect("failed to parse response.xml");
-        let serialized_response = expected_response
-            .as_xml()
-            .expect("failed to convert response to xml");
+        let serialized_response =
+            yaserde::ser::to_string(&expected_response).expect("failed to convert response to xml");
         let actual_response: Response = serialized_response
             .parse()
             .expect("failed to re-parse response");
@@ -131,9 +82,8 @@ mod test {
         let expected_response: Response = response_xml
             .parse()
             .expect("failed to parse response_signed_assertion.xml");
-        let serialized_response = expected_response
-            .as_xml()
-            .expect("failed to convert response to xml");
+        let serialized_response =
+            yaserde::ser::to_string(&expected_response).expect("failed to convert response to xml");
         let actual_response: Response = serialized_response
             .parse()
             .expect("failed to re-parse response");
@@ -150,9 +100,9 @@ mod test {
         let expected_response: Response = response_xml
             .parse()
             .expect("failed to parse response_signed.xml");
-        let serialized_response = expected_response
-            .as_xml()
-            .expect("failed to convert response to xml");
+        let serialized_response =
+            yaserde::ser::to_string(&expected_response).expect("failed to convert response to xml");
+        std::fs::write("/tmp/foo.xml", &serialized_response).unwrap();
         let actual_response: Response = serialized_response
             .parse()
             .expect("failed to re-parse response");

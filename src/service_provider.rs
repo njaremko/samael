@@ -1,10 +1,11 @@
+use crate::crypto;
 use crate::metadata::{Endpoint, IndexedEndpoint, KeyDescriptor, NameIdFormat, SpSsoDescriptor};
-use crate::schema::{Assertion, Response};
-use crate::{crypto, ToXml};
+use crate::schema::{Assertion, NameIdPolicy, Response};
+use crate::utils::UtcDateTime;
 use crate::{
     key_info::{KeyInfo, X509Data},
     metadata::{ContactPerson, EncryptionMethod, EntityDescriptor, HTTP_POST_BINDING},
-    schema::{AuthnRequest, Issuer, NameIdPolicy},
+    schema::{AuthnRequest, Issuer},
 };
 use chrono::prelude::*;
 use chrono::Duration;
@@ -40,13 +41,13 @@ pub enum Error {
         time: String,
     },
     #[snafu(display(
-        "SAML Assertion Issuer does not match IDP entity ID: {:?} != {:?}",
+        "SAML Assertion Issuer does not match IDP entity ID: {:?} != {}",
         issuer,
         entity_id
     ))]
     AssertionIssuerMismatch {
         issuer: Option<String>,
-        entity_id: Option<String>,
+        entity_id: String,
     },
     #[snafu(display("SAML Assertion Condition expired at: {}", time))]
     AssertionConditionExpired {
@@ -71,13 +72,13 @@ pub enum Error {
         possible_ids: Vec<String>,
     },
     #[snafu(display(
-        "SAML Response Issuer does not match IDP entity ID: {:?} != {:?}",
+        "SAML Response Issuer does not match IDP entity ID: {:?} != {}",
         issuer,
         entity_id
     ))]
     ResponseIssuerMismatch {
         issuer: Option<String>,
-        entity_id: Option<String>,
+        entity_id: String,
     },
     #[snafu(display("SAML Response expired at: {}", time))]
     ResponseExpired {
@@ -110,7 +111,7 @@ pub enum Error {
 #[derive(Builder, Clone)]
 #[builder(default, setter(into))]
 pub struct ServiceProvider {
-    pub entity_id: Option<String>,
+    pub entity_id: String,
     pub key: Option<rsa::Rsa<Private>>,
     pub certificate: Option<x509::X509>,
     pub intermediates: Option<Vec<x509::X509>>,
@@ -130,7 +131,7 @@ pub struct ServiceProvider {
 impl Default for ServiceProvider {
     fn default() -> Self {
         ServiceProvider {
-            entity_id: None,
+            entity_id: String::from("<unset>"),
             key: None,
             certificate: None,
             intermediates: None,
@@ -157,13 +158,7 @@ impl ServiceProvider {
             Some(chrono::Duration::hours(48))
         };
 
-        let valid_until = valid_duration.map(|d| Utc::now() + d);
-
-        let entity_id = if let Some(entity_id) = self.entity_id.clone() {
-            Some(entity_id)
-        } else {
-            self.metadata_url.clone()
-        };
+        let valid_until = valid_duration.map(|d| UtcDateTime(Utc::now() + d));
 
         let mut key_descriptors = vec![];
         if let Some(cert) = &self.certificate {
@@ -174,7 +169,7 @@ impl ServiceProvider {
                 }
             }
             key_descriptors.push(KeyDescriptor {
-                encryption_methods: None,
+                encryption_methods: vec![],
                 key_use: Some("signing".to_string()),
                 key_info: KeyInfo {
                     id: None,
@@ -191,7 +186,7 @@ impl ServiceProvider {
                         certificates: vec![base64::encode(&cert_bytes)],
                     }),
                 },
-                encryption_methods: Some(vec![
+                encryption_methods: vec![
                     EncryptionMethod {
                         algorithm: "http://www.w3.org/2001/04/xmlenc#aes128-cbc".to_string(),
                     },
@@ -204,19 +199,19 @@ impl ServiceProvider {
                     EncryptionMethod {
                         algorithm: "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p".to_string(),
                     },
-                ]),
+                ],
             })
         }
 
         let sso_sp_descriptor = SpSsoDescriptor {
-            protocol_support_enumeration: Some("urn:oasis:names:tc:SAML:2.0:protocol".to_string()),
-            key_descriptors: Some(key_descriptors),
-            valid_until,
-            single_logout_services: Some(vec![Endpoint {
+            protocol_support_enumeration: "urn:oasis:names:tc:SAML:2.0:protocol".to_string(),
+            key_descriptors,
+            valid_until: valid_until.clone(),
+            single_logout_services: vec![Endpoint {
                 binding: HTTP_POST_BINDING.to_string(),
                 location: self.slo_url.clone().ok_or(Error::MissingSloUrl)?,
                 response_location: self.slo_url.clone(),
-            }]),
+            }],
             authn_requests_signed: Some(false),
             want_assertions_signed: Some(true),
             assertion_consumer_services: vec![IndexedEndpoint {
@@ -229,10 +224,10 @@ impl ServiceProvider {
         };
 
         Ok(EntityDescriptor {
-            entity_id,
+            entity_id: self.entity_id.clone(),
             valid_until,
-            sp_sso_descriptors: Some(vec![sso_sp_descriptor]),
-            contact_person: self.contact_person.clone().map(|person| vec![person]),
+            sp_sso_descriptors: vec![sso_sp_descriptor],
+            contact_person: self.contact_person.clone().into_iter().collect(),
             ..EntityDescriptor::default()
         })
     }
@@ -253,12 +248,10 @@ impl ServiceProvider {
     }
 
     pub fn sso_binding_location(&self, binding: &str) -> Option<String> {
-        if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
-            for idp_sso_descriptor in idp_sso_descriptors {
-                for sso_service in &idp_sso_descriptor.single_sign_on_services {
-                    if sso_service.binding == binding {
-                        return Some(sso_service.location.clone());
-                    }
+        for idp_sso_descriptor in &self.idp_metadata.idp_sso_descriptors {
+            for sso_service in &idp_sso_descriptor.single_sign_on_services {
+                if sso_service.binding == binding {
+                    return Some(sso_service.location.clone());
                 }
             }
         }
@@ -266,12 +259,10 @@ impl ServiceProvider {
     }
 
     pub fn slo_binding_location(&self, binding: &str) -> Option<String> {
-        if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
-            for idp_sso_descriptor in idp_sso_descriptors {
-                for single_logout_services in &idp_sso_descriptor.single_logout_services {
-                    if single_logout_services.binding == binding {
-                        return Some(single_logout_services.location.clone());
-                    }
+        for idp_sso_descriptor in &self.idp_metadata.idp_sso_descriptors {
+            for single_logout_services in &idp_sso_descriptor.single_logout_services {
+                if single_logout_services.binding == binding {
+                    return Some(single_logout_services.location.clone());
                 }
             }
         }
@@ -280,22 +271,20 @@ impl ServiceProvider {
 
     pub fn idp_signing_certs(&self) -> Result<Option<Vec<openssl::x509::X509>>, Error> {
         let mut result = vec![];
-        if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
-            for idp_sso_descriptor in idp_sso_descriptors {
-                for key_descriptor in &idp_sso_descriptor.key_descriptors {
-                    if key_descriptor
-                        .key_use
-                        .as_ref()
-                        .filter(|key_use| *key_use == "signing")
-                        .is_some()
-                    {
-                        result.append(&mut parse_certificates(key_descriptor)?);
-                    }
+        for idp_sso_descriptor in &self.idp_metadata.idp_sso_descriptors {
+            for key_descriptor in &idp_sso_descriptor.key_descriptors {
+                if key_descriptor
+                    .key_use
+                    .as_ref()
+                    .filter(|key_use| *key_use == "signing")
+                    .is_some()
+                {
+                    result.append(&mut parse_certificates(key_descriptor)?);
                 }
             }
             // No signing keys found, look for keys with no use specified
             if result.is_empty() {
-                for idp_sso_descriptor in idp_sso_descriptors {
+                for idp_sso_descriptor in &self.idp_metadata.idp_sso_descriptors {
                     for key_descriptor in &idp_sso_descriptor.key_descriptors {
                         if key_descriptor.key_use == None
                             || key_descriptor.key_use == Some("".to_string())
@@ -357,26 +346,25 @@ impl ServiceProvider {
                     .collect(),
             });
         }
-        if response.issue_instant + self.max_issue_delay < Utc::now() {
+        if response.issue_instant.0 + self.max_issue_delay < Utc::now() {
             return Err(Error::ResponseExpired {
-                time: (response.issue_instant + self.max_issue_delay)
+                time: (response.issue_instant.0 + self.max_issue_delay)
                     .to_rfc3339_opts(SecondsFormat::Secs, true),
             });
         }
         if let Some(issuer) = &response.issuer {
-            if issuer.value != self.idp_metadata.entity_id {
+            if issuer.value.as_deref() != Some(&self.idp_metadata.entity_id) {
                 return Err(Error::ResponseIssuerMismatch {
                     issuer: issuer.value.clone(),
                     entity_id: self.idp_metadata.entity_id.clone(),
                 });
             }
         }
-        if let Some(status) = &response.status.status_code.value {
-            if status != "urn:oasis:names:tc:SAML:2.0:status:Success" {
-                return Err(Error::ResponseBadStatusCode {
-                    code: status.clone(),
-                });
-            }
+        let status = &response.status.status_code.value;
+        if status != "urn:oasis:names:tc:SAML:2.0:status:Success" {
+            return Err(Error::ResponseBadStatusCode {
+                code: status.clone(),
+            });
         }
 
         if let Some(_encrypted_assertion) = &response.encrypted_assertion {
@@ -394,50 +382,45 @@ impl ServiceProvider {
         assertion: &Assertion,
         _possible_request_ids: &[AsStr],
     ) -> Result<(), Error> {
-        if assertion.issue_instant + self.max_issue_delay < Utc::now() {
+        if assertion.issue_instant.0 + self.max_issue_delay < Utc::now() {
             return Err(Error::AssertionExpired {
-                time: (assertion.issue_instant + self.max_issue_delay)
+                time: (assertion.issue_instant.0 + self.max_issue_delay)
                     .to_rfc3339_opts(SecondsFormat::Secs, true),
             });
         }
-        if assertion.issuer.value != self.idp_metadata.entity_id {
+        if assertion.issuer.value.as_deref() != Some(&self.idp_metadata.entity_id) {
             return Err(Error::AssertionIssuerMismatch {
                 issuer: assertion.issuer.value.clone(),
                 entity_id: self.idp_metadata.entity_id.clone(),
             });
         }
         if let Some(conditions) = &assertion.conditions {
-            if let Some(not_before) = conditions.not_before {
-                if Utc::now() < not_before - self.max_clock_skew {
+            if let Some(not_before) = &conditions.not_before {
+                if Utc::now() < not_before.0 - self.max_clock_skew {
                     return Err(Error::AssertionConditionExpiredBefore {
-                        time: (not_before - self.max_clock_skew)
+                        time: (not_before.0 - self.max_clock_skew)
                             .to_rfc3339_opts(SecondsFormat::Secs, true),
                     });
                 }
             }
-            if let Some(not_on_or_after) = conditions.not_on_or_after {
-                if not_on_or_after + self.max_clock_skew < Utc::now() {
+            if let Some(not_on_or_after) = &conditions.not_on_or_after {
+                if not_on_or_after.0 + self.max_clock_skew < Utc::now() {
                     return Err(Error::AssertionConditionExpired {
-                        time: (not_on_or_after + self.max_clock_skew)
+                        time: (not_on_or_after.0 + self.max_clock_skew)
                             .to_rfc3339_opts(SecondsFormat::Secs, true),
                     });
                 }
             }
-            if let Some(audience_restrictions) = &conditions.audience_restrictions {
-                let mut valid = false;
-                if let Some(audience) = self.entity_id.clone().or_else(|| self.metadata_url.clone())
-                {
-                    for restriction in audience_restrictions {
-                        if restriction.audience.iter().any(|a| a == &audience) {
-                            valid = true;
-                        }
-                    }
-                    if !valid {
-                        return Err(Error::AssertionConditionAudienceRestrictionFailed {
-                            requirement: audience,
-                        });
-                    }
+            let mut valid = false;
+            for restriction in &conditions.audience_restrictions {
+                if restriction.audience.iter().any(|a| a == &self.entity_id) {
+                    valid = true;
                 }
+            }
+            if !valid {
+                return Err(Error::AssertionConditionAudienceRestrictionFailed {
+                    requirement: self.entity_id.clone(),
+                });
             }
         }
 
@@ -460,22 +443,16 @@ impl ServiceProvider {
         &self,
         idp_url: &str,
     ) -> Result<AuthnRequest, Box<dyn std::error::Error>> {
-        let entity_id = if let Some(entity_id) = self.entity_id.clone() {
-            Some(entity_id)
-        } else {
-            self.metadata_url.clone()
-        };
-
         Ok(AuthnRequest {
             assertion_consumer_service_url: self.acs_url.clone(),
             destination: Some(idp_url.to_string()),
             protocol_binding: Some(HTTP_POST_BINDING.to_string()),
             id: format!("id-{}", rand::random::<u32>()),
-            issue_instant: Utc::now(),
+            issue_instant: UtcDateTime(Utc::now()),
             version: "2.0".to_string(),
             issuer: Some(Issuer {
                 format: Some("urn:oasis:names:tc:SAML:2.0:nameid-format:entity".to_string()),
-                value: entity_id,
+                value: Some(self.entity_id.clone()),
                 ..Issuer::default()
             }),
             name_id_policy: Some(NameIdPolicy {

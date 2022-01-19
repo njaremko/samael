@@ -1,0 +1,1516 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<md:EntitiesDescriptor xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:eidas="http://eidas.europa.eu/saml-extensions" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:mdattr="urn:oasis:names:tc:SAML:metadata:attribute" xmlns:mdrpi="urn:oasis:names:tc:SAML:metadata:rpi" xmlns:mdui="urn:oasis:names:tc:SAML:metadata:ui" xmlns:pyff="http://pyff.io/NS" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:ser="http://eidas.europa.eu/metadata/servicelist" xmlns:shibmd="urn:mace:shibboleth:metadata:1.0" xmlns:xrd="http://docs.oasis-open.org/ns/xri/xrd-1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Name="https://metadata.federation.renater.fr/imt-f979s" ID="_20220126T123019Z" validUntil="2022-02-04T12:30:19Z" cacheDuration="PT2H"><ds:Signature><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI="#_20220126T123019Z"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#WithComments"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>eurjMNtJ6DtOCSiclnWkntZsQPYae7a3eyO9RjLy77U=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>M9iAza85WAycEWXfEVzQ+V7/zi3EwmclF4XLb2TiLrFwSRAlumXiKW2DOKW8VRjpRLoiVIF1Y883sFW6NiJK/tRl2yJwgnu8OLiiKrnJu3Fyrka/9eyHnz0kVSvF16v2O6hMu9a0Po0qE0PokO9V1uUdhVVdrNliLPmvw+HKCv0H6WheXFS14fFXSnso4jiVHb08ysFQ2YSzBH8Y1lKTaq3hgVeCX8vJhXmaLrUgPK+nrXO1wZhCBAziON/oBiXmvibGMbIbsAhhZKy02LLLBifRnZTOhnTgFJVuk1somDuZkBusjKdNQAmiQGcRaBa9g8bqWXYKXiK5fGygBmdO1w==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIC9zCCAd+gAwIBAgIEfe6j3jANBgkqhkiG9w0BAQsFADAsMSowKAYDVQQDEyFT
+QU1MIE1ldGFkYXRhIFNpZ25pbmcgQ2VydGlmaWNhdGUwHhcNMTYwNzI5MDczNjM4
+WhcNMjYwNjA3MDczNjM4WjAsMSowKAYDVQQDEyFTQU1MIE1ldGFkYXRhIFNpZ25p
+bmcgQ2VydGlmaWNhdGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDv
+X69N/roE+BhQXuybhP75br2oxXIZCf3A2qkEtzqynnd6r8lFM5QPbph6GOyV3mo3
+nYG/avlAbujhVTXbdqRdRjO6m+rV/62YX03Bhrsw8Q8XMLMkeE1eNk1HFyxbVYtb
+fh+FAKbShqTehI+g2jmp4aKM2xNKSBK3WY8fQ/x33lp/ZUmdPrNutyXG8fh6aqlP
+2gYuxaopYuUhtnu7U9SO41XAse6P3T39qmYLXdEEilXnZ97Lip7LfhudEd0JOSdl
+439MktMn2ExbPP1Nt2N8gVqIXsx5j45hFfNQl5C4ccy7/Yh6aShHbqZiLqKu+bHw
+B09w8LBxErDYJrjEuFs3AgMBAAGjITAfMB0GA1UdDgQWBBTT88iZzWO+hN9SBUkp
+x871lmTuLTANBgkqhkiG9w0BAQsFAAOCAQEABoPpODryXwiM5jjtqk6veR02FevC
+KHpZP6Od7Kqcfs6lg5LcQmGUOgpmW3Gg4UMjBYkgARsT2Nsnah1CJqa8cjvv8p5K
+EIhY0hVS8iMJnrb3PDeiFSeP4xSfct/6z/ebV4+QFl22bsm2zpAC6BpFz8+IJ/jA
+mQzTVob4MAUeQPnwwzm3xz6yanLZx7BK5cfrTCa+hrarNQCboRjXPwiejF8WRCxp
+gRHH6yNs5QH/Z6o5e3tUP7uEpn2Ob+kcLsEMGb9DghkoDAgkHCOZeTy+7hgxt+/T
+94cLTa58gVtvEOnd0GuL7Vfd+IVdXgSard8RfR3OyZlf6M4aSGQA73sskQ==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature><md:EntityDescriptor entityID="https://www-public.tem-tsp.eu/shibboleth">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2010-06-24T16:24:53Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+      <mdattr:EntityAttributes>
+        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+          <saml:AttributeValue>https://federation.renater.fr/category/web</saml:AttributeValue>
+          <saml:AttributeValue>https://federation.renater.fr/scope/national</saml:AttributeValue>
+        </saml:Attribute>
+      </mdattr:EntityAttributes>
+    </md:Extensions>
+    <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.0:protocol urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">Telecom et Management SudParis Webspace</mdui:DisplayName>
+          <mdui:InformationURL xml:lang="fr">http://www-public.it-sudparis.eu/</mdui:InformationURL>
+          <mdui:DisplayName xml:lang="fr">Telecom et Management SudParis Webspace</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">Pages web publiques des utilisateurs Institut Telecom SudParis.
+certaines pages plus ou moins confidentielles peuvent  être soumises à un contrôle d'accès sur la base d'appartenance à la fédération RENATER via les attributs eduPersonScopedAffiliation et unscoped-affiliation, edupersonEntitlement et Mail, les attributs sn et diplayName étant optionnels pour améliorer l'affichage.</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIDBjCCAe6gAwIBAgIJAIvWQdQJ7/rkMA0GCSqGSIb3DQEBBQUAMCAxHjAcBgNV
+BAMTFXd3dy1wdWJsaWMudGVtLXRzcC5ldTAeFw0xNDA5MjIwOTEyMzJaFw0yNDA5
+MTkwOTEyMzJaMCAxHjAcBgNVBAMTFXd3dy1wdWJsaWMudGVtLXRzcC5ldTCCASIw
+DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAK5rxjXQGJjuJ5XY9mxtKks37GMw
+fKucHTQNJvY2iAWdjHVdrO/sqM9x60dqSL0ujPzdFdkzvRDgmNhEQN6Pb2DNZs6q
+tmkov+lvfD2n14tInlujYZI861ZsIa68XgQRYhmXq1fEhohA/risFyUJLIeatpc/
+habnjyoL1K/AyZajBhMGshHbeu/yJgyO2WdLo9e82jXRC9KHne+BrFYg91vnq6Fk
+1+7XNiw92i8buwr2g5o/lRi1dDmwe9yMo+3vE04IX5u+6kpAV3o00Hqc4k9zuOGG
+GW7MyH6oNZ9VjeVI+8UobNnUNAZEhawpvvPTlTx4U8zh2j2Mrfqr3IFCh90CAwEA
+AaNDMEEwIAYDVR0RBBkwF4IVd3d3LXB1YmxpYy50ZW0tdHNwLmV1MB0GA1UdDgQW
+BBR9SvYQkdTOipcrrwN8Y46XHzu3ljANBgkqhkiG9w0BAQUFAAOCAQEARH4fXW8g
+lZP3AIeyBcAaap0jyPEcHMTP4PcFpMgUO3+PYuVakiTkAgiCOOacGcrHIeM4RKAR
+2smRcBkbi8O/PM++63iwlRjSYn1S9WQ4nWw80qUz1EfdLhb3c4in44qHvMGE5CVJ
+yGfEyach1VwjRPFJFRkACq39vHAOGWpKQgUyWPpcQF1sa5vDH/A976EC4cIGN6+T
+nYAVtjnJoch/qM98dp9KnB6mwAixkg+zlEe6nQsQADI7JBmiKH8Kn5RyKDUl+hBI
+6z+Qj8upsN1Tsbn7/krUQkZc9Enup/N61Lccd54oSyb3tzSgajR3aNlf4VFwNGs2
+FFdyyxd5hxHvwA==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:KeyDescriptor use="encryption">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIDBjCCAe6gAwIBAgIJAIvWQdQJ7/rkMA0GCSqGSIb3DQEBBQUAMCAxHjAcBgNV
+BAMTFXd3dy1wdWJsaWMudGVtLXRzcC5ldTAeFw0xNDA5MjIwOTEyMzJaFw0yNDA5
+MTkwOTEyMzJaMCAxHjAcBgNVBAMTFXd3dy1wdWJsaWMudGVtLXRzcC5ldTCCASIw
+DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAK5rxjXQGJjuJ5XY9mxtKks37GMw
+fKucHTQNJvY2iAWdjHVdrO/sqM9x60dqSL0ujPzdFdkzvRDgmNhEQN6Pb2DNZs6q
+tmkov+lvfD2n14tInlujYZI861ZsIa68XgQRYhmXq1fEhohA/risFyUJLIeatpc/
+habnjyoL1K/AyZajBhMGshHbeu/yJgyO2WdLo9e82jXRC9KHne+BrFYg91vnq6Fk
+1+7XNiw92i8buwr2g5o/lRi1dDmwe9yMo+3vE04IX5u+6kpAV3o00Hqc4k9zuOGG
+GW7MyH6oNZ9VjeVI+8UobNnUNAZEhawpvvPTlTx4U8zh2j2Mrfqr3IFCh90CAwEA
+AaNDMEEwIAYDVR0RBBkwF4IVd3d3LXB1YmxpYy50ZW0tdHNwLmV1MB0GA1UdDgQW
+BBR9SvYQkdTOipcrrwN8Y46XHzu3ljANBgkqhkiG9w0BAQUFAAOCAQEARH4fXW8g
+lZP3AIeyBcAaap0jyPEcHMTP4PcFpMgUO3+PYuVakiTkAgiCOOacGcrHIeM4RKAR
+2smRcBkbi8O/PM++63iwlRjSYn1S9WQ4nWw80qUz1EfdLhb3c4in44qHvMGE5CVJ
+yGfEyach1VwjRPFJFRkACq39vHAOGWpKQgUyWPpcQF1sa5vDH/A976EC4cIGN6+T
+nYAVtjnJoch/qM98dp9KnB6mwAixkg+zlEe6nQsQADI7JBmiKH8Kn5RyKDUl+hBI
+6z+Qj8upsN1Tsbn7/krUQkZc9Enup/N61Lccd54oSyb3tzSgajR3aNlf4VFwNGs2
+FFdyyxd5hxHvwA==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIDCTCCAfGgAwIBAgIJAKkJ5YK4FZlHMA0GCSqGSIb3DQEBBQUAMCExHzAdBgNV
+BAMTFndwdWJsaWMuaXQtc3VkcGFyaXMuZXUwHhcNMDkxMTA0MTM0NzM1WhcNMTkx
+MTAyMTM0NzM1WjAhMR8wHQYDVQQDExZ3cHVibGljLml0LXN1ZHBhcmlzLmV1MIIB
+IjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvHSqIqSnGoj3j88pJ9aeZs9f
+PHZJpNUdbLPvfDzzHcBIL8vgelJDF6HD+eKfkO3hibT3W4g/UsUBfEw+se9ky1+H
+69HHl/7YAkJChbNVBVnxcsTmNqbzIlNX4hX2Kj05Je5+ERvjPeAiGfyW7eMHTdrF
+j8HlpCoC8euPoCoPLtGn635D+Ljnphe1BIQF7QozSS0bvOQutTWtSgu2Lc4VOKuK
+JbhGmlfreX9XO2hYpRfyVCWgyn6SJI4GFwk90mYeQEME4wJyNXRdWIsF+AoQf+B6
+RkFUBt/QEgStIArAMvmODHhgIXnm3Ri2coqX/3OBlpdKB1+iou9pGnP0UugaFwID
+AQABo0QwQjAhBgNVHREEGjAYghZ3cHVibGljLml0LXN1ZHBhcmlzLmV1MB0GA1Ud
+DgQWBBRqQz37T7+2Z/yzdKm+AsqY1+XCpDANBgkqhkiG9w0BAQUFAAOCAQEAH8NF
+ncfaZErm2GlVwEkHkLOqnxAMpuQzLiQOdSZeo+If8liav15shtkStV1N4Zgf1wDj
+WVC2M3BDjSXunL90c1h8QygDQib4tvpT6p1K6xEVZVayR3fRIYY/rZDy7Jd28Nko
+xK7eqzW1v4r9rqSxFy+q5nU12iJ2Q70bjhvNmKPA6ap5uasA7iLjNey7p0cXxZhB
+x/pZ7JljkfA1xK4fgWkIZIdZjANgK2JOPWHVqWXYWFjGRrEUCT/yEH+EmBQF/30+
+/r7W0gdMn5x9YCSGkdhnlTP1qjbrU7d9sHgo/uuipLNKIK0KsLzopCapaPsvU4/z
+9lpUQ1jyqa6GVpntdg==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://www-public.tem-tsp.eu/Shibboleth.sso/SAML2/POST" index="1"/>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:1.0:profiles:browser-post" Location="https://www-public.tem-tsp.eu/Shibboleth.sso/SAML/POST" index="5"/>
+      <md:AttributeConsumingService index="0">
+        <md:ServiceName xml:lang="fr">Telecom et Management SudParis Webspace</md:ServiceName>
+        <md:ServiceDescription xml:lang="fr">Pages web publiques des utilisateurs Institut Telecom SudParis.
+certaines pages plus ou moins confidentielles peuvent  être soumises à un contrôle d'accès sur la base d'appartenance à la fédération RENATER via les attributs eduPersonScopedAffiliation et unscoped-affiliation, edupersonEntitlement et Mail, les attributs sn et diplayName étant optionnels pour améliorer l'affichage.</md:ServiceDescription>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:0.9.2342.19200300.100.1.3" FriendlyName="mail"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.7" FriendlyName="eduPersonEntitlement"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.9" FriendlyName="eduPersonScopedAffiliation"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.16.840.1.113730.3.1.241" FriendlyName="displayName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.4" FriendlyName="sn" isRequired="true"/>
+      </md:AttributeConsumingService>
+    </md:SPSSODescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.tem-tsp.eu</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:admin@tem-tsp.eu</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+<md:EntityDescriptor entityID="https://moodev.tem-tsp.eu/sp">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2014-03-22T15:04:50Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+      <mdattr:EntityAttributes>
+        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+          <saml:AttributeValue>https://federation.renater.fr/category/elearning</saml:AttributeValue>
+          <saml:AttributeValue>https://federation.renater.fr/scope/local</saml:AttributeValue>
+        </saml:Attribute>
+      </mdattr:EntityAttributes>
+    </md:Extensions>
+    <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.0:protocol urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">moodle tem-tsp</mdui:DisplayName>
+          <mdui:InformationURL xml:lang="fr">http://moodev.tem-tsp.eu</mdui:InformationURL>
+          <mdui:Description xml:lang="en">LMS moodle development open to the community</mdui:Description>
+          <mdui:DisplayName xml:lang="fr">moodle tem-tsp</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">LMS moodle de developpement ouvert a la communauté</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIC+jCCAeKgAwIBAgIJAPsAiFpaZGv4MA0GCSqGSIb3DQEBBQUAMBwxGjAYBgNV
+BAMTEW1vb2Rldi50ZW0tdHNwLmV1MB4XDTE0MDMxODE2MjM1NVoXDTI0MDMxNTE2
+MjM1NVowHDEaMBgGA1UEAxMRbW9vZGV2LnRlbS10c3AuZXUwggEiMA0GCSqGSIb3
+DQEBAQUAA4IBDwAwggEKAoIBAQDBBEe3VW7S/fx4hAi3I3WcdX0vp+QJRDmO563l
+OYCDFuA6lMTGTQp3dFBXlo5m1Yzv1bVQzTvb+Q1Ubi5lN86dMutfVwb/GNYSXo9K
+yB2mlRt1PmnPVJg2S+a3bWk/fDXK2uNdDXz3iEMfdgBWIRiZVbsJLdLLRHUp8oNH
+tnhL0y/gCru6DvdW9B0LCLRzt6eFyC8YNg2E8SEVyJARf9pY3UsmKKRcCrDPydsx
+VGYoaFxdbFbYBRq3arbxJngS8MvLPXII6YJeFYf2xdRxn2FtZl9PUc+i/HmCG29m
+mWuk/HSVRY95ZwW5Q4y57+ATfyAyxzb/70zeALvzKJe3Q13ZAgMBAAGjPzA9MBwG
+A1UdEQQVMBOCEW1vb2Rldi50ZW0tdHNwLmV1MB0GA1UdDgQWBBRhmhfpk1+Tka6y
+SgtWlGWhfJQGyDANBgkqhkiG9w0BAQUFAAOCAQEApmTH+SLiDmOKFw35toaIyCQ3
+6hnccGEGJ3WjHW1ZczxQWBB7n8S7Rra+G5JryG5pnn3/d0YzGhGSkwIktn80PGfK
+zF+p9pdDqwTaYErmjVpjzhi/lVZlGG4uJVi8heNUHYYZgPLlcKajDFwufEM9XEb4
+SOcZdO/9vVedpc00bdD5f5zOQ4TK9qnyXp7A9nwL5gb8SENGzK/QodsERHMmOqAG
+6r1vlgU+oYL/NZ9IhnbNB6qjZgbRRx7b9x3/cz2qRX6sYSokKypvvfAiuWNVNqMN
+Yhm/kVoCBxFIR8BdQSv8WX8eK8SxG9+Hdv/WuUqA3v7/gGpojgCpdCcxjw3/VQ==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:KeyDescriptor use="encryption">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIC+jCCAeKgAwIBAgIJAPsAiFpaZGv4MA0GCSqGSIb3DQEBBQUAMBwxGjAYBgNV
+BAMTEW1vb2Rldi50ZW0tdHNwLmV1MB4XDTE0MDMxODE2MjM1NVoXDTI0MDMxNTE2
+MjM1NVowHDEaMBgGA1UEAxMRbW9vZGV2LnRlbS10c3AuZXUwggEiMA0GCSqGSIb3
+DQEBAQUAA4IBDwAwggEKAoIBAQDBBEe3VW7S/fx4hAi3I3WcdX0vp+QJRDmO563l
+OYCDFuA6lMTGTQp3dFBXlo5m1Yzv1bVQzTvb+Q1Ubi5lN86dMutfVwb/GNYSXo9K
+yB2mlRt1PmnPVJg2S+a3bWk/fDXK2uNdDXz3iEMfdgBWIRiZVbsJLdLLRHUp8oNH
+tnhL0y/gCru6DvdW9B0LCLRzt6eFyC8YNg2E8SEVyJARf9pY3UsmKKRcCrDPydsx
+VGYoaFxdbFbYBRq3arbxJngS8MvLPXII6YJeFYf2xdRxn2FtZl9PUc+i/HmCG29m
+mWuk/HSVRY95ZwW5Q4y57+ATfyAyxzb/70zeALvzKJe3Q13ZAgMBAAGjPzA9MBwG
+A1UdEQQVMBOCEW1vb2Rldi50ZW0tdHNwLmV1MB0GA1UdDgQWBBRhmhfpk1+Tka6y
+SgtWlGWhfJQGyDANBgkqhkiG9w0BAQUFAAOCAQEApmTH+SLiDmOKFw35toaIyCQ3
+6hnccGEGJ3WjHW1ZczxQWBB7n8S7Rra+G5JryG5pnn3/d0YzGhGSkwIktn80PGfK
+zF+p9pdDqwTaYErmjVpjzhi/lVZlGG4uJVi8heNUHYYZgPLlcKajDFwufEM9XEb4
+SOcZdO/9vVedpc00bdD5f5zOQ4TK9qnyXp7A9nwL5gb8SENGzK/QodsERHMmOqAG
+6r1vlgU+oYL/NZ9IhnbNB6qjZgbRRx7b9x3/cz2qRX6sYSokKypvvfAiuWNVNqMN
+Yhm/kVoCBxFIR8BdQSv8WX8eK8SxG9+Hdv/WuUqA3v7/gGpojgCpdCcxjw3/VQ==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://moodev.tem-tsp.eu/Shibboleth.sso/SAML2/POST" index="1"/>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:1.0:profiles:browser-post" Location="https://moodev.tem-tsp.eu/Shibboleth.sso/SAML/POST" index="5"/>
+      <md:AttributeConsumingService index="0">
+        <md:ServiceName xml:lang="fr">moodle tem-tsp</md:ServiceName>
+        <md:ServiceName xml:lang="en">moodle tem-tsp</md:ServiceName>
+        <md:ServiceDescription xml:lang="fr">LMS moodle de developpement ouvert a la communauté</md:ServiceDescription>
+        <md:ServiceDescription xml:lang="en">LMS moodle development open to the community</md:ServiceDescription>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:0.9.2342.19200300.100.1.3" FriendlyName="mail" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.1" FriendlyName="eduPersonAffiliation"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.5" FriendlyName="eduPersonPrimaryAffiliation"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6" FriendlyName="eduPersonPrincipalName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.7" FriendlyName="eduPersonEntitlement" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.16.840.1.113730.3.1.241" FriendlyName="displayName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.4" FriendlyName="sn" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.42" FriendlyName="givenName" isRequired="true"/>
+      </md:AttributeConsumingService>
+    </md:SPSSODescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.tem-tsp.eu</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:jehan.procaccia@tem-tsp.eu</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+  <md:EntityDescriptor entityID="https://mutuel.mines-telecom.fr/sp">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2013-01-28T10:56:10Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+      <mdattr:EntityAttributes>
+        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+          <saml:AttributeValue>https://federation.renater.fr/category/collaboratif</saml:AttributeValue>
+          <saml:AttributeValue>https://federation.renater.fr/scope/local</saml:AttributeValue>
+        </saml:Attribute>
+      </mdattr:EntityAttributes>
+    </md:Extensions>
+    <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.0:protocol urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">Mines-Telecom CMS</mdui:DisplayName>
+          <mdui:InformationURL xml:lang="fr">http://mutuel.mines-telecom.fr/wikirf/</mdui:InformationURL>
+          <mdui:DisplayName xml:lang="fr">Mines-Telecom CMS</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">Services communs collaboratifs (CMS) au sein de la communauté</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIDDDCCAfSgAwIBAgIJANo/ilOCgAS9MA0GCSqGSIb3DQEBBQUAMCIxIDAeBgNV
+BAMTF211dHVlbC5taW5lcy10ZWxlY29tLmZyMB4XDTEzMDEyNjE0NTQwNFoXDTIz
+MDEyNDE0NTQwNFowIjEgMB4GA1UEAxMXbXV0dWVsLm1pbmVzLXRlbGVjb20uZnIw
+ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDa8OVjLT7awL6qh9pY3RYz
+dupAVXLteiP0wez/lgFk3Zz+cIBR5bEvKGS137+xgamKY9zGVGGBKD9FyFGk5WjD
+guYsFrEBAXcDXsMmsVCjkVnr/A9YUCCEtGACeDYyvr5xB3dI1xY0ah03eeYUJqFz
+TzBKQ/fUlyZJqnX25wYFApHFQAA27dwsrCqoX03YSnmviVATvh4NEMQXXiM1JTUZ
+fx6LYu+2qzSbsj078A96aFQ84nqYMDFVFv068rCaLd9v8Qun2HI3mQ+Sy8h6eWs/
+XQo+NEW9UTmlZcnRmnXjMtemxqbnqG2Bgu5+6W7xinyaceevR1/HvREmCfP437ov
+AgMBAAGjRTBDMCIGA1UdEQQbMBmCF211dHVlbC5taW5lcy10ZWxlY29tLmZyMB0G
+A1UdDgQWBBRR+lT2MZIJqUELCozGJuqET6YYqTANBgkqhkiG9w0BAQUFAAOCAQEA
+A0gIfdR9gKEM0JL9k/0bbxMoo9AizrNov8Qxnd+2Xs1zy9rmGDPaiwtuwy6HHrYC
+cFZtQO5pni82qwZEDvTKk3CK0f4PNj0Plr7SNvURlHPoGcWd5MnkiWBMLgQBIBDA
+K1yJZ6sqWpD5Fa7AywiL/qDB53Lt8zAGaiBdSqzNtrgIGebbFMDVJ3hUXwujsQ4R
+FaWLYWxNppFAYXmAxuhS46GEWDO2YwOurZZ8XQ9Ou7ufp+efW0RobW8+9OlTma5r
+MWbvDI4AeWcFuJbn+qJ93tU+LjMBs4mw1DBnQMs7ijIBBRC5Z0DYfsV9/teFqEQ6
+e60vK9Sn0y4CZLPsDHpzkg==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:KeyDescriptor use="encryption">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIDDDCCAfSgAwIBAgIJANo/ilOCgAS9MA0GCSqGSIb3DQEBBQUAMCIxIDAeBgNV
+BAMTF211dHVlbC5taW5lcy10ZWxlY29tLmZyMB4XDTEzMDEyNjE0NTQwNFoXDTIz
+MDEyNDE0NTQwNFowIjEgMB4GA1UEAxMXbXV0dWVsLm1pbmVzLXRlbGVjb20uZnIw
+ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDa8OVjLT7awL6qh9pY3RYz
+dupAVXLteiP0wez/lgFk3Zz+cIBR5bEvKGS137+xgamKY9zGVGGBKD9FyFGk5WjD
+guYsFrEBAXcDXsMmsVCjkVnr/A9YUCCEtGACeDYyvr5xB3dI1xY0ah03eeYUJqFz
+TzBKQ/fUlyZJqnX25wYFApHFQAA27dwsrCqoX03YSnmviVATvh4NEMQXXiM1JTUZ
+fx6LYu+2qzSbsj078A96aFQ84nqYMDFVFv068rCaLd9v8Qun2HI3mQ+Sy8h6eWs/
+XQo+NEW9UTmlZcnRmnXjMtemxqbnqG2Bgu5+6W7xinyaceevR1/HvREmCfP437ov
+AgMBAAGjRTBDMCIGA1UdEQQbMBmCF211dHVlbC5taW5lcy10ZWxlY29tLmZyMB0G
+A1UdDgQWBBRR+lT2MZIJqUELCozGJuqET6YYqTANBgkqhkiG9w0BAQUFAAOCAQEA
+A0gIfdR9gKEM0JL9k/0bbxMoo9AizrNov8Qxnd+2Xs1zy9rmGDPaiwtuwy6HHrYC
+cFZtQO5pni82qwZEDvTKk3CK0f4PNj0Plr7SNvURlHPoGcWd5MnkiWBMLgQBIBDA
+K1yJZ6sqWpD5Fa7AywiL/qDB53Lt8zAGaiBdSqzNtrgIGebbFMDVJ3hUXwujsQ4R
+FaWLYWxNppFAYXmAxuhS46GEWDO2YwOurZZ8XQ9Ou7ufp+efW0RobW8+9OlTma5r
+MWbvDI4AeWcFuJbn+qJ93tU+LjMBs4mw1DBnQMs7ijIBBRC5Z0DYfsV9/teFqEQ6
+e60vK9Sn0y4CZLPsDHpzkg==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://mutuel.mines-telecom.fr/Shibboleth.sso/SAML2/POST" index="1"/>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:1.0:profiles:browser-post" Location="https://mutuel.mines-telecom.fr/Shibboleth.sso/SAML/POST" index="5"/>
+      <md:AttributeConsumingService index="0">
+        <md:ServiceName xml:lang="fr">Mines-Telecom CMS</md:ServiceName>
+        <md:ServiceDescription xml:lang="fr">Services communs collaboratifs (CMS) au sein de la communauté</md:ServiceDescription>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:0.9.2342.19200300.100.1.3" FriendlyName="mail" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.1" FriendlyName="eduPersonAffiliation" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.5" FriendlyName="eduPersonPrimaryAffiliation"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6" FriendlyName="eduPersonPrincipalName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.7" FriendlyName="eduPersonEntitlement"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.16.840.1.113730.3.1.241" FriendlyName="displayName"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.3" FriendlyName="cn"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.4" FriendlyName="sn"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.42" FriendlyName="givenName"/>
+      </md:AttributeConsumingService>
+    </md:SPSSODescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.tem-tsp.eu</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:admin@int-evry.fr</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+  <md:EntityDescriptor entityID="https://idp.telecom-paristech.fr/idp/shibboleth">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2010-09-06T11:36:26Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+    </md:Extensions>
+    <md:IDPSSODescriptor protocolSupportEnumeration="urn:mace:shibboleth:1.0 urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <shibmd:Scope regexp="false">enst.fr</shibmd:Scope>
+        <shibmd:Scope regexp="false">imt.fr</shibmd:Scope>
+        <shibmd:Scope regexp="false">mines-telecom.fr</shibmd:Scope>
+        <shibmd:Scope regexp="false">telecom-paris.fr</shibmd:Scope>
+        <shibmd:Scope regexp="false">telecom-paristech.fr</shibmd:Scope>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">Télécom Paris</mdui:DisplayName>
+          <mdui:Logo height="16" width="16">data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAACXBIWXMAAABIAAAASABGyWs+AAAACXZwQWcAAAAQAAAAEABcxq3DAAAClUlEQVQoz4XLXU9SYRwA8P/zclBAQJ04DUMXIlijCdnWXZlZF3Zh6ypqtfVyWZfd1mprq5u+Qptld7VydVWtGjNz6UxJRbQxjxxOAqLAgXM4z3mePoK/+x/aSG/M/ZyjlMJBmMVisRhNJpPxa3EXuA8MFShPvZqihFI7ODv9nQcG2AJKKAWAOmh6TQcEhBKEEMbY0A0qSZZlEYLNhkkpJYRUoAwAlFvW9as3PB63YRjFQlHTaoqiTFyeWF9L9fb1ybIcOR5Jp9ZzOTU6PMQ5pwDAOaeSNBAKffn0+cRwrPK1Eg6HmyTb6uqa3+9f+LVw687NYnHXbm9mjJH4lfiH6Y+GYXR3dwmAXr+/2d7c3t6eyymhcNg0zWgsmslkJl9M6oY+EBqgCOPEbMLn9RXyhUB///t30/md/PLv5UbD7PDKwWAw8T2hqurYhbFsNgsAFADs4JAkye1xb8tyoD/g6+kpl/cD/YG90h5GaGR0RKtWS6W90XOj3OJUCF4HjTG2mlw1TTO7nWWMMWYtLS5xi2OCKaWcc0mSqpXqs+dPaYvLNTZ+0elwCM65YSIbRRgD54hSbjJEMMLY0g3AuF6vu9takZFRtfkUooS0OFxno7WZFXO/InW1acm/rkiw8W+3Jitdl0YbalFwwQQjd8+My49f1lOKvpHTt1T54WtTqwlLrN9+YOv1F6a+7b6dzT56U1OU9L0nzacGsQCur+X2fyxVl9KkvaWxWSjP/3Ec7SPQ0uTroD1tredjtkiH8+QABiciBHOTNeoZs7RjKVXnsSOd98ebOrzaWgaBTXBh5PLCEp7TQ56RIQGGYAxpm/L+wgoimNod9t5DdVklmNoOe6vJTU90UMsqQmtgm+Qc7CvNLLoiwf/9YlMHLNeSiwAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAxNS0wNy0yMFQxMDo0OTo0MiswMjowMMft3eUAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMTUtMDctMjBUMTA6NDk6NDIrMDI6MDC2sGVZAAAAAElFTkSuQmCC</mdui:Logo>
+          <mdui:InformationURL xml:lang="fr">http://www.telecom-paristech.fr/</mdui:InformationURL>
+          <mdui:Description xml:lang="en">Students and staff of Télécom Paris and Institut Mines-Telecom</mdui:Description>
+          <mdui:DisplayName xml:lang="fr">Télécom Paris</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">Etudiants, personnels de Télécom Paris et de la Direction Générale de l'Institut Mines-Telecom</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIDSzCCAjOgAwIBAgIUOdyX2dtbQ38bYSsIYvHC27pbOf4wDQYJKoZIhvcNAQEF
+BQAwIzEhMB8GA1UEAxMYaWRwLnRlbGVjb20tcGFyaXN0ZWNoLmZyMB4XDTEwMDEy
+ODE3MDA0MVoXDTMwMDEyODE3MDA0MVowIzEhMB8GA1UEAxMYaWRwLnRlbGVjb20t
+cGFyaXN0ZWNoLmZyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiVSP
+MWN9NGSu79LJ5CEhhDAWfKTaaXQRrk26/3axPDtaDJVO9KhJ9oie3SZjlogVvmuE
+UHiONGqWhO4H1eKXfPKQIpq5e+JpR9Nxr8WMsjhXnToCcMZsSes6E44S3YXWVblv
+EmWKE3JFUYWO/cpVGZWjdnWierXziUPo8UcRI8BPBqoCgMQzDkVtJngqNPWim0/M
+S7LbyZmrYbDlwqM74CNFFRK+cknv221xr36sSTVAf9QdbL+zfvxCOxR4vmUxSTG5
+FKD89Js9ELMZoadpJYWEkdIJuvZ0R12dtlXn+rYKpqpOuP/X/kjtJM40WpchSWn7
+o2z0KwtUVkkugtUN/QIDAQABo3cwdTBUBgNVHREETTBLghhpZHAudGVsZWNvbS1w
+YXJpc3RlY2guZnKGL2h0dHBzOi8vaWRwLnRlbGVjb20tcGFyaXN0ZWNoLmZyL2lk
+cC9zaGliYm9sZXRoMB0GA1UdDgQWBBSzcODCJpeqAD7OPTNA7Uf6rJ/73DANBgkq
+hkiG9w0BAQUFAAOCAQEAPkpw2TRt9SQdGPslqaoEq+/Y+3qdoPAFEipXUxEsexVU
+RZiHCQm90wLhAV4+IGmk5XuVVKN5M+3kQVDq/iql3W9IoShV71mQhDEqNQJkztGK
+1XPWYZu2Qgzui0YessRn7F8/Ts3cRm6L43oAKWJvSR0Zad9L4Eeli/ymCZ+3VO86
+hx8qX90cpGu6iYMPfbu+Dl+dFRxJkNY5SGbNGHvv9ZH3FF7f5cN7R8BtWVgo0rTR
+DmlnOFBrEU8tBkHNwNS0wwdZkOuQjoafB1QOZ39oH7koG+DICom7vxCLTWxcAMj+
+4QsS7+VwhxDRJdfBoQvr3mrm+hxwrCDEGlU3qCaenA==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://idp.telecom-paristech.fr/idp/SAML2/SLO"/>
+      <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://idp.telecom-paristech.fr/idp/SAML2/SLO"/>
+      <md:NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</md:NameIDFormat>
+      <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</md:NameIDFormat>
+      <md:SingleSignOnService Binding="urn:mace:shibboleth:1.0:profiles:AuthnRequest" Location="https://idp.telecom-paristech.fr/idp/profile/Shibboleth/SSO"/>
+      <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://idp.telecom-paristech.fr/idp/profile/SAML2/POST/SSO"/>
+      <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://idp.telecom-paristech.fr/idp/profile/SAML2/Redirect/SSO"/>
+    </md:IDPSSODescriptor>
+    <md:AttributeAuthorityDescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.1:protocol">
+      <md:Extensions>
+        <shibmd:Scope regexp="false">enst.fr</shibmd:Scope>
+        <shibmd:Scope regexp="false">imt.fr</shibmd:Scope>
+        <shibmd:Scope regexp="false">mines-telecom.fr</shibmd:Scope>
+        <shibmd:Scope regexp="false">telecom-paris.fr</shibmd:Scope>
+        <shibmd:Scope regexp="false">telecom-paristech.fr</shibmd:Scope>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIDSzCCAjOgAwIBAgIUOdyX2dtbQ38bYSsIYvHC27pbOf4wDQYJKoZIhvcNAQEF
+BQAwIzEhMB8GA1UEAxMYaWRwLnRlbGVjb20tcGFyaXN0ZWNoLmZyMB4XDTEwMDEy
+ODE3MDA0MVoXDTMwMDEyODE3MDA0MVowIzEhMB8GA1UEAxMYaWRwLnRlbGVjb20t
+cGFyaXN0ZWNoLmZyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiVSP
+MWN9NGSu79LJ5CEhhDAWfKTaaXQRrk26/3axPDtaDJVO9KhJ9oie3SZjlogVvmuE
+UHiONGqWhO4H1eKXfPKQIpq5e+JpR9Nxr8WMsjhXnToCcMZsSes6E44S3YXWVblv
+EmWKE3JFUYWO/cpVGZWjdnWierXziUPo8UcRI8BPBqoCgMQzDkVtJngqNPWim0/M
+S7LbyZmrYbDlwqM74CNFFRK+cknv221xr36sSTVAf9QdbL+zfvxCOxR4vmUxSTG5
+FKD89Js9ELMZoadpJYWEkdIJuvZ0R12dtlXn+rYKpqpOuP/X/kjtJM40WpchSWn7
+o2z0KwtUVkkugtUN/QIDAQABo3cwdTBUBgNVHREETTBLghhpZHAudGVsZWNvbS1w
+YXJpc3RlY2guZnKGL2h0dHBzOi8vaWRwLnRlbGVjb20tcGFyaXN0ZWNoLmZyL2lk
+cC9zaGliYm9sZXRoMB0GA1UdDgQWBBSzcODCJpeqAD7OPTNA7Uf6rJ/73DANBgkq
+hkiG9w0BAQUFAAOCAQEAPkpw2TRt9SQdGPslqaoEq+/Y+3qdoPAFEipXUxEsexVU
+RZiHCQm90wLhAV4+IGmk5XuVVKN5M+3kQVDq/iql3W9IoShV71mQhDEqNQJkztGK
+1XPWYZu2Qgzui0YessRn7F8/Ts3cRm6L43oAKWJvSR0Zad9L4Eeli/ymCZ+3VO86
+hx8qX90cpGu6iYMPfbu+Dl+dFRxJkNY5SGbNGHvv9ZH3FF7f5cN7R8BtWVgo0rTR
+DmlnOFBrEU8tBkHNwNS0wwdZkOuQjoafB1QOZ39oH7koG+DICom7vxCLTWxcAMj+
+4QsS7+VwhxDRJdfBoQvr3mrm+hxwrCDEGlU3qCaenA==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:AttributeService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://idp.telecom-paristech.fr/idp/SAML2/Artifact"/>
+      <md:NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</md:NameIDFormat>
+    </md:AttributeAuthorityDescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM PARISTECH</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM PARISTECH</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.telecom-paristech.fr/</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:shibboleth@enst.fr</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+  <md:EntityDescriptor entityID="https://shoodle.tem-tsp.eu/shibboleth">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2017-12-08T14:02:39Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+      <mdattr:EntityAttributes>
+        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+          <saml:AttributeValue>https://federation.renater.fr/category/collaboratif</saml:AttributeValue>
+          <saml:AttributeValue>https://federation.renater.fr/scope/community</saml:AttributeValue>
+        </saml:Attribute>
+      </mdattr:EntityAttributes>
+    </md:Extensions>
+    <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.0:protocol urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">IMT Evry - Moodle  for projects</mdui:DisplayName>
+          <mdui:Logo height="275" width="275">https://shoodle.tem-tsp.eu//local/login/img/SP-logo.png</mdui:Logo>
+          <mdui:InformationURL xml:lang="fr">https://shoodle.tem-tsp.eu/</mdui:InformationURL>
+          <mdui:Description xml:lang="en">Moodle platform set up to work on projects associated with the IMT schools of the Evry campus.</mdui:Description>
+          <mdui:DisplayName xml:lang="fr">IMT Campus d'Evry - Moodle Projets</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">Plateforme Moodle mise en place pour travailler à des projets associés aux écoles de l'IMT du campus d'Evry.</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIC/TCCAeWgAwIBAgIJAOipreIzimVrMA0GCSqGSIb3DQEBBQUAMB0xGzAZBgNV
+BAMTEnNob29kbGUudGVtLXRzcC5ldTAeFw0xNzEyMDYxMjE3MzlaFw0yNzEyMDQx
+MjE3MzlaMB0xGzAZBgNVBAMTEnNob29kbGUudGVtLXRzcC5ldTCCASIwDQYJKoZI
+hvcNAQEBBQADggEPADCCAQoCggEBAMOUR0YxDEwkSs4727mLG8BKYhP6EtpeWJVE
+Jc09FiCzaJLZtYnpuI7IJuicWyJ2tmLMmc3QUXYV3wXctGQ+y8yx0r+5OAzJ4i3r
+PganNsAUslAIYMlLk2sTlUnpQCu556DtD9NHRrTXUCnlqWBHoF/xM6zFM6MPlLJS
+RT8TWhMK/QsjWRWDyGDufMfi9gxLTv7GGrzjqsMwVFjlJ+CbGWThKnwleubz8FLO
+Zs9sVoDHEJ55LNqqrrFMV0s8wTp2Xw/+YO86yglqpYYehKeJU3eTKvH+mzYuY8r2
+MHXOn3W9hbLJaGYy44HOVZ8Ht6D8DEDra0/JCIEeNaYkQO5W2mUCAwEAAaNAMD4w
+HQYDVR0RBBYwFIISc2hvb2RsZS50ZW0tdHNwLmV1MB0GA1UdDgQWBBS2fzLugyZp
+NeM9DhXgtCVQgR5OMzANBgkqhkiG9w0BAQUFAAOCAQEAuw4yihHGSjwCWaFLw8w7
+blK8XMhgTNUyIhbWeNv/raih4Kz3pRgpHXPccGpe9DBhAKART3OhGQOqcAIoBenz
+GGjsglkCItUbq6DvHcWtLIuUQaSf+BLM8nlbSohOlyiugAUPIivzdntIDhaEB7lf
+mmxSiPmjE1gcqmxyK6wXfjAIILgbEeqvQUUTSgcivSkGBfPNu8xVizDEJLVYLhbR
+ePRYgGGtrdvikGpYgbB3yMhiROy8TLXvAePn7BgJXLbg4rXkT8KvaroUI7uLdULl
+HJ2BVrwOg6oV6fA2IEXTQ/3aRJqWDrtFxOBJ2YoIMhVd4J9OzPE0NFT/gbtgKkp1
+HA==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:KeyDescriptor use="encryption">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIC/TCCAeWgAwIBAgIJAOipreIzimVrMA0GCSqGSIb3DQEBBQUAMB0xGzAZBgNV
+BAMTEnNob29kbGUudGVtLXRzcC5ldTAeFw0xNzEyMDYxMjE3MzlaFw0yNzEyMDQx
+MjE3MzlaMB0xGzAZBgNVBAMTEnNob29kbGUudGVtLXRzcC5ldTCCASIwDQYJKoZI
+hvcNAQEBBQADggEPADCCAQoCggEBAMOUR0YxDEwkSs4727mLG8BKYhP6EtpeWJVE
+Jc09FiCzaJLZtYnpuI7IJuicWyJ2tmLMmc3QUXYV3wXctGQ+y8yx0r+5OAzJ4i3r
+PganNsAUslAIYMlLk2sTlUnpQCu556DtD9NHRrTXUCnlqWBHoF/xM6zFM6MPlLJS
+RT8TWhMK/QsjWRWDyGDufMfi9gxLTv7GGrzjqsMwVFjlJ+CbGWThKnwleubz8FLO
+Zs9sVoDHEJ55LNqqrrFMV0s8wTp2Xw/+YO86yglqpYYehKeJU3eTKvH+mzYuY8r2
+MHXOn3W9hbLJaGYy44HOVZ8Ht6D8DEDra0/JCIEeNaYkQO5W2mUCAwEAAaNAMD4w
+HQYDVR0RBBYwFIISc2hvb2RsZS50ZW0tdHNwLmV1MB0GA1UdDgQWBBS2fzLugyZp
+NeM9DhXgtCVQgR5OMzANBgkqhkiG9w0BAQUFAAOCAQEAuw4yihHGSjwCWaFLw8w7
+blK8XMhgTNUyIhbWeNv/raih4Kz3pRgpHXPccGpe9DBhAKART3OhGQOqcAIoBenz
+GGjsglkCItUbq6DvHcWtLIuUQaSf+BLM8nlbSohOlyiugAUPIivzdntIDhaEB7lf
+mmxSiPmjE1gcqmxyK6wXfjAIILgbEeqvQUUTSgcivSkGBfPNu8xVizDEJLVYLhbR
+ePRYgGGtrdvikGpYgbB3yMhiROy8TLXvAePn7BgJXLbg4rXkT8KvaroUI7uLdULl
+HJ2BVrwOg6oV6fA2IEXTQ/3aRJqWDrtFxOBJ2YoIMhVd4J9OzPE0NFT/gbtgKkp1
+HA==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://shoodle.tem-tsp.eu/Shibboleth.sso/SAML2/POST" index="1"/>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:1.0:profiles:browser-post" Location="https://shoodle.tem-tsp.eu/Shibboleth.sso/SAML/POST" index="5"/>
+      <md:AttributeConsumingService index="0">
+        <md:ServiceName xml:lang="fr">IMT Campus d'Evry - Moodle Projets</md:ServiceName>
+        <md:ServiceName xml:lang="en">IMT Evry - Moodle  for projects</md:ServiceName>
+        <md:ServiceDescription xml:lang="fr">Plateforme Moodle mise en place pour travailler à des projets associés aux écoles de l'IMT du campus d'Evry.</md:ServiceDescription>
+        <md:ServiceDescription xml:lang="en">Moodle platform set up to work on projects associated with the IMT schools of the Evry campus.</md:ServiceDescription>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:0.9.2342.19200300.100.1.3" FriendlyName="mail" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.1" FriendlyName="eduPersonAffiliation"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.5" FriendlyName="eduPersonPrimaryAffiliation"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6" FriendlyName="eduPersonPrincipalName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.7" FriendlyName="eduPersonEntitlement"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.16.840.1.113730.3.1.241" FriendlyName="displayName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.3" FriendlyName="cn"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.4" FriendlyName="sn" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.42" FriendlyName="givenName" isRequired="true"/>
+      </md:AttributeConsumingService>
+    </md:SPSSODescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.tem-tsp.eu</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:jehan.procaccia@tem-tsp.eu</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+  <md:EntityDescriptor entityID="https://idpmt3.tem-tsp.eu/idp/shibboleth">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2016-07-03T10:51:23Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+    </md:Extensions>
+    <md:IDPSSODescriptor protocolSupportEnumeration="urn:mace:shibboleth:1.0 urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <shibmd:Scope regexp="false">tem-tsp.eu</shibmd:Scope>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">IMT-Telecom&amp;Management-SudParis-3</mdui:DisplayName>
+          <mdui:InformationURL xml:lang="fr">http://www.tem-tsp.eu</mdui:InformationURL>
+          <mdui:Description xml:lang="en">staff and students</mdui:Description>
+          <mdui:DisplayName xml:lang="fr">IMT-Telecom&amp;Management-SudParis-3</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">Permanents et etudiants</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIDLzCCAhegAwIBAgIUd0GoX6xvER2C7ppJ+oujcTI+2z0wDQYJKoZIhvcNAQEL
+BQAwHDEaMBgGA1UEAwwRaWRwbXQzLnRlbS10c3AuZXUwHhcNMTYwNTIzMjAxNDQ3
+WhcNMzYwNTIzMjAxNDQ3WjAcMRowGAYDVQQDDBFpZHBtdDMudGVtLXRzcC5ldTCC
+ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMlVeX+MOgPpmMCmtO+JvvMC
+XQYtXKkRN8M5TGzkuaXGGLkcX9t2FYIZI1m7d7vIOlghiYVBu/oCy1yN3pdilful
+qQu+qXHZtgw+r5og/1Jh0IyNwtIRzP+zDPLwLAvuYJAt8Vth5iTK+8gKM8GD4FHj
+o5geaq94YcWbGFberAM+ZpVjVH9XSg+YMCO/HujzUfMKt8j2UEkF3xoHAxYow5cO
+aSIZ0HveV8TETJs5viOf0dT9c/ig25czSVeIdbXE512XnOHy29vCOXYl6aaOddHU
+BMt++EX+NN3TaGQeLs5hkqX5+Wt1xF9NMwGYt/Lbo6lguyttTqYy7Y6oBS1k2H8C
+AwEAAaNpMGcwHQYDVR0OBBYEFAYLBUSE4vAyU62EboA1N/axmcA1MEYGA1UdEQQ/
+MD2CEWlkcG10My50ZW0tdHNwLmV1hihodHRwczovL2lkcG10My50ZW0tdHNwLmV1
+L2lkcC9zaGliYm9sZXRoMA0GCSqGSIb3DQEBCwUAA4IBAQAtZ12INPREnJTM9e0d
+huIfwm7c909f5LF/F7fykQHSGyU1Pl3/CzyjRoLRtjx6vZia2Zh66helVlW2PDW/
+KRd5bof5uMzcPINsyjMinLDwHnQ1hlmwRHF132XhFZ6wHrLlbN2DZyRc4O1AEvov
+dkjW9bNReuYiqSsx6gBI/vADUOZNbe8xBV7kZUZv5kXJLWNMt26UAL0/bKGNYOHO
+bjLASwEqTvDW+PO5BdTMN8wuqqcxy0+GT5s2HrteX+7vQJCQDMVQj21+fce43SO8
+Zp3OewX6zGw/iiFINAxj/sQ58ZhOXOLw3hV9xLpGtxSIqgXffyN4Zy7OBZfQ5ItJ
+AX5K</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://idpmt3.tem-tsp.eu/idp/profile/SAML2/Redirect/SLO"/>
+      <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://idpmt3.tem-tsp.eu/idp/profile/SAML2/POST/SLO"/>
+      <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP" Location="https://idpmt3.tem-tsp.eu/idp/profile/SAML2/SOAP/SLO"/>
+      <md:NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</md:NameIDFormat>
+      <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</md:NameIDFormat>
+      <md:SingleSignOnService Binding="urn:mace:shibboleth:1.0:profiles:AuthnRequest" Location="https://idpmt3.tem-tsp.eu/idp/profile/Shibboleth/SSO"/>
+      <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://idpmt3.tem-tsp.eu/idp/profile/SAML2/POST/SSO"/>
+      <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://idpmt3.tem-tsp.eu/idp/profile/SAML2/Redirect/SSO"/>
+    </md:IDPSSODescriptor>
+    <md:AttributeAuthorityDescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.1:protocol">
+      <md:Extensions>
+        <shibmd:Scope regexp="false">tem-tsp.eu</shibmd:Scope>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIDLzCCAhegAwIBAgIUd0GoX6xvER2C7ppJ+oujcTI+2z0wDQYJKoZIhvcNAQEL
+BQAwHDEaMBgGA1UEAwwRaWRwbXQzLnRlbS10c3AuZXUwHhcNMTYwNTIzMjAxNDQ3
+WhcNMzYwNTIzMjAxNDQ3WjAcMRowGAYDVQQDDBFpZHBtdDMudGVtLXRzcC5ldTCC
+ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMlVeX+MOgPpmMCmtO+JvvMC
+XQYtXKkRN8M5TGzkuaXGGLkcX9t2FYIZI1m7d7vIOlghiYVBu/oCy1yN3pdilful
+qQu+qXHZtgw+r5og/1Jh0IyNwtIRzP+zDPLwLAvuYJAt8Vth5iTK+8gKM8GD4FHj
+o5geaq94YcWbGFberAM+ZpVjVH9XSg+YMCO/HujzUfMKt8j2UEkF3xoHAxYow5cO
+aSIZ0HveV8TETJs5viOf0dT9c/ig25czSVeIdbXE512XnOHy29vCOXYl6aaOddHU
+BMt++EX+NN3TaGQeLs5hkqX5+Wt1xF9NMwGYt/Lbo6lguyttTqYy7Y6oBS1k2H8C
+AwEAAaNpMGcwHQYDVR0OBBYEFAYLBUSE4vAyU62EboA1N/axmcA1MEYGA1UdEQQ/
+MD2CEWlkcG10My50ZW0tdHNwLmV1hihodHRwczovL2lkcG10My50ZW0tdHNwLmV1
+L2lkcC9zaGliYm9sZXRoMA0GCSqGSIb3DQEBCwUAA4IBAQAtZ12INPREnJTM9e0d
+huIfwm7c909f5LF/F7fykQHSGyU1Pl3/CzyjRoLRtjx6vZia2Zh66helVlW2PDW/
+KRd5bof5uMzcPINsyjMinLDwHnQ1hlmwRHF132XhFZ6wHrLlbN2DZyRc4O1AEvov
+dkjW9bNReuYiqSsx6gBI/vADUOZNbe8xBV7kZUZv5kXJLWNMt26UAL0/bKGNYOHO
+bjLASwEqTvDW+PO5BdTMN8wuqqcxy0+GT5s2HrteX+7vQJCQDMVQj21+fce43SO8
+Zp3OewX6zGw/iiFINAxj/sQ58ZhOXOLw3hV9xLpGtxSIqgXffyN4Zy7OBZfQ5ItJ
+AX5K</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:AttributeService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://idpmt3.tem-tsp.eu/idp/profile/SAML1/SOAP/AttributeQuery"/>
+      <md:NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</md:NameIDFormat>
+    </md:AttributeAuthorityDescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.tem-tsp.eu</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:jehan.procaccia@tem-tsp.eu</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+  <md:EntityDescriptor entityID="https://gitlabev.imtbs-tsp.eu/sp">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2019-09-19T11:57:28Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+      <mdattr:EntityAttributes>
+        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+          <saml:AttributeValue>https://federation.renater.fr/category/collaboratif</saml:AttributeValue>
+          <saml:AttributeValue>https://federation.renater.fr/scope/local</saml:AttributeValue>
+        </saml:Attribute>
+      </mdattr:EntityAttributes>
+    </md:Extensions>
+    <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.0:protocol urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">gitlabev</mdui:DisplayName>
+          <mdui:InformationURL xml:lang="fr">https://gitlabev.imtbs-tsp.eu/</mdui:InformationURL>
+          <mdui:Description xml:lang="en">gitlab for the IMT-IP-Paris community</mdui:Description>
+          <mdui:DisplayName xml:lang="fr">gitlabev</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">gitlab for the IMT-IP-Paris community</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIEBjCCAm6gAwIBAgIJAKb9QSEs2H6HMA0GCSqGSIb3DQEBCwUAMCAxHjAcBgNV
+BAMTFWdpdGxhYmV2LmltdGJzLXRzcC5ldTAeFw0xODA5MTUwODM2MTJaFw0yODA5
+MTIwODM2MTJaMCAxHjAcBgNVBAMTFWdpdGxhYmV2LmltdGJzLXRzcC5ldTCCAaIw
+DQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBAKm2O2SnkjG8hD2uhhcrqpLj4Y5n
+js8xIuGSUQPjB35wtJ6goSU07xCRHb9XWz0W9Cg4z9YRpJVboU/LyjBJdB3dS2aa
+aR5TciorJipqoWM1oSPx4OPYsxksaSnNVdQ7wXjqU49vQx2N5QQzT6YgiBVKhvEB
+sZCSjJkNAmWgFTlx0g7RemNlnfHqrUuqfVJUh3ZUaCr7a7f6Xbc2FnFpUpwzJXQQ
+HQfhsobH02Ot0WM/Z88En1G3DBotQxdaarD8dO5CW8VAJXtHNpZpmhri0X8IG/Xx
+Mge2pgK3XpEWJUuw0NMNxo9N8EEiFuadCArgnF27X89ZNJhJ0CHk+pAiRHzH+ITa
+E2etNiGJQWUtT0QpaxQglsqNm/1uv0HJxt4j7laWUuyJ0EUbTiyVw0SJfcXQtfWS
+O8A8ykxFrP0+mmCr7KCaK3F5vCvD1EnfNUpPmdmhTkzTn9WXbvUpHSLLhrR4Wqe9
+8oxyOQwdKie/v7li9WWbCTMs1w1vjdh3XOfRCwIDAQABo0MwQTAgBgNVHREEGTAX
+ghVnaXRsYWJldi5pbXRicy10c3AuZXUwHQYDVR0OBBYEFAyAE91w+30kenadiNAk
+9vPjuyBhMA0GCSqGSIb3DQEBCwUAA4IBgQAq3a5CZ9bB/yullKcyeIkcGxaaz+mb
+GfgBm84Uraog78LpEEn3W5w1r8MMYBBnMl013cTPNA4IL5/iKBGhhI0qkM9PN2y9
+jTTLd01p6gGdw4CVPsvjbbfDgPCpXndqFgHQcTyRhA8fKKdqS8obFUDW02G39ybT
+sPGABBCNH1ORISUov+SuwtQNFq3bQzWt+UooXyRQBx336aCf66XmXIWXRVNjX1qA
+u/wEobUfO9RGz1Qnm4x+qZ1+LeezFD731L8PytUFKqmF9A2tS/l729hgDoA3DSJW
+zKLml5VdyeHHaafIj2WaV9Q2QJzj3xBLD+P6cxrtDv4JeEIjqNC1mHXGqrnrOlKk
+cah2bQAyrxzo3WAzQuxX5PjJlKvnDH9axqCKAZb4Zi5Q7Gp7Uwd2ThmHXjv1ktXx
+2BlFjVZ28+rQ8r38/8ne9EgjYkGSN8AVaMJXqBWVzA1DT45PwJwIrhpeNloZGUsw
+H8Ouvrd/Y75uk7vzd1n+nb+snHWleq8F5IA=</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:KeyDescriptor use="encryption">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIEBjCCAm6gAwIBAgIJAKb9QSEs2H6HMA0GCSqGSIb3DQEBCwUAMCAxHjAcBgNV
+BAMTFWdpdGxhYmV2LmltdGJzLXRzcC5ldTAeFw0xODA5MTUwODM2MTJaFw0yODA5
+MTIwODM2MTJaMCAxHjAcBgNVBAMTFWdpdGxhYmV2LmltdGJzLXRzcC5ldTCCAaIw
+DQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBAKm2O2SnkjG8hD2uhhcrqpLj4Y5n
+js8xIuGSUQPjB35wtJ6goSU07xCRHb9XWz0W9Cg4z9YRpJVboU/LyjBJdB3dS2aa
+aR5TciorJipqoWM1oSPx4OPYsxksaSnNVdQ7wXjqU49vQx2N5QQzT6YgiBVKhvEB
+sZCSjJkNAmWgFTlx0g7RemNlnfHqrUuqfVJUh3ZUaCr7a7f6Xbc2FnFpUpwzJXQQ
+HQfhsobH02Ot0WM/Z88En1G3DBotQxdaarD8dO5CW8VAJXtHNpZpmhri0X8IG/Xx
+Mge2pgK3XpEWJUuw0NMNxo9N8EEiFuadCArgnF27X89ZNJhJ0CHk+pAiRHzH+ITa
+E2etNiGJQWUtT0QpaxQglsqNm/1uv0HJxt4j7laWUuyJ0EUbTiyVw0SJfcXQtfWS
+O8A8ykxFrP0+mmCr7KCaK3F5vCvD1EnfNUpPmdmhTkzTn9WXbvUpHSLLhrR4Wqe9
+8oxyOQwdKie/v7li9WWbCTMs1w1vjdh3XOfRCwIDAQABo0MwQTAgBgNVHREEGTAX
+ghVnaXRsYWJldi5pbXRicy10c3AuZXUwHQYDVR0OBBYEFAyAE91w+30kenadiNAk
+9vPjuyBhMA0GCSqGSIb3DQEBCwUAA4IBgQAq3a5CZ9bB/yullKcyeIkcGxaaz+mb
+GfgBm84Uraog78LpEEn3W5w1r8MMYBBnMl013cTPNA4IL5/iKBGhhI0qkM9PN2y9
+jTTLd01p6gGdw4CVPsvjbbfDgPCpXndqFgHQcTyRhA8fKKdqS8obFUDW02G39ybT
+sPGABBCNH1ORISUov+SuwtQNFq3bQzWt+UooXyRQBx336aCf66XmXIWXRVNjX1qA
+u/wEobUfO9RGz1Qnm4x+qZ1+LeezFD731L8PytUFKqmF9A2tS/l729hgDoA3DSJW
+zKLml5VdyeHHaafIj2WaV9Q2QJzj3xBLD+P6cxrtDv4JeEIjqNC1mHXGqrnrOlKk
+cah2bQAyrxzo3WAzQuxX5PjJlKvnDH9axqCKAZb4Zi5Q7Gp7Uwd2ThmHXjv1ktXx
+2BlFjVZ28+rQ8r38/8ne9EgjYkGSN8AVaMJXqBWVzA1DT45PwJwIrhpeNloZGUsw
+H8Ouvrd/Y75uk7vzd1n+nb+snHWleq8F5IA=</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://gitlabev.imtbs-tsp.eu/Shibboleth.sso/SAML2/POST" index="1"/>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:1.0:profiles:browser-post" Location="https://gitlabev.imtbs-tsp.eu/Shibboleth.sso/SAML/POST" index="5"/>
+      <md:AttributeConsumingService index="0">
+        <md:ServiceName xml:lang="fr">gitlabev</md:ServiceName>
+        <md:ServiceName xml:lang="en">gitlabev</md:ServiceName>
+        <md:ServiceDescription xml:lang="fr">gitlab for the IMT-IP-Paris community</md:ServiceDescription>
+        <md:ServiceDescription xml:lang="en">gitlab for the IMT-IP-Paris community</md:ServiceDescription>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:0.9.2342.19200300.100.1.1" FriendlyName="uid" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:0.9.2342.19200300.100.1.3" FriendlyName="mail" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.1" FriendlyName="eduPersonAffiliation"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.5" FriendlyName="eduPersonPrimaryAffiliation"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6" FriendlyName="eduPersonPrincipalName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.7" FriendlyName="eduPersonEntitlement"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.7135.1.2.1.14" FriendlyName="supannEtablissement"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.16.840.1.113730.3.1.241" FriendlyName="displayName"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.3" FriendlyName="cn"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.4" FriendlyName="sn"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.42" FriendlyName="givenName"/>
+      </md:AttributeConsumingService>
+    </md:SPSSODescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.tem-tsp.eu</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:admin@imtbs-tsp.eu</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+  <md:EntityDescriptor entityID="https://mintel.imt.fr">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2017-01-03T17:56:49Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+      <mdattr:EntityAttributes>
+        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+          <saml:AttributeValue>https://federation.renater.fr/category/web</saml:AttributeValue>
+          <saml:AttributeValue>https://federation.renater.fr/scope/local</saml:AttributeValue>
+        </saml:Attribute>
+      </mdattr:EntityAttributes>
+    </md:Extensions>
+    <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.0:protocol urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">Min&amp;tel</mdui:DisplayName>
+          <mdui:InformationURL xml:lang="fr">https://mintel.imt.fr</mdui:InformationURL>
+          <mdui:Description xml:lang="en">Intranet Institut Mines-Telecom</mdui:Description>
+          <mdui:DisplayName xml:lang="fr">Min&amp;tel</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">Intranet Institut Mines-Telecom</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIDDDCCAfSgAwIBAgIJAIWjTQQJmLalMA0GCSqGSIb3DQEBBQUAMCIxIDAeBgNV
+BAMTF21pbnRlbC5taW5lcy10ZWxlY29tLmZyMB4XDTEyMDYyMTE5NDMxMVoXDTIy
+MDYxOTE5NDMxMVowIjEgMB4GA1UEAxMXbWludGVsLm1pbmVzLXRlbGVjb20uZnIw
+ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCnZsw06EwKpy1KLJTnONKH
+yZoNuAKyfzw59chtptIchgFvFG45+W/3o/4EhugMrHhGhIwuSbZ5UQFteiyUJBhC
+CJlQTjmPW9HRZLQs5MHbNTTuNC83Frb/zBwupfdFx/wtPpa+rFjSGk8hBNsw3JkQ
+9h5cBFqrnZ+94PPyVX/N9xUICc+w/QzR3NG+92F4U4KAWZTe6/jnWhAa2O5EmIG+
+xbDWI9Epr/hrqldITBjutHoMUw1kIuDqZ6oN+1ykutOa6uRUKP13JMnSPm3oNMs8
+S7CPMxr0swdvqndkMTaQ4JzHRsujKsr205DTXg/Zb5wBzLiGKI+rdetOz6Mdve2v
+AgMBAAGjRTBDMCIGA1UdEQQbMBmCF21pbnRlbC5taW5lcy10ZWxlY29tLmZyMB0G
+A1UdDgQWBBSsxhfXrO8Fi75556AydiS10PXmMTANBgkqhkiG9w0BAQUFAAOCAQEA
+drr6/hqFu/rgBUIguWr/1Ft/etz8AglfN8bGIUMQdwNKv4jPTy5i40TmGCw36QsN
+KGMIUpoS91yA7pfZE/9SoI+O4W8XF4WW4/BiOsR4NneI0kBXAdZsB6uw4LB+f2D4
+mJ7AuJkfEB+3yhZegNKhWk7UUoz8ZLyrDPrPGdKAEnS2wfzQab5TPQGUOpvz/7TL
+DChjAFGP+ScKlO9ccxYTBDVK1lPZ1ECn/g0cV7tfsPHAA9poXQK1CEm4tQ6EuXeV
+FSo4o087W3gfphSwJWc2tw0qumfEvU0626nfeobhjPIXEvCWvEOMw7mNunaDAaqN
+pz010LKFvYYyYtJwStCxIg==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:KeyDescriptor use="encryption">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIDDDCCAfSgAwIBAgIJAIWjTQQJmLalMA0GCSqGSIb3DQEBBQUAMCIxIDAeBgNV
+BAMTF21pbnRlbC5taW5lcy10ZWxlY29tLmZyMB4XDTEyMDYyMTE5NDMxMVoXDTIy
+MDYxOTE5NDMxMVowIjEgMB4GA1UEAxMXbWludGVsLm1pbmVzLXRlbGVjb20uZnIw
+ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCnZsw06EwKpy1KLJTnONKH
+yZoNuAKyfzw59chtptIchgFvFG45+W/3o/4EhugMrHhGhIwuSbZ5UQFteiyUJBhC
+CJlQTjmPW9HRZLQs5MHbNTTuNC83Frb/zBwupfdFx/wtPpa+rFjSGk8hBNsw3JkQ
+9h5cBFqrnZ+94PPyVX/N9xUICc+w/QzR3NG+92F4U4KAWZTe6/jnWhAa2O5EmIG+
+xbDWI9Epr/hrqldITBjutHoMUw1kIuDqZ6oN+1ykutOa6uRUKP13JMnSPm3oNMs8
+S7CPMxr0swdvqndkMTaQ4JzHRsujKsr205DTXg/Zb5wBzLiGKI+rdetOz6Mdve2v
+AgMBAAGjRTBDMCIGA1UdEQQbMBmCF21pbnRlbC5taW5lcy10ZWxlY29tLmZyMB0G
+A1UdDgQWBBSsxhfXrO8Fi75556AydiS10PXmMTANBgkqhkiG9w0BAQUFAAOCAQEA
+drr6/hqFu/rgBUIguWr/1Ft/etz8AglfN8bGIUMQdwNKv4jPTy5i40TmGCw36QsN
+KGMIUpoS91yA7pfZE/9SoI+O4W8XF4WW4/BiOsR4NneI0kBXAdZsB6uw4LB+f2D4
+mJ7AuJkfEB+3yhZegNKhWk7UUoz8ZLyrDPrPGdKAEnS2wfzQab5TPQGUOpvz/7TL
+DChjAFGP+ScKlO9ccxYTBDVK1lPZ1ECn/g0cV7tfsPHAA9poXQK1CEm4tQ6EuXeV
+FSo4o087W3gfphSwJWc2tw0qumfEvU0626nfeobhjPIXEvCWvEOMw7mNunaDAaqN
+pz010LKFvYYyYtJwStCxIg==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://mintel.imt.fr/Shibboleth.sso/SAML2/POST" index="1"/>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:1.0:profiles:browser-post" Location="https://mintel.imt.fr/Shibboleth.sso/SAML/POST" index="5"/>
+      <md:AttributeConsumingService index="0">
+        <md:ServiceName xml:lang="fr">Min&amp;tel</md:ServiceName>
+        <md:ServiceName xml:lang="en">Min&amp;tel</md:ServiceName>
+        <md:ServiceDescription xml:lang="fr">Intranet Institut Mines-Telecom</md:ServiceDescription>
+        <md:ServiceDescription xml:lang="en">Intranet Institut Mines-Telecom</md:ServiceDescription>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6" FriendlyName="eduPersonPrincipalName" isRequired="true"/>
+      </md:AttributeConsumingService>
+    </md:SPSSODescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM PARISTECH</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM PARISTECH</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.telecom-paristech.fr/</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:olivier.allain@telecom-paristech.fr</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+  <md:EntityDescriptor entityID="https://visio.r2.enst.fr/shibboleth">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2020-05-13T16:50:16Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+      <mdattr:EntityAttributes>
+        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+          <saml:AttributeValue>https://federation.renater.fr/category/collaboratif</saml:AttributeValue>
+          <saml:AttributeValue>https://federation.renater.fr/scope/local</saml:AttributeValue>
+        </saml:Attribute>
+      </mdattr:EntityAttributes>
+    </md:Extensions>
+    <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.0:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">INFRES - BigBlueButton</mdui:DisplayName>
+          <mdui:InformationURL xml:lang="fr">https://visio.r2.enst.fr</mdui:InformationURL>
+          <mdui:Description xml:lang="en">Shibboleth access to the INFRES bigbluebutton server, for users needing it (Télécom / IPParis / IMT)</mdui:Description>
+          <mdui:DisplayName xml:lang="fr">INFRES - BigBlueButton</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">Accès Shibboleth au service de visioconférence BigBlueButton au département INFRES à Télécom Paris, à destination des utilisateurs en ayant besoin (Télécom / IPParis / IMT)</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIEKDCCApCgAwIBAgIUJd3hzN0CRb13zznpxl5ryjTCkMgwDQYJKoZIhvcNAQEL
+BQAwGzEZMBcGA1UEAxMQdmlzaW8ucjIuZW5zdC5mcjAeFw0yMDA1MTMxNDQ3MjFa
+Fw0yMzA1MTMxNDQ3MjFaMBsxGTAXBgNVBAMTEHZpc2lvLnIyLmVuc3QuZnIwggGi
+MA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQDsvCZJrA5822ry2C5JvonBG8Tq
+RlVkI3OG51oaurSpnZYXzTv/0FN4mXHOCsGiDJS1hsfXiosnhHTCes0FULMDm3E6
+dMowRpU+MwA/iBVhuUo85x/g1Nx0jmJBcDmxosfkI6+pyXrosWT08iOSLjihjmZ1
+KNGr19xrHAkUfncCRwtXg6028sgJRfjW1mGFuo/lH3gPSXHsWVu4uk+1SCoi8oDo
+Yl4iKcgqgUim0dgf6UXZg4S58UyM1j8Zz5BL2/UETCOmOjnu6ExWhfJtM+6+l6nc
+IX+9yUVO6o7KxP7fHBpIGwk6w5Ya+By4fFIK1TQDg/iVNrJxAE9eiueecLPnaKlQ
+k8mwH6CfcgRLLOhF3CGNBZf96jDFQXT6f4HJ6+kt7zKWiErvBcU2AC0Mw2FiDk9/
+ihbutX3dStz7GOGT025c5dap7EoO6NYI1ypGWFYruhu3Ir8uXbJFA3AfSeejKTwn
+VGic7jQACiCmy6iTiQ/7rjl6wt8E0RjEziE/OLsCAwEAAaNkMGIwQQYDVR0RBDow
+OIIQdmlzaW8ucjIuZW5zdC5mcoYkaHR0cHM6Ly92aXNpby5yMi5lbnN0LmZyL3No
+aWJib2xldGgvMB0GA1UdDgQWBBT++uTqmSdGjdsB8jkVfSTRZT17GjANBgkqhkiG
+9w0BAQsFAAOCAYEAuRpywYGoDgV4WtvwaLRCr8YV/vlSPeQhU2bLBLgxohkRUOgl
+Dv+BZgWMSdNYJUZCtotNxrfCzyRism7Z5JU//V6X2iSehljGfwjLYcbEe1+Eomyn
+RC+zejC3NDDYBQouEC+lBXFf0U5stMr7ofgXq8rq5cYnOuGTY0Kyhw3CTbzoJXt4
+t5JPOBTUKcqlB+Z1DjIykT2tXhjM/AFL9eO/toWz0aaRxoPgopbPlpAcarfZDUaH
+U0RUMW5t4t47uBXPf0zYXeH5V6OJjTtOLm930SqW1wn4Mh+qRJViRNt9dkrsajpG
+5/3hcB/j60CdpQX1wVS2NTo59dBQ+U26FquMy39vZ1wxn2HmBO9KWNvTKMNZc4Tr
+DHQYo0T35iMo1+lB0DUiw3eOQF2/hDY2mJzArEQIuvPrdguI1XoWuk/OUoQ8Envn
+7PBQmZ/fLCXXhMEErCoA/sqxLuFqAjpHOIhVEkGb1cNpqbCfQuQBJZI8KkYwLhV0
+0G3IhrdbkKT1u2WZ</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:KeyDescriptor use="encryption">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIEKDCCApCgAwIBAgIUJd3hzN0CRb13zznpxl5ryjTCkMgwDQYJKoZIhvcNAQEL
+BQAwGzEZMBcGA1UEAxMQdmlzaW8ucjIuZW5zdC5mcjAeFw0yMDA1MTMxNDQ3MjFa
+Fw0yMzA1MTMxNDQ3MjFaMBsxGTAXBgNVBAMTEHZpc2lvLnIyLmVuc3QuZnIwggGi
+MA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQDsvCZJrA5822ry2C5JvonBG8Tq
+RlVkI3OG51oaurSpnZYXzTv/0FN4mXHOCsGiDJS1hsfXiosnhHTCes0FULMDm3E6
+dMowRpU+MwA/iBVhuUo85x/g1Nx0jmJBcDmxosfkI6+pyXrosWT08iOSLjihjmZ1
+KNGr19xrHAkUfncCRwtXg6028sgJRfjW1mGFuo/lH3gPSXHsWVu4uk+1SCoi8oDo
+Yl4iKcgqgUim0dgf6UXZg4S58UyM1j8Zz5BL2/UETCOmOjnu6ExWhfJtM+6+l6nc
+IX+9yUVO6o7KxP7fHBpIGwk6w5Ya+By4fFIK1TQDg/iVNrJxAE9eiueecLPnaKlQ
+k8mwH6CfcgRLLOhF3CGNBZf96jDFQXT6f4HJ6+kt7zKWiErvBcU2AC0Mw2FiDk9/
+ihbutX3dStz7GOGT025c5dap7EoO6NYI1ypGWFYruhu3Ir8uXbJFA3AfSeejKTwn
+VGic7jQACiCmy6iTiQ/7rjl6wt8E0RjEziE/OLsCAwEAAaNkMGIwQQYDVR0RBDow
+OIIQdmlzaW8ucjIuZW5zdC5mcoYkaHR0cHM6Ly92aXNpby5yMi5lbnN0LmZyL3No
+aWJib2xldGgvMB0GA1UdDgQWBBT++uTqmSdGjdsB8jkVfSTRZT17GjANBgkqhkiG
+9w0BAQsFAAOCAYEAuRpywYGoDgV4WtvwaLRCr8YV/vlSPeQhU2bLBLgxohkRUOgl
+Dv+BZgWMSdNYJUZCtotNxrfCzyRism7Z5JU//V6X2iSehljGfwjLYcbEe1+Eomyn
+RC+zejC3NDDYBQouEC+lBXFf0U5stMr7ofgXq8rq5cYnOuGTY0Kyhw3CTbzoJXt4
+t5JPOBTUKcqlB+Z1DjIykT2tXhjM/AFL9eO/toWz0aaRxoPgopbPlpAcarfZDUaH
+U0RUMW5t4t47uBXPf0zYXeH5V6OJjTtOLm930SqW1wn4Mh+qRJViRNt9dkrsajpG
+5/3hcB/j60CdpQX1wVS2NTo59dBQ+U26FquMy39vZ1wxn2HmBO9KWNvTKMNZc4Tr
+DHQYo0T35iMo1+lB0DUiw3eOQF2/hDY2mJzArEQIuvPrdguI1XoWuk/OUoQ8Envn
+7PBQmZ/fLCXXhMEErCoA/sqxLuFqAjpHOIhVEkGb1cNpqbCfQuQBJZI8KkYwLhV0
+0G3IhrdbkKT1u2WZ</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://visio.r2.enst.fr/Shibboleth.sso/SAML2/POST" index="1"/>
+      <md:AttributeConsumingService index="0">
+        <md:ServiceName xml:lang="fr">INFRES - BigBlueButton</md:ServiceName>
+        <md:ServiceName xml:lang="en">INFRES - BigBlueButton</md:ServiceName>
+        <md:ServiceDescription xml:lang="fr">Accès Shibboleth au service de visioconférence BigBlueButton au département INFRES à Télécom Paris, à destination des utilisateurs en ayant besoin (Télécom / IPParis / IMT)</md:ServiceDescription>
+        <md:ServiceDescription xml:lang="en">Shibboleth access to the INFRES bigbluebutton server, for users needing it (Télécom / IPParis / IMT)</md:ServiceDescription>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:0.9.2342.19200300.100.1.3" FriendlyName="mail" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6" FriendlyName="eduPersonPrincipalName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.16.840.1.113730.3.1.241" FriendlyName="displayName" isRequired="true"/>
+      </md:AttributeConsumingService>
+    </md:SPSSODescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM PARISTECH</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM PARISTECH</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.telecom-paristech.fr/</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:marc.jeanmougin@telecom-paris.fr</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+  <md:EntityDescriptor entityID="https://idp.telecom-paristech.fr/sp">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2015-05-05T12:03:30Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+      <mdattr:EntityAttributes>
+        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+          <saml:AttributeValue>https://federation.renater.fr/category/metier</saml:AttributeValue>
+          <saml:AttributeValue>https://federation.renater.fr/scope/local</saml:AttributeValue>
+        </saml:Attribute>
+      </mdattr:EntityAttributes>
+    </md:Extensions>
+    <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.0:protocol urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">Generic service provider at Telecom ParisTech</mdui:DisplayName>
+          <mdui:InformationURL xml:lang="fr">https://idp.telecom-paristech.fr/sp</mdui:InformationURL>
+          <mdui:Description xml:lang="en">Service provider for access to several resources hosted by Telecom ParisTech</mdui:Description>
+          <mdui:DisplayName xml:lang="fr">Fournisseur de service générique de Télécom ParisTech</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">Fournisseur de service permettant l'accès à plusieurs ressources hébergées par Télécom ParisTech</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIDEjCCAfqgAwIBAgIJANpbNMugKhJbMA0GCSqGSIb3DQEBBQUAMCQxIjAgBgNV
+BAMTGXNoaWIudGVsZWNvbS1wYXJpc3RlY2guZnIwHhcNMTUwNTA0MTY0ODEwWhcN
+MjUwNTAxMTY0ODEwWjAkMSIwIAYDVQQDExlzaGliLnRlbGVjb20tcGFyaXN0ZWNo
+LmZyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1GUrNRQ9nL2792GT
++vp2W2kTdu2kmt08DrsqP6QBmb1H9mQJwzIJKmTgPAvKUlYEzMfBOeUDLhTtMQ1Q
+OLwgmxxiACmFi4TSZ7XUvXjgi8mH1UBGbAhoItupe/Oc9Ce0JLJu/Xqbm7xFduiT
+P5f1l2Kf/84lwdgMn7SkUmn0dNJ9+bSLEuXYS18nqJSF2iJFbPhFmZN/1++lngiJ
+5o9cd6apYkVv8Ksqt8WqSjjriOMgnO+uH4Yt8nMVVJPYoLiqL6ydzd+hychFd4Yy
+2JO+rR4NflCSXu7g3XV1SyL3aX05diuxnWbkAkXPrDUqSMGLMGR1e/HZ7YCdwR/C
+lGQPzQIDAQABo0cwRTAkBgNVHREEHTAbghlzaGliLnRlbGVjb20tcGFyaXN0ZWNo
+LmZyMB0GA1UdDgQWBBTlkAR7hBfcFii+tNbZebm6Hj1lcTANBgkqhkiG9w0BAQUF
+AAOCAQEAbCImC3aWxLYeAXvE6Q8x94/AR4eXoJQaBYFxgfmzWE/VnynDQNlI5/nt
+fcDF3ZHq5MGx6xZqxT7BWc3z2kMGXfU25zfM5KkV7epJlL9x1/OvQyIO0De7AHt8
+hsCMsDe5svRQDMBQ09WuMTZskTGYJzECkcfssFJ4a8gEJwutKptQJLATlzbflF6F
+uDmUG5PrBW55GopiHb0mORjYFNoiBBX/XrC5p3XTl5duJZJfWitxEMMPVRuQfDrn
+Nrhrorf2bBYyNJ3aqRtZXpLxmd1kuc19vE+t8/JEwu03CU99al3ef6SIueeccwur
+4OYo0plzFCFW5+AqhARKee4X0IL1wg==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:KeyDescriptor use="encryption">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIDEjCCAfqgAwIBAgIJANpbNMugKhJbMA0GCSqGSIb3DQEBBQUAMCQxIjAgBgNV
+BAMTGXNoaWIudGVsZWNvbS1wYXJpc3RlY2guZnIwHhcNMTUwNTA0MTY0ODEwWhcN
+MjUwNTAxMTY0ODEwWjAkMSIwIAYDVQQDExlzaGliLnRlbGVjb20tcGFyaXN0ZWNo
+LmZyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1GUrNRQ9nL2792GT
++vp2W2kTdu2kmt08DrsqP6QBmb1H9mQJwzIJKmTgPAvKUlYEzMfBOeUDLhTtMQ1Q
+OLwgmxxiACmFi4TSZ7XUvXjgi8mH1UBGbAhoItupe/Oc9Ce0JLJu/Xqbm7xFduiT
+P5f1l2Kf/84lwdgMn7SkUmn0dNJ9+bSLEuXYS18nqJSF2iJFbPhFmZN/1++lngiJ
+5o9cd6apYkVv8Ksqt8WqSjjriOMgnO+uH4Yt8nMVVJPYoLiqL6ydzd+hychFd4Yy
+2JO+rR4NflCSXu7g3XV1SyL3aX05diuxnWbkAkXPrDUqSMGLMGR1e/HZ7YCdwR/C
+lGQPzQIDAQABo0cwRTAkBgNVHREEHTAbghlzaGliLnRlbGVjb20tcGFyaXN0ZWNo
+LmZyMB0GA1UdDgQWBBTlkAR7hBfcFii+tNbZebm6Hj1lcTANBgkqhkiG9w0BAQUF
+AAOCAQEAbCImC3aWxLYeAXvE6Q8x94/AR4eXoJQaBYFxgfmzWE/VnynDQNlI5/nt
+fcDF3ZHq5MGx6xZqxT7BWc3z2kMGXfU25zfM5KkV7epJlL9x1/OvQyIO0De7AHt8
+hsCMsDe5svRQDMBQ09WuMTZskTGYJzECkcfssFJ4a8gEJwutKptQJLATlzbflF6F
+uDmUG5PrBW55GopiHb0mORjYFNoiBBX/XrC5p3XTl5duJZJfWitxEMMPVRuQfDrn
+Nrhrorf2bBYyNJ3aqRtZXpLxmd1kuc19vE+t8/JEwu03CU99al3ef6SIueeccwur
+4OYo0plzFCFW5+AqhARKee4X0IL1wg==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:1.0:profiles:browser-post" Location="https://idp.telecom-paristech.fr/idp/module.php/saml/sp/saml1-acs.php/sp" index="1"/>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://idp.telecom-paristech.fr/idp/module.php/saml/sp/saml2-acs.php/sp" index="0"/>
+      <md:AttributeConsumingService index="0">
+        <md:ServiceName xml:lang="fr">Fournisseur de service générique de Télécom ParisTech</md:ServiceName>
+        <md:ServiceName xml:lang="en">Generic service provider at Telecom ParisTech</md:ServiceName>
+        <md:ServiceDescription xml:lang="fr">Fournisseur de service permettant l'accès à plusieurs ressources hébergées par Télécom ParisTech</md:ServiceDescription>
+        <md:ServiceDescription xml:lang="en">Service provider for access to several resources hosted by Telecom ParisTech</md:ServiceDescription>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:0.9.2342.19200300.100.1.3" FriendlyName="mail" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6" FriendlyName="eduPersonPrincipalName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.16.840.1.113730.3.1.241" FriendlyName="displayName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.3" FriendlyName="cn"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.4" FriendlyName="sn"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.42" FriendlyName="givenName"/>
+      </md:AttributeConsumingService>
+    </md:SPSSODescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM PARISTECH</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM PARISTECH</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.telecom-paristech.fr/</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:shibboleth@telecom-paristech.fr</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+  <md:EntityDescriptor entityID="https://dups.tem-tsp.eu/sp">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2014-12-12T18:15:52Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+      <mdattr:EntityAttributes>
+        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+          <saml:AttributeValue>https://federation.renater.fr/category/collaboratif</saml:AttributeValue>
+          <saml:AttributeValue>https://federation.renater.fr/scope/local</saml:AttributeValue>
+        </saml:Attribute>
+      </mdattr:EntityAttributes>
+    </md:Extensions>
+    <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.0:protocol urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">CMS DUPS</mdui:DisplayName>
+          <mdui:InformationURL xml:lang="fr">http://dups.tem-tsp.eu/</mdui:InformationURL>
+          <mdui:Description xml:lang="en">CMS drupal</mdui:Description>
+          <mdui:DisplayName xml:lang="fr">CMS DUPS</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">CMS drupal</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIC9DCCAdygAwIBAgIJAJQgRQrzn6HxMA0GCSqGSIb3DQEBBQUAMBoxGDAWBgNV
+BAMTD2R1cHMudGVtLXRzcC5ldTAeFw0xNDEyMTIxNjA3NTVaFw0yNDEyMDkxNjA3
+NTVaMBoxGDAWBgNVBAMTD2R1cHMudGVtLXRzcC5ldTCCASIwDQYJKoZIhvcNAQEB
+BQADggEPADCCAQoCggEBAOSmKsKWfEIP5wLbKl2xB6Xu1UAS6aXVoGKfajclv0zg
+1yCdHAh+Xo6G5qBMGnl2nvP2dUwpupmYfcRq7QIQ8MQV/aMIvsceqyFrrgqA1mMO
+nr0CXaCVWFygb7E/6Zsx9Tkt9d3IoHVrdD1/DsfxT6dBX91Os1gRnG64D/m/hjOs
+uJkhqcI0seKlIlzRmcDFq9PezKJg3XV6DsKpbcJVvnLGkRR556zBNIWkbNtatOjz
+EGxGy+U/LSsjxNRtQAtud/pdHpRLIugz1c7xYQ8qdNqyt5vnj6nPmZeREPI9r7jI
+cMYZedaD/F4gD8t3XObY5VY7yya/gU0BRp/TQk3ACE0CAwEAAaM9MDswGgYDVR0R
+BBMwEYIPZHVwcy50ZW0tdHNwLmV1MB0GA1UdDgQWBBTMIjdAbeQkH62dwgQ/9Azm
+XH5wGzANBgkqhkiG9w0BAQUFAAOCAQEA38FZ5w6EHPMqXbWQpqaEFYkGzu7E5/tN
+N44ZMOe17WG1bvDPZYF+072OlLOzppGkt5D1rq+Zmjf5BKMpQc1dAStdQmPZ64+S
+4j+ZxxziXvU0PWm1z/5x/dagt8jBFbyqkUbdTLetkT1f0mRvJTrZAxGp1EltRCkM
+E6emnR0s13cK7r0BS8QtQyUyffi5C/xY1fRQDhQ4B8sq00Br5VABrs/3kDDfFMMP
+fTi4SUf3USTjCerO9nCiiQQADQ4pC3rr3LU49U/ySuSQT6BEsl1hJLIOVTmKmSzb
+TcmRCHl01rYH8Ov+sUyLU0mBGZqzGPcV773O/DSRSu3HMqbN2OgJDQ==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:KeyDescriptor use="encryption">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIC9DCCAdygAwIBAgIJAJQgRQrzn6HxMA0GCSqGSIb3DQEBBQUAMBoxGDAWBgNV
+BAMTD2R1cHMudGVtLXRzcC5ldTAeFw0xNDEyMTIxNjA3NTVaFw0yNDEyMDkxNjA3
+NTVaMBoxGDAWBgNVBAMTD2R1cHMudGVtLXRzcC5ldTCCASIwDQYJKoZIhvcNAQEB
+BQADggEPADCCAQoCggEBAOSmKsKWfEIP5wLbKl2xB6Xu1UAS6aXVoGKfajclv0zg
+1yCdHAh+Xo6G5qBMGnl2nvP2dUwpupmYfcRq7QIQ8MQV/aMIvsceqyFrrgqA1mMO
+nr0CXaCVWFygb7E/6Zsx9Tkt9d3IoHVrdD1/DsfxT6dBX91Os1gRnG64D/m/hjOs
+uJkhqcI0seKlIlzRmcDFq9PezKJg3XV6DsKpbcJVvnLGkRR556zBNIWkbNtatOjz
+EGxGy+U/LSsjxNRtQAtud/pdHpRLIugz1c7xYQ8qdNqyt5vnj6nPmZeREPI9r7jI
+cMYZedaD/F4gD8t3XObY5VY7yya/gU0BRp/TQk3ACE0CAwEAAaM9MDswGgYDVR0R
+BBMwEYIPZHVwcy50ZW0tdHNwLmV1MB0GA1UdDgQWBBTMIjdAbeQkH62dwgQ/9Azm
+XH5wGzANBgkqhkiG9w0BAQUFAAOCAQEA38FZ5w6EHPMqXbWQpqaEFYkGzu7E5/tN
+N44ZMOe17WG1bvDPZYF+072OlLOzppGkt5D1rq+Zmjf5BKMpQc1dAStdQmPZ64+S
+4j+ZxxziXvU0PWm1z/5x/dagt8jBFbyqkUbdTLetkT1f0mRvJTrZAxGp1EltRCkM
+E6emnR0s13cK7r0BS8QtQyUyffi5C/xY1fRQDhQ4B8sq00Br5VABrs/3kDDfFMMP
+fTi4SUf3USTjCerO9nCiiQQADQ4pC3rr3LU49U/ySuSQT6BEsl1hJLIOVTmKmSzb
+TcmRCHl01rYH8Ov+sUyLU0mBGZqzGPcV773O/DSRSu3HMqbN2OgJDQ==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:1.0:profiles:browser-post" Location="https://dups.tem-tsp.eu/Shibboleth.sso/SAML/POST" index="5"/>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://dups.tem-tsp.eu/Shibboleth.sso/SAML2/POST" index="1"/>
+      <md:AttributeConsumingService index="0">
+        <md:ServiceName xml:lang="fr">CMS DUPS</md:ServiceName>
+        <md:ServiceName xml:lang="en">CMS DUPS</md:ServiceName>
+        <md:ServiceDescription xml:lang="fr">CMS drupal</md:ServiceDescription>
+        <md:ServiceDescription xml:lang="en">CMS drupal</md:ServiceDescription>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:0.9.2342.19200300.100.1.3" FriendlyName="mail" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.1" FriendlyName="eduPersonAffiliation" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.5" FriendlyName="eduPersonPrimaryAffiliation"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6" FriendlyName="eduPersonPrincipalName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.7" FriendlyName="eduPersonEntitlement" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.16.840.1.113730.3.1.241" FriendlyName="displayName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.3" FriendlyName="cn"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.4" FriendlyName="sn"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.42" FriendlyName="givenName"/>
+      </md:AttributeConsumingService>
+    </md:SPSSODescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.tem-tsp.eu</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:jehan.procaccia@tem-tsp.eu</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+  <md:EntityDescriptor entityID="https://idpr4.imtbs-tsp.eu/idp/shibboleth">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2021-06-14T12:42:03Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+    </md:Extensions>
+    <md:IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <shibmd:Scope regexp="false">imt-bs.eu</shibmd:Scope>
+        <shibmd:Scope regexp="false">imtbs-tsp.eu</shibmd:Scope>
+        <shibmd:Scope regexp="false">int-evry.fr</shibmd:Scope>
+        <shibmd:Scope regexp="false">telecom-em.eu</shibmd:Scope>
+        <shibmd:Scope regexp="false">telecom-sudparis.eu</shibmd:Scope>
+        <shibmd:Scope regexp="false">tem-tsp.eu</shibmd:Scope>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">Institut Mines Telecom Business School and Telecom SudParis (v4)</mdui:DisplayName>
+          <mdui:Logo height="16" width="16">data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAADAFBMVEUAAAAAADMAAGYAAJkAAMwAAP8AMwAAMzMAM2YAM5kAM8wAM/8AZgAAZjMAZmYAZpkAZswAZv8AmQAAmTMAmWYAmZkAmcwAmf8AzAAAzDMAzGYAzJkAzMwAzP8A/wAA/zMA/2YA/5kA/8wA//8zAAAzADMzAGYzAJkzAMwzAP8zMwAzMzMzM2YzM5kzM8wzM/8zZgAzZjMzZmYzZpkzZswzZv8zmQAzmTMzmWYzmZkzmcwzmf8zzAAzzDMzzGYzzJkzzMwzzP8z/wAz/zMz/2Yz/5kz/8wz//9mAABmADNmAGZmAJlmAMxmAP9mMwBmMzNmM2ZmM5lmM8xmM/9mZgBmZjNmZmZmZplmZsxmZv9mmQBmmTNmmWZmmZlmmcxmmf9mzABmzDNmzGZmzJlmzMxmzP9m/wBm/zNm/2Zm/5lm/8xm//+ZAACZADOZAGaZAJmZAMyZAP+ZMwCZMzOZM2aZM5mZM8yZM/+ZZgCZZjOZZmaZZpmZZsyZZv+ZmQCZmTOZmWaZmZmZmcyZmf+ZzACZzDOZzGaZzJmZzMyZzP+Z/wCZ/zOZ/2aZ/5mZ/8yZ///MAADMADPMAGbMAJnMAMzMAP/MMwDMMzPMM2bMM5nMM8zMM//MZgDMZjPMZmbMZpnMZszMZv/MmQDMmTPMmWbMmZnMmczMmf/MzADMzDPMzGbMzJnMzMzMzP/M/wDM/zPM/2bM/5nM/8zM////AAD/ADP/AGb/AJn/AMz/AP//MwD/MzP/M2b/M5n/M8z/M///ZgD/ZjP/Zmb/Zpn/Zsz/Zv//mQD/mTP/mWb/mZn/mcz/mf//zAD/zDP/zGb/zJn/zMz/zP///wD//zP//2b//5n//8z///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABlenwdAAABAHRSTlP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG8mZagAAAAlwSFlzAAALEwAACxMBAJqcGAAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAABuSURBVBiVZY6xDcAgDARdeoJUniCU2cWZx/s4FcM848RABCIcEuJP6G0qP6hgZRdACiASQeKeQtDsEFm6DGFJDRGP8ePUhFyTfKVq1BqHqB3wdpqIxxMW5pS0CuaLAZ2LMW6GKsW4LrbVF5x8pbzU96I24m8LKwAAAABJRU5ErkJggg==</mdui:Logo>
+          <mdui:InformationURL xml:lang="fr">http://www.tem-tsp.eu</mdui:InformationURL>
+          <mdui:Description xml:lang="en">IDP staff and student</mdui:Description>
+          <mdui:DisplayName xml:lang="fr">Institut Mines Telecom Business School et Telecom SudParis (v4)</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">IDP personnels et etudiants</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIENDCCApygAwIBAgIVAOSz9rtlHJUq6hU8gj1B+hY0A0/8MA0GCSqGSIb3DQEB
+CwUAMB0xGzAZBgNVBAMMEmlkcHI0LmltdGJzLXRzcC5ldTAeFw0yMTA2MTExMzE4
+MzBaFw00MTA2MTExMzE4MzBaMB0xGzAZBgNVBAMMEmlkcHI0LmltdGJzLXRzcC5l
+dTCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBAJX35b4ArqJYk9gD6wZT
+iaqTCuHVQwaAQu6Pp2oVEW9OcuLsnmOL75aatA6hMNxfgkJLM3eYrBV7ySulc9aw
+oJtyUlGqmx/Ez0xXzXhi8jJBjnWCKqP4UGFcWvLwOLnOsNmgGzjVp/tnM+uf6RaF
+PYYkpFk5902iqNc24SDG1sv9EJbdxe2pV0/8UoSLZ9S/dz4UW+rG68gYU1Tq2YxA
+jdDQiVMblVM9GyJwx5q4CPdIB+pTV+b5WLlfYWGW8VI2koRPsRu3AH4LYsEMSfsF
+T6WAkWQmuDYP4NqVkySLz2EFUW55a0gkEIxWsJ9+JFk38P5HWDME5PXKrrnQ5lcM
+3BQumbIvaq4vMuJxpNj4ooxeJPi45xfbq9Vv27G3vmzmM1YU2vlGp3w/QCGlB0G8
+ShXsiiQ7Azz6wt28Qp/AM2Sk/LliKUjD30oRVoCBfSBpTR7LBiZylU/ithD9gqK+
+1CxyzN+9MI15QgIuP8AWWUHM5X03IEy/UU7nfhtemnYV5QIDAQABo2swaTAdBgNV
+HQ4EFgQUYkoCgnql7XVpkjTyw7z3UmUY0m4wSAYDVR0RBEEwP4ISaWRwcjQuaW10
+YnMtdHNwLmV1hilodHRwczovL2lkcHI0LmltdGJzLXRzcC5ldS9pZHAvc2hpYmJv
+bGV0aDANBgkqhkiG9w0BAQsFAAOCAYEAGGvQEN4CSO6Sb++JVZrnOl916ko7Oswf
+SnZScrt0+WJPexyiz+8XPsl7vWwJhtbSYGolCIGDZ+gWVgEe+pOgYFtzt/zXnQYC
+rUFXpzdRHDo3FKuB3idyHl1swS6/NktOgqXFsalOdWkvRWOCDv3lRA6H+jNuuwTs
+wSe3MB2yXsN87B+zHxe9BxPaRexS3/FuoCidB7/OPXpLje+tXxsrMNqqE0hLAAyd
+JgnSSsZ996yzH6r5Kk5Vgx8Ww4c9Gv0lZS1jHXD0iAQ2A0ZGwc6G7hC54vy+qrS2
+dkm6wQR63ULgTIlcfd67uLamM4rvmHSlKQEgGZzDZReE6c+RWSVBPx309XnijWVH
+jXNCzfABswrZJXzh1TLpH8rBaY+9CJggz5dSUOxzCc2olWushRb4SGzhhtvzlDTg
+tkv8hzGIqsZkjq21BWkYwiszXqOPQ3VyA/pfpwVbF88Lzo3s3ft507u1wqXhNkWK
+aDLX27CLiKW2vakr0KaIDK85huERsA59</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</md:NameIDFormat>
+      <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://idpr4.imtbs-tsp.eu/idp/profile/SAML2/Redirect/SSO"/>
+      <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://idpr4.imtbs-tsp.eu/idp/profile/SAML2/POST/SSO"/>
+    </md:IDPSSODescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.tem-tsp.eu</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:admin@imtbs-tsp.eu</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+  <md:EntityDescriptor entityID="https://wp.tem-tsp.eu/shibboleth">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2014-02-05T10:35:25Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+      <mdattr:EntityAttributes>
+        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+          <saml:AttributeValue>https://federation.renater.fr/category/collaboratif</saml:AttributeValue>
+          <saml:AttributeValue>https://federation.renater.fr/scope/local</saml:AttributeValue>
+        </saml:Attribute>
+      </mdattr:EntityAttributes>
+    </md:Extensions>
+    <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.0:protocol urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">Blogs M &amp; T SudParis</mdui:DisplayName>
+          <mdui:InformationURL xml:lang="fr">http://wp.tem-tsp.eu/</mdui:InformationURL>
+          <mdui:Description xml:lang="en">Wordpress Multisite blogs at Telecom scholl of Management and Telecom SudParis</mdui:Description>
+          <mdui:DisplayName xml:lang="fr">Blogs M &amp; T SudParis</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">Blogs wordpress Telecom Ecole de Management et Telecom Sudparis</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIC7jCCAdagAwIBAgIJAKaRfQcDt6H1MA0GCSqGSIb3DQEBBQUAMBgxFjAUBgNV
+BAMTDXdwLnRlbS10c3AuZXUwHhcNMTIxMjI4MTgxMTM5WhcNMjIxMjI2MTgxMTM5
+WjAYMRYwFAYDVQQDEw13cC50ZW0tdHNwLmV1MIIBIjANBgkqhkiG9w0BAQEFAAOC
+AQ8AMIIBCgKCAQEApyDU2WA7N971re8vNRWpsQT1pOELXYWvUZWPqJvHN8xxQyct
+PAB2ndi7eGkoSZgRz2RRs0muR1ki50t03nhSBA9eLguM3RFjz+33p44Z5A/YQViZ
+XntXqCyP6cQQ6/fIPme7bOhAwleboT22t7dH5zmHuduc81obgLYINK3R6rEKnHoz
+1WQGoPUkfgIsWLZd09V2xkUTdNZCndd+8lfH89MP+Qr4gbOxQUot6X4be7EkvZAj
+RBauVJQrEIxBxsjQs7tNE/qIYolgwvMMs5ywz684X6dZ7ayAxZVy078AB1k28W2R
+cOFkZHvjXp80LSt7xcZivqzRgfkCpnpDJwTM/QIDAQABozswOTAYBgNVHREEETAP
+gg13cC50ZW0tdHNwLmV1MB0GA1UdDgQWBBRtnzedkoLzbT2IFMz9pdE7nVLW/jAN
+BgkqhkiG9w0BAQUFAAOCAQEAWBMn9m86RK0iW0YKpzWRV5cBzOe+kAMKAzJpufRP
+YTk1dU1rdYkrQqytuxro+KSvFkiSib+YSQfDsVyV6PdkgM1gcm5BFEZWkwj2+rZY
+Ra2RvhFixvc+vPl/BxAqmW5UrFvEeRF9ALA7Q+i3KVH93/LIeROBWJXzc52cDNa+
+4to4MfMjm2+8cV/CqX4n2kF6Ksxc81OZnElfZvvKk8pqlW59peNaJu42rzBRgAhX
+AKiqOxp/7ce95t1yJ4nxv8wlrjaLrS14l/wiaSYBeZK1JIzChvF27HcOq6m5cG06
+11Nvhki3b3lMlE9JWDcOe2o07ONdC7nRyX7x5nSN77/UzA==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:KeyDescriptor use="encryption">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIC7jCCAdagAwIBAgIJAKaRfQcDt6H1MA0GCSqGSIb3DQEBBQUAMBgxFjAUBgNV
+BAMTDXdwLnRlbS10c3AuZXUwHhcNMTIxMjI4MTgxMTM5WhcNMjIxMjI2MTgxMTM5
+WjAYMRYwFAYDVQQDEw13cC50ZW0tdHNwLmV1MIIBIjANBgkqhkiG9w0BAQEFAAOC
+AQ8AMIIBCgKCAQEApyDU2WA7N971re8vNRWpsQT1pOELXYWvUZWPqJvHN8xxQyct
+PAB2ndi7eGkoSZgRz2RRs0muR1ki50t03nhSBA9eLguM3RFjz+33p44Z5A/YQViZ
+XntXqCyP6cQQ6/fIPme7bOhAwleboT22t7dH5zmHuduc81obgLYINK3R6rEKnHoz
+1WQGoPUkfgIsWLZd09V2xkUTdNZCndd+8lfH89MP+Qr4gbOxQUot6X4be7EkvZAj
+RBauVJQrEIxBxsjQs7tNE/qIYolgwvMMs5ywz684X6dZ7ayAxZVy078AB1k28W2R
+cOFkZHvjXp80LSt7xcZivqzRgfkCpnpDJwTM/QIDAQABozswOTAYBgNVHREEETAP
+gg13cC50ZW0tdHNwLmV1MB0GA1UdDgQWBBRtnzedkoLzbT2IFMz9pdE7nVLW/jAN
+BgkqhkiG9w0BAQUFAAOCAQEAWBMn9m86RK0iW0YKpzWRV5cBzOe+kAMKAzJpufRP
+YTk1dU1rdYkrQqytuxro+KSvFkiSib+YSQfDsVyV6PdkgM1gcm5BFEZWkwj2+rZY
+Ra2RvhFixvc+vPl/BxAqmW5UrFvEeRF9ALA7Q+i3KVH93/LIeROBWJXzc52cDNa+
+4to4MfMjm2+8cV/CqX4n2kF6Ksxc81OZnElfZvvKk8pqlW59peNaJu42rzBRgAhX
+AKiqOxp/7ce95t1yJ4nxv8wlrjaLrS14l/wiaSYBeZK1JIzChvF27HcOq6m5cG06
+11Nvhki3b3lMlE9JWDcOe2o07ONdC7nRyX7x5nSN77/UzA==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://wp.tem-tsp.eu/Shibboleth.sso/SAML2/POST" index="1"/>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:1.0:profiles:browser-post" Location="https://wp.tem-tsp.eu/Shibboleth.sso/SAML/POST" index="5"/>
+      <md:AttributeConsumingService index="0">
+        <md:ServiceName xml:lang="fr">Blogs M &amp; T SudParis</md:ServiceName>
+        <md:ServiceName xml:lang="en">Blogs M &amp; T SudParis</md:ServiceName>
+        <md:ServiceDescription xml:lang="fr">Blogs wordpress Telecom Ecole de Management et Telecom Sudparis</md:ServiceDescription>
+        <md:ServiceDescription xml:lang="en">Wordpress Multisite blogs at Telecom scholl of Management and Telecom SudParis</md:ServiceDescription>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:0.9.2342.19200300.100.1.3" FriendlyName="mail" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.1" FriendlyName="eduPersonAffiliation" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6" FriendlyName="eduPersonPrincipalName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.7" FriendlyName="eduPersonEntitlement"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.16.840.1.113730.3.1.241" FriendlyName="displayName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.4" FriendlyName="sn"/>
+      </md:AttributeConsumingService>
+    </md:SPSSODescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.tem-tsp.eu</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:jehan.procaccia@tem-tsp.eu</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+  <md:EntityDescriptor entityID="https://wiki.r2.enst.fr">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2021-07-02T14:11:22Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+      <mdattr:EntityAttributes>
+        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+          <saml:AttributeValue>https://federation.renater.fr/category/collaboratif</saml:AttributeValue>
+          <saml:AttributeValue>https://federation.renater.fr/scope/local</saml:AttributeValue>
+        </saml:Attribute>
+      </mdattr:EntityAttributes>
+    </md:Extensions>
+    <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.0:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">Telewiki</mdui:DisplayName>
+          <mdui:InformationURL xml:lang="fr">https://wiki.r2.enst.fr</mdui:InformationURL>
+          <mdui:Description xml:lang="en">a wiki for IMT's working group on remote labs</mdui:Description>
+          <mdui:DisplayName xml:lang="fr">Telewiki</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">Wiki pour le groupe de travail TP virtuel de l'IMT</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIEGDCCAoCgAwIBAgIUQVvxclHSSA3eK/825+bhCKhVRQIwDQYJKoZIhvcNAQEL
+BQAwGjEYMBYGA1UEAxMPd2lraS5yMi5lbnN0LmZyMB4XDTIxMDcwMjExNTMwMloX
+DTMxMDYzMDExNTMwMlowGjEYMBYGA1UEAxMPd2lraS5yMi5lbnN0LmZyMIIBojAN
+BgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAu0dIPwh9lICs5RT0diSpmWhM292A
+jYVcRAdSCnWHWSPhpWlUsCCfqlTMIbsI85qMMDa01cHWlA+U6OxP8IS3xSQ71mdy
+S0QAn9YuHn3+GmReiVu1CkSv3LIwVgZJ64eF/nYWVG9Nrf1dkdL4hrsUMvw8k8/b
+fvecwoSD120zjfUdnd9XBVVGqasUh6v0dn1RGo5iO+imqamvrdK0yhqlVsAGu0kL
+eBYk70Z6AnQxrZal8kpOYmUbGcumpnZ8mEbi1d5vXUrcu/wjThX5SE6CWZYHuUVX
+73k37c7MzbTb+Qmxf/wnDHcmeomxFc4mzk5OEY/FbX+5WzWbXe0S7iEsenQuuLvY
+K9t9+aNnVeI0CNIzDMskc7s7zd1/KI6UO32tNLpvtyDH8H4BbH979G7ae2odSX4i
+p/GRjQ89yYcmmcYfbCuS/SxFwkQqJsCjBaj1w8jLFRkk6+7lKiszJvZw19IAmquh
+A3BxDVHf70q/lUfXCV17Kr4q8HU4hk3XeCy9AgMBAAGjVjBUMDMGA1UdEQQsMCqC
+D3dpa2kucjIuZW5zdC5mcoYXaHR0cHM6Ly93aWtpLnIyLmVuc3QuZnIwHQYDVR0O
+BBYEFDg8aQbC6L0APMZnsIJ2+F6rNNVVMA0GCSqGSIb3DQEBCwUAA4IBgQB8nMIn
+r4QsOrzBEucxR5UN5plBEIR+GSfh1IoqbNcDKdBXSllI1ZElqgvWTXlpEVsEuU0k
+b0bo/Xk25vIYFG/OYb7H53tKe8ZAFMXeXXiD8xrq7pQcwRkqKk5Jj0U2IWzL3P4Q
+wizXj4hsiPUVQy5Lzewv8NK5GzkT02RU+zYOSpETTKR2Res6lsOu3Wrperioqkt9
+L2BumQzGJCx3vG7DyzHyuOvun5Am0c9ysoF9bQ0/WazNQmpvVKvpGxXMmGKTdGju
+PsWjkOqLCgVjdr7YHtmcfUwnurSk+oHJIwoHwzaetABsbPp7tRV81ypMTXbyDCDi
++/fKs7GjcB5HlcF7ngFiQfzM+oy2FcZSB1EK3zIw7uFaZIFaVKCUE/LiNg59FSQH
+s9TxgfizneSD7IS9G9uvpu8PgAxLylaCGJAhY/7ULPtth+e0RMjxPIFq8IHddwPw
+9K5QKuSfmrQXCHPfv+O8fYo+1TjkTiv7bjvgXP0AuP4Z5LTsrxF4YzzdZuY=</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:KeyDescriptor use="encryption">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIEGDCCAoCgAwIBAgIUQVvxclHSSA3eK/825+bhCKhVRQIwDQYJKoZIhvcNAQEL
+BQAwGjEYMBYGA1UEAxMPd2lraS5yMi5lbnN0LmZyMB4XDTIxMDcwMjExNTMwMloX
+DTMxMDYzMDExNTMwMlowGjEYMBYGA1UEAxMPd2lraS5yMi5lbnN0LmZyMIIBojAN
+BgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAu0dIPwh9lICs5RT0diSpmWhM292A
+jYVcRAdSCnWHWSPhpWlUsCCfqlTMIbsI85qMMDa01cHWlA+U6OxP8IS3xSQ71mdy
+S0QAn9YuHn3+GmReiVu1CkSv3LIwVgZJ64eF/nYWVG9Nrf1dkdL4hrsUMvw8k8/b
+fvecwoSD120zjfUdnd9XBVVGqasUh6v0dn1RGo5iO+imqamvrdK0yhqlVsAGu0kL
+eBYk70Z6AnQxrZal8kpOYmUbGcumpnZ8mEbi1d5vXUrcu/wjThX5SE6CWZYHuUVX
+73k37c7MzbTb+Qmxf/wnDHcmeomxFc4mzk5OEY/FbX+5WzWbXe0S7iEsenQuuLvY
+K9t9+aNnVeI0CNIzDMskc7s7zd1/KI6UO32tNLpvtyDH8H4BbH979G7ae2odSX4i
+p/GRjQ89yYcmmcYfbCuS/SxFwkQqJsCjBaj1w8jLFRkk6+7lKiszJvZw19IAmquh
+A3BxDVHf70q/lUfXCV17Kr4q8HU4hk3XeCy9AgMBAAGjVjBUMDMGA1UdEQQsMCqC
+D3dpa2kucjIuZW5zdC5mcoYXaHR0cHM6Ly93aWtpLnIyLmVuc3QuZnIwHQYDVR0O
+BBYEFDg8aQbC6L0APMZnsIJ2+F6rNNVVMA0GCSqGSIb3DQEBCwUAA4IBgQB8nMIn
+r4QsOrzBEucxR5UN5plBEIR+GSfh1IoqbNcDKdBXSllI1ZElqgvWTXlpEVsEuU0k
+b0bo/Xk25vIYFG/OYb7H53tKe8ZAFMXeXXiD8xrq7pQcwRkqKk5Jj0U2IWzL3P4Q
+wizXj4hsiPUVQy5Lzewv8NK5GzkT02RU+zYOSpETTKR2Res6lsOu3Wrperioqkt9
+L2BumQzGJCx3vG7DyzHyuOvun5Am0c9ysoF9bQ0/WazNQmpvVKvpGxXMmGKTdGju
+PsWjkOqLCgVjdr7YHtmcfUwnurSk+oHJIwoHwzaetABsbPp7tRV81ypMTXbyDCDi
++/fKs7GjcB5HlcF7ngFiQfzM+oy2FcZSB1EK3zIw7uFaZIFaVKCUE/LiNg59FSQH
+s9TxgfizneSD7IS9G9uvpu8PgAxLylaCGJAhY/7ULPtth+e0RMjxPIFq8IHddwPw
+9K5QKuSfmrQXCHPfv+O8fYo+1TjkTiv7bjvgXP0AuP4Z5LTsrxF4YzzdZuY=</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP" Location="https://wiki.r2.enst.fr/Shibboleth.sso/SLO/SOAP"/>
+      <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://wiki.r2.enst.fr/Shibboleth.sso/SLO/Redirect"/>
+      <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://wiki.r2.enst.fr/Shibboleth.sso/SLO/POST"/>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://wiki.r2.enst.fr/Shibboleth.sso/SAML2/POST" index="1"/>
+      <md:AttributeConsumingService index="0">
+        <md:ServiceName xml:lang="fr">Telewiki</md:ServiceName>
+        <md:ServiceName xml:lang="en">Telewiki</md:ServiceName>
+        <md:ServiceDescription xml:lang="fr">Wiki pour le groupe de travail TP virtuel de l'IMT</md:ServiceDescription>
+        <md:ServiceDescription xml:lang="en">a wiki for IMT's working group on remote labs</md:ServiceDescription>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:0.9.2342.19200300.100.1.3" FriendlyName="mail" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6" FriendlyName="eduPersonPrincipalName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.16.840.1.113730.3.1.241" FriendlyName="displayName" isRequired="true"/>
+      </md:AttributeConsumingService>
+    </md:SPSSODescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM PARISTECH</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM PARISTECH</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.telecom-paristech.fr/</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:remi.sharrock@telecom-paris.fr</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+  <md:EntityDescriptor entityID="https://wups.tem-tsp.eu/sp">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2014-04-06T00:29:21Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+      <mdattr:EntityAttributes>
+        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+          <saml:AttributeValue>https://federation.renater.fr/category/collaboratif</saml:AttributeValue>
+          <saml:AttributeValue>https://federation.renater.fr/scope/local</saml:AttributeValue>
+        </saml:Attribute>
+      </mdattr:EntityAttributes>
+    </md:Extensions>
+    <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.0:protocol urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">Université Paris Saclay - Wikis</mdui:DisplayName>
+          <mdui:InformationURL xml:lang="fr">http://wups.tem-tsp.eu/</mdui:InformationURL>
+          <mdui:Description xml:lang="en">wiki for IT</mdui:Description>
+          <mdui:DisplayName xml:lang="fr">Université Paris Saclay - Wikis</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">wiki pour les DSI</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIC9DCCAdygAwIBAgIJAPe91550C9SiMA0GCSqGSIb3DQEBBQUAMBoxGDAWBgNV
+BAMTD3d1cHMudGVtLXRzcC5ldTAeFw0xNDA0MDUyMjAzMzdaFw0yNDA0MDIyMjAz
+MzdaMBoxGDAWBgNVBAMTD3d1cHMudGVtLXRzcC5ldTCCASIwDQYJKoZIhvcNAQEB
+BQADggEPADCCAQoCggEBANS5ao/ZyzqolpryU8dnl2bwGgYNDp3Bb1cwSPK4OPH8
+wYCUP07CH1TW6ZHWU8L17A4xW+UIesLJJsZsgE1C0EsSGG+VJzANJSeryiK2J9Fl
+2t0TKS1EZNtbfBlIMoOEJpeP3hT4HxsUgyZAZ94kW4dbayeJQ9rkQAaK7DsLZ4Be
+BFlrrZgjIE6/cbxAl610ZspmHLIhN4Si9wVWmr5UBg71KSzArt4lruzU4V06U5Rl
+9+58P6SD0laq7/dW3iT9Xo8H/J+29jsafxajwPe82O4QNuDqKOjG0jB+H25rLbqz
+CUUGtgcvFLh6+hvoAKnlT6DaCFBJORqXo5fY7HJ/rokCAwEAAaM9MDswGgYDVR0R
+BBMwEYIPd3Vwcy50ZW0tdHNwLmV1MB0GA1UdDgQWBBT1GDcgtvnfAYaM/bxJUGp6
+LSu4CDANBgkqhkiG9w0BAQUFAAOCAQEAINIw3NXvQLmw6wDyS2m9Auz5YONp0hny
+FjYvFaYJK+xM1xrxI/LiTJq8lb7/fHeR6bb6VKvZmRuwCEml3aujQQJ4hKjbDA8k
+T5+YHWBhw96h6/87LRp6A2j+ClcLbIEgZOvjXXVb9B8Tw1jfZfLZx08GfzVs8RMT
+gM3rnadPVA/zHn+tixIwe5JXT/77UNpq7jDHiN1r4eVUdWz9LO11VaG+/dtaX+6M
+Aaln6Uy5fef6KmQlQGw3tzESpO/4oIXCobFIhAvSWhIFRolCF25fgO0JMjDcGorh
+U1XnmDlq92SPrR01lGFRLEFjjbptIxE1HR33WzPFp+rFK55GO6Rotg==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:KeyDescriptor use="encryption">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIC9DCCAdygAwIBAgIJAPe91550C9SiMA0GCSqGSIb3DQEBBQUAMBoxGDAWBgNV
+BAMTD3d1cHMudGVtLXRzcC5ldTAeFw0xNDA0MDUyMjAzMzdaFw0yNDA0MDIyMjAz
+MzdaMBoxGDAWBgNVBAMTD3d1cHMudGVtLXRzcC5ldTCCASIwDQYJKoZIhvcNAQEB
+BQADggEPADCCAQoCggEBANS5ao/ZyzqolpryU8dnl2bwGgYNDp3Bb1cwSPK4OPH8
+wYCUP07CH1TW6ZHWU8L17A4xW+UIesLJJsZsgE1C0EsSGG+VJzANJSeryiK2J9Fl
+2t0TKS1EZNtbfBlIMoOEJpeP3hT4HxsUgyZAZ94kW4dbayeJQ9rkQAaK7DsLZ4Be
+BFlrrZgjIE6/cbxAl610ZspmHLIhN4Si9wVWmr5UBg71KSzArt4lruzU4V06U5Rl
+9+58P6SD0laq7/dW3iT9Xo8H/J+29jsafxajwPe82O4QNuDqKOjG0jB+H25rLbqz
+CUUGtgcvFLh6+hvoAKnlT6DaCFBJORqXo5fY7HJ/rokCAwEAAaM9MDswGgYDVR0R
+BBMwEYIPd3Vwcy50ZW0tdHNwLmV1MB0GA1UdDgQWBBT1GDcgtvnfAYaM/bxJUGp6
+LSu4CDANBgkqhkiG9w0BAQUFAAOCAQEAINIw3NXvQLmw6wDyS2m9Auz5YONp0hny
+FjYvFaYJK+xM1xrxI/LiTJq8lb7/fHeR6bb6VKvZmRuwCEml3aujQQJ4hKjbDA8k
+T5+YHWBhw96h6/87LRp6A2j+ClcLbIEgZOvjXXVb9B8Tw1jfZfLZx08GfzVs8RMT
+gM3rnadPVA/zHn+tixIwe5JXT/77UNpq7jDHiN1r4eVUdWz9LO11VaG+/dtaX+6M
+Aaln6Uy5fef6KmQlQGw3tzESpO/4oIXCobFIhAvSWhIFRolCF25fgO0JMjDcGorh
+U1XnmDlq92SPrR01lGFRLEFjjbptIxE1HR33WzPFp+rFK55GO6Rotg==</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:1.0:profiles:browser-post" Location="https://wups.tem-tsp.eu/Shibboleth.sso/SAML/POST" index="0"/>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://wups.tem-tsp.eu/Shibboleth.sso/SAML2/POST" index="0"/>
+      <md:AttributeConsumingService index="0">
+        <md:ServiceName xml:lang="fr">Université Paris Saclay - Wikis</md:ServiceName>
+        <md:ServiceName xml:lang="en">Université Paris Saclay - Wikis</md:ServiceName>
+        <md:ServiceDescription xml:lang="fr">wiki pour les DSI</md:ServiceDescription>
+        <md:ServiceDescription xml:lang="en">wiki for IT</md:ServiceDescription>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:0.9.2342.19200300.100.1.3" FriendlyName="mail" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.1" FriendlyName="eduPersonAffiliation"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.5" FriendlyName="eduPersonPrimaryAffiliation" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6" FriendlyName="eduPersonPrincipalName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.7" FriendlyName="eduPersonEntitlement" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.16.840.1.113730.3.1.241" FriendlyName="displayName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.3" FriendlyName="cn"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.4" FriendlyName="sn"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.42" FriendlyName="givenName"/>
+      </md:AttributeConsumingService>
+    </md:SPSSODescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM &amp; Management SudParis</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.tem-tsp.eu</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:jehan.procaccia@tem-tsp.eu</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+  <md:EntityDescriptor entityID="https://moodle.r2.enst.fr/moodle">
+    <md:Extensions>
+      <mdrpi:RegistrationInfo registrationAuthority="https://federation.renater.fr/" registrationInstant="2018-10-26T16:21:12Z">
+        <mdrpi:RegistrationPolicy xml:lang="en">https://services.renater.fr/federation/en/documentation/engagement-conformite/metadata_registration_practice_statement</mdrpi:RegistrationPolicy>
+      </mdrpi:RegistrationInfo>
+      <mdattr:EntityAttributes>
+        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+          <saml:AttributeValue>https://federation.renater.fr/category/elearning</saml:AttributeValue>
+          <saml:AttributeValue>https://federation.renater.fr/scope/local</saml:AttributeValue>
+        </saml:Attribute>
+      </mdattr:EntityAttributes>
+    </md:Extensions>
+    <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.0:protocol urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:2.0:protocol">
+      <md:Extensions>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">Moddle Télécom ParisTech INFRES</mdui:DisplayName>
+          <mdui:InformationURL xml:lang="fr">https://moodle.r2.enst.fr/moodle</mdui:InformationURL>
+          <mdui:Description xml:lang="en">Instance moodle Télécom ParisTech INFRES</mdui:Description>
+          <mdui:DisplayName xml:lang="fr">Moddle Télécom ParisTech INFRES</mdui:DisplayName>
+          <mdui:Description xml:lang="fr">Instance moodle Télécom ParisTech INFRES</mdui:Description>
+        </mdui:UIInfo>
+      </md:Extensions>
+      <md:KeyDescriptor use="signing">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIDHDCCAgSgAwIBAgIJAJmOo7TQtCQJMA0GCSqGSIb3DQEBBQUAMBwxGjAYBgNV
+BAMTEW1vb2RsZS5yMi5lbnN0LmZyMB4XDTE3MDEyNTA4NDY1OFoXDTI3MDEyMzA4
+NDY1OFowHDEaMBgGA1UEAxMRbW9vZGxlLnIyLmVuc3QuZnIwggEiMA0GCSqGSIb3
+DQEBAQUAA4IBDwAwggEKAoIBAQDQmfq6wl4SDM2jogGM8o8TIDPTx9NwncnA3oT3
+oQxu1s36B45kiXPuTgasMhVCuy7ZCI7fwaidEhfY7+r1NI9rbbj/rdaFLcUk3R6O
+BKAj5Z2vAXO4N3QUuwz3c0DDbRbn209jDiz4yay+8k7+H57F8bHw7GkHVUJxE7aJ
+QixWf9LvXuTESeHW4jXVJRroqEb85TpCGY8+sW6Vx0qN0Ge2Y3PhRZNJcX1VFyIr
+f0fB11bopyvCNf5Z0oYPONI4DaOKk6VyFQZD18pFFV+mNPdeDD5gB+qfLkWRZ4qj
+FUabL4VBMSlt+5oWRsbCPOUQzGSby8HgaoJDFJZ1cxw2LmeHAgMBAAGjYTBfMD4G
+A1UdEQQ3MDWCEW1vb2RsZS5yMi5lbnN0LmZyhiBodHRwczovL21vb2RsZS5yMi5l
+bnN0LmZyL21vb2RsZTAdBgNVHQ4EFgQURsHDSzgV9MVyRDqBvPxjHlsOZSIwDQYJ
+KoZIhvcNAQEFBQADggEBABC+HjDrXmPyBrNh+J8Y0dH7nOtL3FWZ6jtt+A7hCcqj
+1SGDJj+8miXjNrOwPpYE+7/DILXRziQkDdH3GbnESZpzLTW1mUZYejGkALimn/9M
+4mzK3vkTZc8qdkXiefwEvKlls5UHWM4wu8BJsA0GjmN3XQoaBry75AWYv3tePZnI
+JOTWA6u1xd1Bu+7s9V9xm8KnexsW/QPgJ9rrl5ZbLMYfKFvx5JOhvkVUvxA7wu7Y
+IzZVrXN2Wd2rm8UdDqJwjgO8N27pHd+vJHNu9epk8S0fM6L4nfr6EU5klw4VQVkP
+BD0jJ1GXZkCXsd31hCWTOWG0iyt4Ho+qNHZscK7tRkM=</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:KeyDescriptor use="encryption">
+        <ds:KeyInfo>
+          <ds:X509Data>
+            <ds:X509Certificate>MIIDHDCCAgSgAwIBAgIJAJmOo7TQtCQJMA0GCSqGSIb3DQEBBQUAMBwxGjAYBgNV
+BAMTEW1vb2RsZS5yMi5lbnN0LmZyMB4XDTE3MDEyNTA4NDY1OFoXDTI3MDEyMzA4
+NDY1OFowHDEaMBgGA1UEAxMRbW9vZGxlLnIyLmVuc3QuZnIwggEiMA0GCSqGSIb3
+DQEBAQUAA4IBDwAwggEKAoIBAQDQmfq6wl4SDM2jogGM8o8TIDPTx9NwncnA3oT3
+oQxu1s36B45kiXPuTgasMhVCuy7ZCI7fwaidEhfY7+r1NI9rbbj/rdaFLcUk3R6O
+BKAj5Z2vAXO4N3QUuwz3c0DDbRbn209jDiz4yay+8k7+H57F8bHw7GkHVUJxE7aJ
+QixWf9LvXuTESeHW4jXVJRroqEb85TpCGY8+sW6Vx0qN0Ge2Y3PhRZNJcX1VFyIr
+f0fB11bopyvCNf5Z0oYPONI4DaOKk6VyFQZD18pFFV+mNPdeDD5gB+qfLkWRZ4qj
+FUabL4VBMSlt+5oWRsbCPOUQzGSby8HgaoJDFJZ1cxw2LmeHAgMBAAGjYTBfMD4G
+A1UdEQQ3MDWCEW1vb2RsZS5yMi5lbnN0LmZyhiBodHRwczovL21vb2RsZS5yMi5l
+bnN0LmZyL21vb2RsZTAdBgNVHQ4EFgQURsHDSzgV9MVyRDqBvPxjHlsOZSIwDQYJ
+KoZIhvcNAQEFBQADggEBABC+HjDrXmPyBrNh+J8Y0dH7nOtL3FWZ6jtt+A7hCcqj
+1SGDJj+8miXjNrOwPpYE+7/DILXRziQkDdH3GbnESZpzLTW1mUZYejGkALimn/9M
+4mzK3vkTZc8qdkXiefwEvKlls5UHWM4wu8BJsA0GjmN3XQoaBry75AWYv3tePZnI
+JOTWA6u1xd1Bu+7s9V9xm8KnexsW/QPgJ9rrl5ZbLMYfKFvx5JOhvkVUvxA7wu7Y
+IzZVrXN2Wd2rm8UdDqJwjgO8N27pHd+vJHNu9epk8S0fM6L4nfr6EU5klw4VQVkP
+BD0jJ1GXZkCXsd31hCWTOWG0iyt4Ho+qNHZscK7tRkM=</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </md:KeyDescriptor>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://moodle.r2.enst.fr/Shibboleth.sso/SAML2/POST" index="1"/>
+      <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:1.0:profiles:browser-post" Location="https://moodle.r2.enst.fr/Shibboleth.sso/SAML/POST" index="5"/>
+      <md:AttributeConsumingService index="0">
+        <md:ServiceName xml:lang="fr">Moddle Télécom ParisTech INFRES</md:ServiceName>
+        <md:ServiceName xml:lang="en">Moddle Télécom ParisTech INFRES</md:ServiceName>
+        <md:ServiceDescription xml:lang="fr">Instance moodle Télécom ParisTech INFRES</md:ServiceDescription>
+        <md:ServiceDescription xml:lang="en">Instance moodle Télécom ParisTech INFRES</md:ServiceDescription>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:0.9.2342.19200300.100.1.3" FriendlyName="mail" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6" FriendlyName="eduPersonPrincipalName" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.4" FriendlyName="sn" isRequired="true"/>
+        <md:RequestedAttribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oid:2.5.4.42" FriendlyName="givenName" isRequired="true"/>
+      </md:AttributeConsumingService>
+    </md:SPSSODescriptor>
+    <md:Organization>
+      <md:OrganizationName xml:lang="en">TELECOM PARISTECH</md:OrganizationName>
+      <md:OrganizationDisplayName xml:lang="en">TELECOM PARISTECH</md:OrganizationDisplayName>
+      <md:OrganizationURL xml:lang="en">http://www.telecom-paristech.fr/</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+      <md:EmailAddress>mailto:nicolas.bouche@telecom-paristech.fr</md:EmailAddress>
+    </md:ContactPerson>
+  </md:EntityDescriptor>
+  </md:EntitiesDescriptor>

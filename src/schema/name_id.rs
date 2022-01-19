@@ -3,7 +3,7 @@ use yaserde_derive::{YaDeserialize, YaSerialize};
 #[derive(
     Clone, Debug, YaDeserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize,
 )]
-pub struct Issuer {
+pub struct NameId {
     #[yaserde(attribute, rename = "NameQualifier")]
     pub name_qualifier: Option<String>,
     #[yaserde(attribute, rename = "SPNameQualifier")]
@@ -13,5 +13,5 @@ pub struct Issuer {
     #[yaserde(attribute, rename = "SPProvidedID")]
     pub sp_provided_id: Option<String>,
     #[yaserde(text)]
-    pub value: Option<String>,
+    pub value: String,
 }

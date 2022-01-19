@@ -1,19 +1,25 @@
-use crate::metadata::KeyDescriptor;
-use chrono::prelude::*;
-use serde::Deserialize;
+use yaserde_derive::{YaDeserialize, YaSerialize};
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+use crate::{metadata::KeyDescriptor, signature::Signature, utils::UtcDateTime};
+
+#[derive(Clone, Debug, YaDeserialize, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize)]
+#[yaserde(
+    namespace = "md: urn:oasis:names:tc:SAML:2.0:metadata",
+    namespace = "saml: urn:oasis:names:tc:SAML:2.0:assertion"
+)]
 pub struct AffiliationDescriptor {
-    #[serde(rename = "affiliationOwnerID")]
-    pub affiliation_descriptors: String,
-    #[serde(rename = "ID")]
-    pub id: String,
-    #[serde(rename = "validUntil")]
-    pub valid_until: Option<DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
+    #[yaserde(attribute, rename = "affiliationOwnerID")]
+    pub affiliation_owner_id: String,
+    #[yaserde(attribute, rename = "validUntil")]
+    pub valid_until: Option<UtcDateTime>,
+    #[yaserde(attribute, rename = "cacheDuration")]
     pub cache_duration: String,
-    #[serde(rename = "AffiliateMember", default)]
+    #[yaserde(attribute, rename = "ID")]
+    pub id: Option<String>,
+    #[yaserde(rename = "Signature", prefix = "sd")]
+    pub signature: Option<Signature>,
+    #[yaserde(rename = "AffiliateMember", prefix = "md")]
     pub affiliate_members: Vec<String>,
-    #[serde(rename = "KeyDescriptor", default)]
+    #[yaserde(rename = "KeyDescriptor", prefix = "md", default)]
     pub key_descriptors: Vec<KeyDescriptor>,
 }

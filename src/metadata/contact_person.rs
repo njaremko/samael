@@ -1,11 +1,4 @@
-use crate::metadata::helpers::write_plain_element;
-use crate::ToXml;
-use quick_xml::events::{BytesEnd, BytesStart, Event};
-use quick_xml::Writer;
-use serde::Deserialize;
-use std::io::Write;
-
-const NAME: &str = "md:ContactPerson";
+use yaserde_derive::{YaDeserialize, YaSerialize};
 
 pub enum ContactType {
     Technical,
@@ -27,53 +20,21 @@ impl ContactType {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(
+    Clone, Debug, YaDeserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize,
+)]
+#[yaserde(namespace = "md: urn:oasis:names:tc:SAML:2.0:metadata")]
 pub struct ContactPerson {
-    #[serde(rename = "contactType")]
-    pub contact_type: Option<String>,
-    #[serde(rename = "Company")]
+    #[yaserde(attribute, rename = "contactType")]
+    pub contact_type: String,
+    #[yaserde(rename = "Company", prefix = "md")]
     pub company: Option<String>,
-    #[serde(rename = "GivenName")]
+    #[yaserde(rename = "GivenName", prefix = "md")]
     pub given_name: Option<String>,
-    #[serde(rename = "SurName")]
-    pub sur_name: Option<String>,
-    #[serde(rename = "EmailAddress")]
-    pub email_addresses: Option<Vec<String>>,
-    #[serde(rename = "TelephoneNumber")]
-    pub telephone_numbers: Option<Vec<String>>,
-}
-
-impl ToXml for ContactPerson {
-    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
-        let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
-        if let Some(contact_type) = &self.contact_type {
-            root.push_attribute(("contactType", contact_type.as_ref()))
-        }
-        writer.write_event(Event::Start(root))?;
-
-        self.company
-            .as_ref()
-            .map(|company| write_plain_element(writer, "md:Company", company));
-        self.sur_name
-            .as_ref()
-            .map(|sur_name| write_plain_element(writer, "md:SurName", sur_name));
-        self.given_name
-            .as_ref()
-            .map(|given_name| write_plain_element(writer, "md:GivenName", given_name));
-
-        if let Some(email_addresses) = &self.email_addresses {
-            for email in email_addresses {
-                write_plain_element(writer, "md:EmailAddress", email)?;
-            }
-        }
-
-        if let Some(telephone_numbers) = &self.telephone_numbers {
-            for number in telephone_numbers {
-                write_plain_element(writer, "md:TelephoneNumber", number)?;
-            }
-        }
-
-        writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(())
-    }
+    #[yaserde(rename = "SurName", prefix = "md")]
+    pub surname: Option<String>,
+    #[yaserde(rename = "EmailAddress", prefix = "md", default)]
+    pub email_addresses: Vec<String>,
+    #[yaserde(rename = "TelephoneNumber", prefix = "md", default)]
+    pub telephone_numbers: Vec<String>,
 }

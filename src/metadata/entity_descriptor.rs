@@ -1,109 +1,94 @@
 use crate::metadata::{
     AffiliationDescriptor, AttributeAuthorityDescriptors, AuthnAuthorityDescriptors, ContactPerson,
-    IdpSsoDescriptor, Organization, PdpDescriptors, RoleDescriptor, SpSsoDescriptor,
+    IdpSsoDescriptor, Organization, PdpDescriptor, RoleDescriptor, SpSsoDescriptor,
 };
 use crate::signature::Signature;
-use crate::ToXml;
-use chrono::prelude::*;
-use quick_xml::events::{BytesEnd, BytesStart, Event};
-use quick_xml::Writer;
-use serde::Deserialize;
+use crate::utils::UtcDateTime;
 use snafu::Snafu;
-use std::io::Write;
 use std::str::FromStr;
+use yaserde_derive::{YaDeserialize, YaSerialize};
 
-#[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
-#[serde(rename = "md:EntityDescriptor")]
+#[derive(
+    Clone, Debug, YaDeserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize,
+)]
+#[yaserde(
+    root,
+    prefix = "md",
+    namespace = "ds: http://www.w3.org/2000/09/xmldsig#",
+    namespace = "md: urn:oasis:names:tc:SAML:2.0:metadata"
+)]
 pub struct EntityDescriptor {
-    #[serde(rename = "entityID")]
-    pub entity_id: Option<String>,
-    #[serde(rename = "ID")]
-    pub id: Option<String>,
-    #[serde(rename = "Signature")]
-    pub signature: Option<Signature>,
-    #[serde(rename = "validUntil")]
-    pub valid_until: Option<DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
+    #[yaserde(attribute, rename = "entityID")]
+    pub entity_id: String,
+    #[yaserde(attribute, rename = "validUntil")]
+    pub valid_until: Option<UtcDateTime>,
+    #[yaserde(attribute, rename = "cacheDuration")]
     pub cache_duration: Option<String>,
-    #[serde(rename = "RoleDescriptor")]
-    pub role_descriptors: Option<Vec<RoleDescriptor>>,
-    #[serde(rename = "IDPSSODescriptor")]
-    pub idp_sso_descriptors: Option<Vec<IdpSsoDescriptor>>,
-    #[serde(rename = "SPSSODescriptor")]
-    pub sp_sso_descriptors: Option<Vec<SpSsoDescriptor>>,
-    #[serde(rename = "AuthnAuthorityDescriptor")]
-    pub authn_authority_descriptors: Option<Vec<AuthnAuthorityDescriptors>>,
-    #[serde(rename = "AttributeAuthorityDescriptor")]
-    pub attribute_authority_descriptors: Option<Vec<AttributeAuthorityDescriptors>>,
-    #[serde(rename = "PDPDescriptor")]
-    pub pdp_descriptors: Option<Vec<PdpDescriptors>>,
-    #[serde(rename = "AffiliationDescriptor")]
+    #[yaserde(attribute, rename = "ID")]
+    pub id: Option<String>,
+    #[yaserde(rename = "Signature", prefix = "ds")]
+    pub signature: Option<Signature>,
+    #[yaserde(rename = "RoleDescriptor", prefix = "md", default)]
+    pub role_descriptors: Vec<RoleDescriptor>,
+    #[yaserde(rename = "IDPSSODescriptor", prefix = "md", default)]
+    pub idp_sso_descriptors: Vec<IdpSsoDescriptor>,
+    #[yaserde(rename = "SPSSODescriptor", prefix = "md", default)]
+    pub sp_sso_descriptors: Vec<SpSsoDescriptor>,
+    #[yaserde(rename = "AuthnAuthorityDescriptor", prefix = "md", default)]
+    pub authn_authority_descriptors: Vec<AuthnAuthorityDescriptors>,
+    #[yaserde(rename = "AttributeAuthorityDescriptor", prefix = "md", default)]
+    pub attribute_authority_descriptors: Vec<AttributeAuthorityDescriptors>,
+    #[yaserde(rename = "PDPDescriptor", prefix = "md", default)]
+    pub pdp_descriptors: Vec<PdpDescriptor>,
+    #[yaserde(rename = "AffiliationDescriptor", prefix = "md")]
     pub affiliation_descriptors: Option<AffiliationDescriptor>,
-    #[serde(rename = "ContactPerson")]
-    pub contact_person: Option<Vec<ContactPerson>>,
-    #[serde(rename = "Organization")]
+    #[yaserde(rename = "Organization", prefix = "md")]
     pub organization: Option<Organization>,
+    #[yaserde(rename = "ContactPerson", prefix = "md", default)]
+    pub contact_person: Vec<ContactPerson>,
+    #[yaserde(rename = "AdditionalMetadataLocation", prefix = "md", default)]
+    pub additional_metadata_locations: Vec<AdditionalMetadataLocation>,
 }
 
 #[derive(Debug, Snafu)]
 pub enum Error {
-    #[snafu(display("Failed to deserialize SAML response: {:?}", source))]
-    #[snafu(context(false))]
-    ParseError { source: quick_xml::DeError },
+    #[snafu(display("Failed to deserialize SAML response: {message:?}"))]
+    ParseError { message: String },
 }
 
 impl FromStr for EntityDescriptor {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(quick_xml::de::from_str(s)?)
+        yaserde::de::from_str(s).map_err(|message| Error::ParseError { message })
     }
 }
 
-impl ToXml for EntityDescriptor {
-    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
-        let root_name = "md:EntityDescriptor";
-        let mut root = BytesStart::borrowed(root_name.as_bytes(), root_name.len());
-        if let Some(entity_id) = &self.entity_id {
-            root.push_attribute(("entityID", entity_id.as_ref()))
-        }
-        if let Some(valid_until) = &self.valid_until {
-            root.push_attribute((
-                "validUntil",
-                valid_until
-                    .to_rfc3339_opts(SecondsFormat::Secs, true)
-                    .as_ref(),
-            ))
-        }
-        if let Some(cache_duration) = &self.cache_duration {
-            root.push_attribute(("cacheDuration", cache_duration.as_ref()));
-        }
+#[derive(
+    Clone, Debug, YaDeserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize,
+)]
+pub struct AdditionalMetadataLocation {
+    #[yaserde(attribute)]
+    namespace: String,
+    #[yaserde(text)]
+    value: String,
+}
 
-        root.push_attribute(("xmlns:md", "urn:oasis:names:tc:SAML:2.0:metadata"));
-        root.push_attribute(("xmlns:saml", "urn:oasis:names:tc:SAML:2.0:assertion"));
-        root.push_attribute(("xmlns:mdrpi", "urn:oasis:names:tc:SAML:metadata:rpi"));
-        root.push_attribute(("xmlns:mdattr", "urn:oasis:names:tc:SAML:metadata:attribute"));
-        root.push_attribute(("xmlns:mdui", "urn:oasis:names:tc:SAML:metadata:ui"));
-        root.push_attribute((
-            "xmlns:idpdisc",
-            "urn:oasis:names:tc:SAML:profiles:SSO:idp-discovery-protocol",
-        ));
-        root.push_attribute(("xmlns:ds", "http://www.w3.org/2000/09/xmldsig#"));
-        writer.write_event(Event::Start(root))?;
-        self.sp_sso_descriptors.to_xml(writer)?;
-        self.idp_sso_descriptors.to_xml(writer)?;
-        self.organization.to_xml(writer)?;
-        self.contact_person.to_xml(writer)?;
-        writer.write_event(Event::End(BytesEnd::borrowed(root_name.as_bytes())))?;
-
-        Ok(())
-    }
+#[derive(
+    Clone, Debug, YaDeserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize,
+)]
+#[yaserde(
+    root,
+    prefix = "md",
+    namespace = "md: urn:oasis:names:tc:SAML:2.0:metadata"
+)]
+pub struct EntitiesDescriptor {
+    #[yaserde(prefix = "md", rename = "EntityDescriptor")]
+    pub descriptors: Vec<EntityDescriptor>,
 }
 
 #[cfg(test)]
 mod test {
-    use crate::ToXml;
-
     use super::EntityDescriptor;
 
     #[test]
@@ -115,8 +100,7 @@ mod test {
         let entity_descriptor: EntityDescriptor = input_xml
             .parse()
             .expect("Failed to parse sp_metadata.xml into an EntityDescriptor");
-        let output_xml = entity_descriptor
-            .as_xml()
+        let output_xml = yaserde::ser::to_string(&entity_descriptor)
             .expect("Failed to convert EntityDescriptor to xml");
         let reparsed_entity_descriptor: EntityDescriptor = output_xml
             .parse()
@@ -134,8 +118,7 @@ mod test {
         let entity_descriptor: EntityDescriptor = input_xml
             .parse()
             .expect("Failed to parse sp_metadata.xml into an EntityDescriptor");
-        let output_xml = entity_descriptor
-            .as_xml()
+        let output_xml = yaserde::ser::to_string(&entity_descriptor)
             .expect("Failed to convert EntityDescriptor to xml");
         let reparsed_entity_descriptor: EntityDescriptor = output_xml
             .parse()

@@ -1,88 +1,70 @@
-use crate::schema::{Conditions, Issuer, NameIdPolicy, Subject};
+use crate::schema::{Conditions, Issuer, Subject};
 use crate::signature::Signature;
-use crate::ToXml;
+use crate::utils::UtcDateTime;
 use chrono::prelude::*;
-use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, Event};
-use quick_xml::Writer;
-use serde::Deserialize;
 use snafu::Snafu;
-use std::io::Write;
 use std::str::FromStr;
+use yaserde_derive::{YaDeserialize, YaSerialize};
 
 #[cfg(feature = "xmlsec")]
 use crate::crypto;
 
-const NAME: &str = "saml2p:AuthnRequest";
-const SCHEMA: (&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
+use super::NameIdPolicy;
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(
+    Clone, Debug, Default, YaDeserialize, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize,
+)]
+#[yaserde(
+    namespace = "ds: http://www.w3.org/2000/09/xmldsig#",
+    namespace = "saml: urn:oasis:names:tc:SAML:2.0:assertion",
+    namespace = "samlp: urn:oasis:names:tc:SAML:2.0:protocol"
+)]
 pub struct AuthnRequest {
-    #[serde(rename = "ID")]
+    #[yaserde(attribute, rename = "ID")]
     pub id: String,
-    #[serde(rename = "Version")]
+    #[yaserde(attribute, rename = "Version")]
     pub version: String,
-    #[serde(rename = "IssueInstant")]
-    pub issue_instant: DateTime<Utc>,
-    #[serde(rename = "Destination")]
+    #[yaserde(attribute, rename = "IssueInstant", TODO)]
+    pub issue_instant: UtcDateTime,
+    #[yaserde(attribute, rename = "Destination")]
     pub destination: Option<String>,
-    #[serde(rename = "Consent")]
+    #[yaserde(attribute, rename = "Consent")]
     pub consent: Option<String>,
-    #[serde(rename = "Issuer")]
-    pub issuer: Option<Issuer>,
-    #[serde(rename = "Signature")]
-    pub signature: Option<Signature>,
-    #[serde(rename = "Subject")]
-    pub subject: Option<Subject>,
-    #[serde(rename = "NameIDPolicy")]
-    pub name_id_policy: Option<NameIdPolicy>,
-    #[serde(rename = "Conditions")]
-    pub conditions: Option<Conditions>,
-    #[serde(rename = "ForceAuthn")]
+    #[yaserde(attribute, rename = "ForceAuthn")]
     pub force_authn: Option<bool>,
-    #[serde(rename = "IsPassive")]
+    #[yaserde(attribute, rename = "IsPassive")]
     pub is_passive: Option<bool>,
-    #[serde(rename = "AssertionConsumerServiceIndex")]
-    pub assertion_consumer_service_index: Option<usize>,
-    #[serde(rename = "AssertionConsumerServiceURL")]
-    pub assertion_consumer_service_url: Option<String>,
-    #[serde(rename = "ProtocolBinding")]
+    #[yaserde(attribute, rename = "ProtocolBinding")]
     pub protocol_binding: Option<String>,
-    #[serde(rename = "AttributeConsumingServiceIndex")]
-    pub attribute_consuming_service_index: Option<usize>,
-    #[serde(rename = "ProviderName")]
+    #[yaserde(attribute, rename = "AssertionConsumerServiceIndex")]
+    pub assertion_consumer_service_index: Option<u16>,
+    #[yaserde(attribute, rename = "AssertionConsumerServiceURL")]
+    pub assertion_consumer_service_url: Option<String>,
+    #[yaserde(attribute, rename = "AttributeConsumingServiceIndex")]
+    pub attribute_consuming_service_index: Option<u16>,
+    #[yaserde(attribute, rename = "ProviderName")]
     pub provider_name: Option<String>,
-}
-
-impl Default for AuthnRequest {
-    fn default() -> Self {
-        AuthnRequest {
-            id: "".to_string(),
-            version: "".to_string(),
-            issue_instant: Utc::now(),
-            destination: None,
-            consent: None,
-            issuer: None,
-            signature: None,
-            subject: None,
-            name_id_policy: None,
-            conditions: None,
-            force_authn: None,
-            is_passive: None,
-            assertion_consumer_service_index: None,
-            assertion_consumer_service_url: None,
-            protocol_binding: None,
-            attribute_consuming_service_index: None,
-            provider_name: None,
-        }
-    }
+    #[yaserde(rename = "Issuer", prefix = "saml")]
+    pub issuer: Option<Issuer>,
+    #[yaserde(rename = "Signature", prefix = "ds")]
+    pub signature: Option<Signature>,
+    #[yaserde(rename = "Subject", prefix = "saml")]
+    pub subject: Option<Subject>,
+    #[yaserde(rename = "NameIDPolicy", prefix = "samlp")]
+    pub name_id_policy: Option<NameIdPolicy>,
+    #[yaserde(rename = "Conditions", prefix = "saml")]
+    pub conditions: Option<Conditions>,
+    #[yaserde(rename = "RequestedAuthnContext", prefix = "samlp")]
+    pub requested_authn_context: Option<RequestedAuthnContext>,
+    #[yaserde(rename = "Scoping", prefix = "samlp")]
+    pub scoping: Option<Scoping>,
 }
 
 #[derive(Debug, Snafu)]
 pub enum Error {
-    #[snafu(display("Failed to deserialize AuthnRequest: {:?}", source))]
-    #[snafu(context(false))]
+    #[snafu(display("Failed to deserialize AuthnRequest: {:?}", message))]
     ParseError {
-        source: quick_xml::DeError,
+        message: String,
     },
 
     NoSubjectNameID,
@@ -92,7 +74,7 @@ impl FromStr for AuthnRequest {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(quick_xml::de::from_str(s)?)
+        yaserde::de::from_str(s).map_err(|message| Error::ParseError { message })
     }
 }
 
@@ -107,7 +89,7 @@ impl AuthnRequest {
     }
 
     pub fn issuer_at(&self) -> &DateTime<Utc> {
-        &self.issue_instant
+        &self.issue_instant.0
     }
 
     pub fn issuer_value(&self) -> Option<String> {
@@ -121,6 +103,10 @@ impl AuthnRequest {
         self
     }
 
+    pub fn as_xml(&self) -> Result<String, String> {
+        yaserde::ser::to_string(self)
+    }
+
     #[cfg(feature = "xmlsec")]
     pub fn to_signed_xml(
         &self,
@@ -131,72 +117,51 @@ impl AuthnRequest {
     }
 }
 
-impl ToXml for AuthnRequest {
-    fn to_xml<W: Write>(&self, writer: &mut Writer<W>) -> Result<(), Box<dyn std::error::Error>> {
-        writer.write_event(Event::Decl(BytesDecl::new(
-            "1.0".as_bytes(),
-            Some("UTF-8".as_bytes()),
-            None,
-        )))?;
+#[derive(
+    Clone, Debug, Default, YaDeserialize, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize,
+)]
+#[yaserde(namespace = "saml: urn:oasis:names:tc:SAML:2.0:assertion")]
+pub struct RequestedAuthnContext {
+    #[yaserde(rename = "AuthnContextClassRef", prefix = "saml", default)]
+    authn_context_class_ref: Vec<String>,
+    #[yaserde(rename = "AuthnContextDeclRef", prefix = "saml", default)]
+    authn_context_decl_ref: Vec<String>,
+}
 
-        let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
-        root.push_attribute(SCHEMA);
-        root.push_attribute(("ID", self.id.as_ref()));
-        root.push_attribute(("Version", self.version.as_ref()));
-        root.push_attribute((
-            "IssueInstant",
-            self.issue_instant
-                .to_rfc3339_opts(SecondsFormat::Millis, true)
-                .as_ref(),
-        ));
+#[derive(
+    Clone, Debug, Default, YaDeserialize, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize,
+)]
+#[yaserde(namespace = "samlp: urn:oasis:names:tc:SAML:2.0:protocol")]
+pub struct Scoping {
+    #[yaserde(attribute, rename = "ProxyCount")]
+    proxy_count: Option<u32>,
+    #[yaserde(rename = "IDPList", prefix = "samlp")]
+    idp_list: Option<IdpList>,
+    #[yaserde(rename = "RequesterID", prefix = "samlp", default)]
+    requester_id: Option<String>,
+}
 
-        if let Some(destination) = &self.destination {
-            root.push_attribute(("Destination", destination.as_ref()));
-        }
-        if let Some(consent) = &self.consent {
-            root.push_attribute(("Consent", consent.as_ref()));
-        }
-        if let Some(force_authn) = &self.force_authn {
-            root.push_attribute(("ForceAuthn", force_authn.to_string().as_ref()));
-        }
-        if let Some(is_passive) = &self.is_passive {
-            root.push_attribute(("IsPassive", is_passive.to_string().as_ref()));
-        }
-        if let Some(protocol_binding) = &self.protocol_binding {
-            root.push_attribute(("ProtocolBinding", protocol_binding.as_ref()));
-        }
-        if let Some(assertion_consumer_service_index) = &self.assertion_consumer_service_index {
-            root.push_attribute((
-                "AssertionConsumerServiceIndex",
-                assertion_consumer_service_index.to_string().as_ref(),
-            ));
-        }
-        if let Some(assertion_consumer_service_url) = &self.assertion_consumer_service_url {
-            root.push_attribute((
-                "AssertionConsumerServiceURL",
-                assertion_consumer_service_url.as_ref(),
-            ));
-        }
-        if let Some(attribute_consuming_service_index) = &self.attribute_consuming_service_index {
-            root.push_attribute((
-                "AttributeConsumingServiceIndex	",
-                attribute_consuming_service_index.to_string().as_ref(),
-            ));
-        }
-        if let Some(provider_name) = &self.provider_name {
-            root.push_attribute(("ProviderName", provider_name.as_ref()));
-        }
-        writer.write_event(Event::Start(root))?;
+#[derive(
+    Clone, Debug, Default, YaDeserialize, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize,
+)]
+#[yaserde(namespace = "samlp: urn:oasis:names:tc:SAML:2.0:protocol")]
+pub struct IdpList {
+    #[yaserde(rename = "IDPEntry", prefix = "samlp")]
+    idp_entries: Vec<IdpEntry>,
+    #[yaserde(rename = "GetComplete", prefix = "samlp")]
+    get_complete: Option<String>,
+}
 
-        self.issuer.to_xml(writer)?;
-        self.signature.to_xml(writer)?;
-        self.subject.to_xml(writer)?;
-        self.name_id_policy.to_xml(writer)?;
-        self.conditions.to_xml(writer)?;
-
-        writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(())
-    }
+#[derive(
+    Clone, Debug, Default, YaDeserialize, Hash, Eq, PartialEq, Ord, PartialOrd, YaSerialize,
+)]
+pub struct IdpEntry {
+    #[yaserde(attribute, rename = "ProviderID")]
+    provider_id: String,
+    #[yaserde(attribute, rename = "Name")]
+    name: Option<String>,
+    #[yaserde(attribte, rename = "Loc")]
+    loc: Option<String>,
 }
 
 #[cfg(test)]
