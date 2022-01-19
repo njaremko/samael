@@ -44,13 +44,13 @@ pub enum Error {
     #[cfg(feature = "xmlsec")]
     #[snafu(display("failed to remove attribute: {}", error))]
     XmlAttributeRemovalError {
-        error: Box<dyn std::error::Error>
+        error: Box<dyn std::error::Error + Send + Sync>
     },
 
     #[cfg(feature = "xmlsec")]
     #[snafu(display("failed to define namespace: {}", error))]
     XmlNamespaceDefinitionError {
-        error: Box<dyn std::error::Error>
+        error: Box<dyn std::error::Error + Send + Sync>
     },
 
     #[cfg(feature = "xmlsec")]

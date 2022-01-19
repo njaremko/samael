@@ -394,8 +394,7 @@ dependencies = [
 [[package]]
 name = "libxml"
 version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02c07ecb409949e5c5c0818e189e6bc766bcb8b08b3401772ca8c61a58c682b8"
+source = "git+https://github.com/spd-mfa/rust-libxml?rev=7ea237326685f4faaf203db7bcaa355322987ff9#7ea237326685f4faaf203db7bcaa355322987ff9"
 dependencies = [
  "libc",
  "pkg-config",
@@ -686,6 +685,7 @@ dependencies = [
  "rand 0.8.4",
  "serde",
  "snafu",
+ "static_assertions",
  "url",
  "uuid",
 ]
@@ -742,6 +742,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "static_assertions"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "strsim"
