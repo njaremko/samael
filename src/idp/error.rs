@@ -52,5 +52,13 @@ impl From<crate::schema::authn_request::Error> for Error {
     }
 }
 
-unsafe impl Send for Error {}
-unsafe impl Sync for Error {}
+#[cfg(test)]
+mod test {
+    use crate::idp::error::Error;
+    use static_assertions::assert_impl_all;
+
+    #[test]
+    fn test_implements_send_sync() {
+        assert_impl_all!(Error: Send, Sync);
+    }
+}
