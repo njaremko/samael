@@ -51,3 +51,6 @@ impl From<crate::schema::authn_request::Error> for Error {
         Error::InvalidAuthnRequest { error }
     }
 }
+
+unsafe impl Send for Error {}
+unsafe impl Sync for Error {}
