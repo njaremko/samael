@@ -57,8 +57,5 @@ mod test {
     use crate::idp::error::Error;
     use static_assertions::assert_impl_all;
 
-    #[test]
-    fn test_implements_send_sync() {
-        assert_impl_all!(Error: Send, Sync);
-    }
+    assert_impl_all!(Error: Send, Sync);
 }
