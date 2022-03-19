@@ -9,12 +9,14 @@ use crate::{
 use chrono::prelude::*;
 use chrono::Duration;
 use flate2::{write::DeflateEncoder, Compression};
-use openssl::pkey::Private;
-use openssl::{rsa, x509};
+use rsa::pkcs1::FromRsaPrivateKey;
+use rsa::{Hash, PaddingScheme, RsaPrivateKey};
+use sha2::{Digest, Sha256};
 use snafu::Snafu;
 use std::fmt::Debug;
 use std::io::Write;
 use url::Url;
+use x509_parser::parse_x509_certificate;
 
 #[cfg(test)]
 mod tests;
@@ -114,9 +116,9 @@ pub enum Error {
 #[builder(default, setter(into))]
 pub struct ServiceProvider {
     pub entity_id: Option<String>,
-    pub key: Option<rsa::Rsa<Private>>,
-    pub certificate: Option<x509::X509>,
-    pub intermediates: Option<Vec<x509::X509>>,
+    pub key: Option<RsaPrivateKey>,
+    pub certificate: Option<String>,
+    pub intermediates: Option<Vec<String>>,
     pub metadata_url: Option<String>,
     pub acs_url: Option<String>,
     pub slo_url: Option<String>,
@@ -170,10 +172,10 @@ impl ServiceProvider {
 
         let mut key_descriptors = vec![];
         if let Some(cert) = &self.certificate {
-            let mut cert_bytes: Vec<u8> = cert.to_der()?;
+            let mut cert_bytes: Vec<u8> = cert.as_bytes().into();
             if let Some(intermediates) = &self.intermediates {
                 for intermediate in intermediates {
-                    cert_bytes.append(&mut intermediate.to_der()?);
+                    cert_bytes.append(&mut intermediate.as_bytes().to_vec());
                 }
             }
             key_descriptors.push(KeyDescriptor {
@@ -284,7 +286,7 @@ impl ServiceProvider {
         None
     }
 
-    pub fn idp_signing_certs(&self) -> Result<Option<Vec<openssl::x509::X509>>, Error> {
+    pub fn idp_signing_certs(&self) -> Result<Option<Vec<String>>, Error> {
         let mut result = vec![];
         if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
             for idp_sso_descriptor in idp_sso_descriptors {
@@ -295,7 +297,26 @@ impl ServiceProvider {
                         .filter(|key_use| *key_use == "signing")
                         .is_some()
                     {
-                        result.append(&mut parse_certificates(key_descriptor)?);
+                        if let Some(cert) = key_descriptor
+                            .key_info
+                            .x509_data
+                            .as_ref()
+                            .and_then(|data| data.certificate.as_ref())
+                        {
+                            if let Ok(decoded) = base64::decode(cert.as_bytes()) {
+                                if let Ok((_, parsed)) = parse_x509_certificate(&decoded) {
+                                    result.push(parsed.raw_serial_as_string())
+                                } else {
+                                    return Err(Error::FailedToParseCert {
+                                        cert: cert.to_string(),
+                                    });
+                                }
+                            } else {
+                                return Err(Error::FailedToParseCert {
+                                    cert: cert.to_string(),
+                                });
+                            }
+                        }
                     }
                 }
             }
@@ -306,7 +327,26 @@ impl ServiceProvider {
                         if key_descriptor.key_use == None
                             || key_descriptor.key_use == Some("".to_string())
                         {
-                            result.append(&mut parse_certificates(key_descriptor)?);
+                            if let Some(cert) = key_descriptor
+                                .key_info
+                                .x509_data
+                                .as_ref()
+                                .and_then(|data| data.certificate.as_ref())
+                            {
+                                if let Ok(decoded) = base64::decode(cert.as_bytes()) {
+                                    if let Ok((_, parsed)) = parse_x509_certificate(&decoded) {
+                                        result.push(parsed.raw_serial_as_string())
+                                    } else {
+                                        return Err(Error::FailedToParseCert {
+                                            cert: cert.to_string(),
+                                        });
+                                    }
+                                } else {
+                                    return Err(Error::FailedToParseCert {
+                                        cert: cert.to_string(),
+                                    });
+                                }
+                            }
                         }
                     }
                 }
@@ -602,17 +642,14 @@ impl AuthnRequest {
             .to_string();
 
         // Use openssl's bindings to sign
-        let pkey = openssl::rsa::Rsa::private_key_from_der(private_key_der)?;
-        let pkey = openssl::pkey::PKey::from_rsa(pkey)?;
-
-        let mut signer =
-            openssl::sign::Signer::new(openssl::hash::MessageDigest::sha256(), pkey.as_ref())?;
-
-        signer.update(string_to_sign.as_bytes())?;
+        let pkey = RsaPrivateKey::from_pkcs1_der(&private_key_der)?;
+        let padding = PaddingScheme::new_pkcs1v15_sign(Some(Hash::SHA2_256));
+        let hashed = Sha256::digest(string_to_sign.as_bytes());
+        let signature = pkey.sign(padding, &hashed[..])?;
 
         unsigned_url
             .query_pairs_mut()
-            .append_pair("Signature", &base64::encode(signer.sign_to_vec()?));
+            .append_pair("Signature", &base64::encode(signature));
 
         // Past this point, it's a signed url :)
         Ok(Some(unsigned_url))

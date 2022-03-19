@@ -23,20 +23,20 @@ pkg-config =  "^0.3.17"
 bindgen    = "^0.60.1"
 
 [dependencies]
-openssl = "0.10"
-openssl-sys = "0.9"
-openssl-probe = "0.1.2"
-url = "2.1.1"
-quick-xml = { version = "0.23.0", features = [ "serialize" ] }
-serde = { version = "1.0", features = ["derive"] }
-chrono = { version = "0.4", features = ["serde"] }
 base64 = "0.13"
-flate2 = "1.0"
-snafu = "0.7"
-rand = "0.8.4"
-derive_builder = "0.11.2"
-libxml = { version = "0.3.0", optional = true}
-uuid = { version = ">=0.8.0, <2.0.0", features = [ "v4" ] }
+chrono = { version = "0.4", features = ["serde"] }
 data-encoding = "2.2.0"
-libc        = {version = "^0.2.66", optional = true}
+derive_builder = "0.11.2"
+flate2 = "1.0"
 lazy_static = {version = "^1.4.0", optional = true}
+libc        = {version = "^0.2.66", optional = true}
+libxml = { version = "0.3.0", optional = true}
+quick-xml = { version = "0.23.0", features = [ "serialize" ] }
+rand = "0.8.4"
+rsa = "0.5.0"
+serde = { version = "1.0", features = ["derive"] }
+sha2 = "0.9"
+snafu = "0.7"
+url = "2.1.1"
+uuid = { version = ">=0.8.0, <2.0.0", features = [ "v4" ] }
+x509-parser = "0.13.0"
