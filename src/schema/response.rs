@@ -30,7 +30,7 @@ pub struct Response {
     #[serde(rename = "Signature")]
     pub signature: Option<Signature>,
     #[serde(rename = "Status")]
-    pub status: Status,
+    pub status: Option<Status>,
     #[serde(rename = "EncryptedAssertion")]
     pub encrypted_assertion: Option<String>,
     #[serde(rename = "Assertion")]
@@ -90,8 +90,9 @@ impl Response {
         if let Some(signature) = &self.signature {
             writer.write(signature.to_xml()?.as_bytes())?;
         }
-
-        writer.write(self.status.to_xml()?.as_bytes())?;
+        if let Some(status) = &self.status {
+            writer.write(status.to_xml()?.as_bytes())?;
+        }
 
         if let Some(assertion) = &self.assertion {
             writer.write(assertion.to_xml()?.as_bytes())?;

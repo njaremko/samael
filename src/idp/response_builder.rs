@@ -125,13 +125,13 @@ fn build_response(
         consent: None,
         issuer: Some(issuer.clone()),
         signature: Some(Signature::template(&response_id, x509_cert)),
-        status: Status {
+        status: Some(Status {
             status_code: StatusCode {
                 value: Some("urn:oasis:names:tc:SAML:2.0:status:Success".to_string()),
             },
             status_message: None,
             status_detail: None,
-        },
+        }),
         encrypted_assertion: None,
         assertion: Some(build_assertion(
             name_id,
