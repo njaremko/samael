@@ -23,6 +23,15 @@ use quick_xml::Writer;
 use std::io::Cursor;
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+pub struct NameID {
+    #[serde(rename = "Format")]
+    pub format: Option<String>,
+
+    #[serde(rename = "$value")]
+    pub value: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct LogoutRequest {
     #[serde(rename = "@ID")]
     pub id: Option<String>,
@@ -38,6 +47,8 @@ pub struct LogoutRequest {
     pub signature: Option<Signature>,
     #[serde(rename = "@SessionIndex")]
     pub session_index: Option<String>,
+    #[serde(rename = "NameID")]
+    pub name_id: Option<NameID>,
 }
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
