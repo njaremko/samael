@@ -18,6 +18,7 @@ mod error;
 mod keys;
 mod xmldsig;
 mod xmlsec;
+mod backend;
 
 // exports
 pub use self::error::XmlSecError;

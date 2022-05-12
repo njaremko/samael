@@ -9,10 +9,13 @@ pub type XmlSecResult<T> = Result<T, XmlSecError>;
 #[allow(missing_docs)]
 #[derive(Debug)]
 pub enum XmlSecError {
+    XmlSecAbiMismatch,
     XmlSecInitError,
     ContextInitError,
     CryptoInitOpenSSLError,
     CryptoInitOpenSSLAppError,
+    #[cfg(xmlsec_dynamic)]
+    CryptoLoadLibraryError,
 
     InvalidInputString,
 
@@ -33,11 +36,16 @@ impl std::fmt::Display for XmlSecError {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::XmlSecInitError => write!(fmt, "{}", "Internal XmlSec Init Error"),
+            Self::XmlSecAbiMismatch => write!(fmt, "{}", "XmlSec ABI version mismatch"),
             Self::CryptoInitOpenSSLError => {
                 write!(fmt, "{}", "Internal XmlSec Crypto OpenSSL Init Error")
             }
             Self::CryptoInitOpenSSLAppError => {
                 write!(fmt, "{}", "Internal XmlSec Crypto OpenSSLApp Init Error")
+            }
+            #[cfg(xmlsec_dynamic)]
+            Self::CryptoLoadLibraryError => {
+                write!(fmt, "{}", "XmlSec failed to load default crypto backend")
             }
             Self::ContextInitError => write!(fmt, "{}", "Internal XmlSec Context Error"),
 

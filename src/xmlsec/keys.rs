@@ -6,6 +6,7 @@ use crate::bindings;
 use super::error::XmlSecError;
 use super::error::XmlSecResult;
 use super::xmlsec;
+use super::backend;
 
 use std::ptr::null;
 use std::ptr::null_mut;
@@ -39,7 +40,7 @@ impl XmlSecKey {
 
         // Load key from buffer
         let key = unsafe {
-            bindings::xmlSecOpenSSLAppKeyLoadMemory(
+            backend::xmlSecCryptoAppKeyLoadMemory(
                 buffer.as_ptr(),
                 buffer.len() as u32,
                 format as u32,
