@@ -32,7 +32,7 @@ snafu = "0.6"
 rand = "0.8.4"
 derive_builder = "0.10.2"
 libxml = { version = "0.3.0", optional = true}
-uuid = { version = "0.8.1", features = ["v4"] }
+uuid = { version = ">=0.8.0, <2.0.0", features = [ "v4" ] }
 data-encoding = "2.2.0"
 libc        = {version = "^0.2.66", optional = true}
 lazy_static = {version = "^1.4.0", optional = true}
