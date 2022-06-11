@@ -5,24 +5,52 @@ This is a SAML2 library for rust.
 This is a work in progress. Pull Requests are welcome.
 
 Current Features:
+
 - Serializing and Deserializing SAML messages
 - IDP-initiated SSO
-- SP-initiated SSO Redirect-POST binding 
+- SP-initiated SSO Redirect-POST binding
 - Helpers for validating SAML assertions
-    - Encrypted assertions aren't supported yet
+  - Encrypted assertions aren't supported yet
 - Verify SAMLRequest (AuthnRequest) message signatures
 - Create signed SAMLResponse (Response) messages
 
 The `"xmlsec"` feature flag adds basic support for verifying and signing SAML messages. We're using a modified copy of [rust-xmlsec](https://github.com/voipir/rust-xmlsec) library (bindings to xmlsec1 library).
 
 If you want to use the `"xmlsec"` feature, you'll need to install the following C libs:
+
 - libxml2
 - openssl
 - xmlsec1 (with openssl statically linked)
-> **NOTE**: this has only been tested using libxml2 ^2.9.10. 
-> The default macOS libxml2 (2.9.4) has known concurrency issues.
-    
+  > **NOTE**: this has only been tested using libxml2 ^2.9.10.
+  > The default macOS libxml2 (2.9.4) has known concurrency issues.
+
+# Build instructions
+
+We use [nix](https://nixos.org/download.html) to faciliate reproducible builds of `samael`.
+It will ensure you have the required libraries installed in a way that won't cause any issues with the rest of your system.
+If you want to take advantage of this, you'll need to put in a little bit of work.
+
+1. [Install nix](https://nixos.org/download.html)
+2. Enable [nix flake support](https://nixos.wiki/wiki/Flakes#Non-NixOS)
+3. Install [direnv](https://direnv.net/)
+4. Install [cachix](https://docs.cachix.org/installation)
+5. Run `cachix use nix-community` to enable a binary cache for the rust toolchain (otherwise you'll build the rust toolchain from scratch)
+6. Run `nix-env -f '<nixpkgs>' -iA nix-direnv` and `echo "source $HOME/.nix-profile/share/nix-direnv/direnvrc" > $HOME/.direnvrc` to improve nix support for direnv
+7. `cd` into this repo and run `direnv allow`
+8. Install the [direnv VS Code extension](https://marketplace.visualstudio.com/items?itemName=mkhl.direnv)
+
+## Building the library
+
+Just run `nix build`
+
+## Entering a dev environment
+
+Just run `nix develop`
+
+# How do I use this library?
+
 Here is some sample code using this library:
+
 ```rust
 use samael::metadata::{ContactPerson, ContactType, EntityDescriptor};
 use samael::service_provider::ServiceProviderBuilder;
