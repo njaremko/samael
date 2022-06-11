@@ -36,7 +36,7 @@ If you want to take advantage of this, you'll need to put in a little bit of wor
 4. Install [cachix](https://docs.cachix.org/installation)
 5. Run `cachix use nix-community` to enable a binary cache for the rust toolchain (otherwise you'll build the rust toolchain from scratch)
 6. Run `nix-env -f '<nixpkgs>' -iA nix-direnv` and `echo "source $HOME/.nix-profile/share/nix-direnv/direnvrc" > $HOME/.direnvrc` to improve nix support for direnv
-7. `cd` into this repo and run `direnv allow`
+7. `cd` into this repo and run `nix build` then, after that finishes, `direnv allow`
 8. Install the [direnv VS Code extension](https://marketplace.visualstudio.com/items?itemName=mkhl.direnv)
 
 ## Building the library
