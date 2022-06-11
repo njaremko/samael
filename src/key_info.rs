@@ -37,7 +37,7 @@ const X509_DATA_NAME: &str = "ds:X509Data";
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct X509Data {
     #[serde(rename = "X509Certificate")]
-    pub certificate: Option<String>,
+    pub certificates: Vec<String>,
 }
 
 impl X509Data {
@@ -47,7 +47,7 @@ impl X509Data {
         let root = BytesStart::borrowed(X509_DATA_NAME.as_bytes(), X509_DATA_NAME.len());
         writer.write_event(Event::Start(root))?;
 
-        if let Some(certificate) = &self.certificate {
+        for certificate in &self.certificates {
             let name = "ds:X509Certificate";
             writer.write_event(Event::Start(BytesStart::borrowed(
                 name.as_bytes(),

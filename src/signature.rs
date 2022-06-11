@@ -64,9 +64,9 @@ impl Signature {
             key_info: Some(vec![KeyInfo {
                 id: None,
                 x509_data: Some(X509Data {
-                    certificate: Some(
+                    certificates: vec![
                         crate::crypto::mime_encode_x509_cert(x509_cert_der)
-                    ),
+                    ],
                 }),
             }]),
         }
@@ -96,7 +96,7 @@ impl Signature {
         self.key_info.get_or_insert(Vec::new()).push(KeyInfo {
             id: None,
             x509_data: Some(X509Data {
-                certificate: Some(base64::encode(public_cert_der)),
+                certificates: vec![base64::encode(public_cert_der)],
             }),
         });
         self
