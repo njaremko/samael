@@ -414,11 +414,13 @@ impl ServiceProvider {
                 });
             }
         }
-        if let Some(status) = &response.status.status_code.value {
-            if status != "urn:oasis:names:tc:SAML:2.0:status:Success" {
-                return Err(Error::ResponseBadStatusCode {
-                    code: status.clone(),
-                });
+        if let Some(status) = &response.status {
+            if let Some(status) = &status.status_code.value {
+                if status != "urn:oasis:names:tc:SAML:2.0:status:Success" {
+                    return Err(Error::ResponseBadStatusCode {
+                        code: status.clone(),
+                    });
+                }
             }
         }
 
