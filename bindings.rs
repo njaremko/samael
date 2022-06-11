@@ -13,14 +13,29 @@ const BINDINGS: &str = "bindings.rs";
 
 fn main() {
     if env::var_os("CARGO_FEATURE_XMLSEC").is_some() {
-        println!("cargo:rustc-link-lib=xmlsec1-openssl"); // -lxmlsec1-openssl
+        let path_out = PathBuf::from(env::var("OUT_DIR").unwrap());
+        let path_bindings = path_out.join(BINDINGS);
+
+        // Determine which API/ABI is available on this platform:
+        let cflags = fetch_xmlsec_config_flags();
+        let dynamic = if cflags
+            .iter()
+            .any(|s| s == "-DXMLSEC_CRYPTO_DYNAMIC_LOADING=1")
+        {
+            println!("cargo:rustc-cfg=xmlsec_dynamic");
+            true
+        } else {
+            println!("cargo:rustc-cfg=xmlsec_static");
+            false
+        };
+
+        if !dynamic {
+            println!("cargo:rustc-link-lib=xmlsec1-openssl"); // -lxmlsec1-openssl
+        }
         println!("cargo:rustc-link-lib=xmlsec1"); // -lxmlsec1
         println!("cargo:rustc-link-lib=xml2"); // -lxml2
         println!("cargo:rustc-link-lib=ssl"); // -lssl
         println!("cargo:rustc-link-lib=crypto"); // -lcrypto
-
-        let path_out = PathBuf::from(env::var("OUT_DIR").unwrap());
-        let path_bindings = path_out.join(BINDINGS);
 
         if !path_bindings.exists() {
             PkgConfig::new()
@@ -29,7 +44,7 @@ fn main() {
 
             let bindbuild = BindgenBuilder::default()
                 .header("bindings.h")
-                .clang_args(fetch_xmlsec_config_flags())
+                .clang_args(cflags)
                 .clang_args(fetch_xmlsec_config_libs())
                 .layout_tests(true)
                 .rustfmt_bindings(true)

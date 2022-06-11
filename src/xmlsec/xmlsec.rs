@@ -5,8 +5,10 @@ use crate::bindings;
 
 use lazy_static::lazy_static;
 
+use super::backend;
 use super::error::XmlSecError;
 use super::XmlSecResult;
+use std::convert::TryInto;
 use std::ptr::null;
 use std::sync::Mutex;
 
@@ -60,6 +62,19 @@ impl Drop for XmlSecContext {
 
 /// Init xmlsec library
 fn init_xmlsec() -> XmlSecResult<()> {
+    let rc = unsafe {
+        bindings::xmlSecCheckVersionExt(
+            bindings::XMLSEC_VERSION_MAJOR.try_into().unwrap(),
+            bindings::XMLSEC_VERSION_MINOR.try_into().unwrap(),
+            bindings::XMLSEC_VERSION_SUBMINOR.try_into().unwrap(),
+            bindings::xmlSecCheckVersionMode_xmlSecCheckVersionABICompatible,
+        )
+    };
+
+    if rc < 0 {
+        return Err(XmlSecError::XmlSecAbiMismatch);
+    }
+
     let rc = unsafe { bindings::xmlSecInit() };
 
     if rc < 0 {
@@ -73,7 +88,15 @@ fn init_xmlsec() -> XmlSecResult<()> {
 /// xmlsec-crypto libraries. Use the crypto library name ("openssl",
 /// "nss", etc.) to load corresponding xmlsec-crypto library.
 fn init_crypto_app() -> XmlSecResult<()> {
-    let rc = unsafe { bindings::xmlSecOpenSSLAppInit(null()) };
+    #[cfg(xmlsec_dynamic)]
+    {
+        let rc = unsafe { backend::xmlSecCryptoDLLoadLibrary(null()) };
+        if rc < 0 {
+            return Err(XmlSecError::CryptoLoadLibraryError);
+        }
+    }
+
+    let rc = unsafe { backend::xmlSecCryptoAppInit(null()) };
 
     if rc < 0 {
         Err(XmlSecError::CryptoInitOpenSSLAppError)
@@ -84,7 +107,7 @@ fn init_crypto_app() -> XmlSecResult<()> {
 
 /// Init xmlsec-crypto library
 fn init_crypto() -> XmlSecResult<()> {
-    let rc = unsafe { bindings::xmlSecOpenSSLInit() };
+    let rc = unsafe { backend::xmlSecCryptoInit() };
 
     if rc < 0 {
         Err(XmlSecError::CryptoInitOpenSSLError)
@@ -95,12 +118,12 @@ fn init_crypto() -> XmlSecResult<()> {
 
 /// Shutdown xmlsec-crypto library
 fn cleanup_crypto() {
-    unsafe { bindings::xmlSecOpenSSLShutdown() };
+    unsafe { backend::xmlSecCryptoShutdown() };
 }
 
 /// Shutdown crypto library
 fn cleanup_crypto_app() {
-    unsafe { bindings::xmlSecOpenSSLAppShutdown() };
+    unsafe { backend::xmlSecCryptoAppShutdown() };
 }
 
 /// Shutdown xmlsec library
