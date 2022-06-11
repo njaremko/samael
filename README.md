@@ -20,9 +20,9 @@ If you want to use the `"xmlsec"` feature, you'll need to install the following 
 
 - libxml2
 - openssl
-- xmlsec1 (with openssl statically linked)
-  > **NOTE**: this has only been tested using libxml2 ^2.9.10.
-  > The default macOS libxml2 (2.9.4) has known concurrency issues.
+- xmlsec1
+- libxslt
+- pkg-config
 
 # Build instructions
 
