@@ -13,4 +13,4 @@ jobs:
       - uses: cachix/cachix-action@v10
         with:
           name: nix-community
-      - run: nix build
+      - run: nix-shell --run 'cargo test --features xmlsec'

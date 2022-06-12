@@ -10,9 +10,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixpkgs.url = "nixpkgs/nixos-unstable";
+    flake-compat = {
+      url = "github:edolstra/flake-compat";
+      flake = false;
+    };
   };
 
-  outputs = { self, fenix, flake-utils, naersk, nixpkgs }:
+  outputs = { self, fenix, flake-utils, naersk, nixpkgs, flake-compat }:
     flake-utils.lib.eachDefaultSystem
       (system:
         let
@@ -36,8 +40,8 @@
           packages.samael = naersk-lib.buildPackage {
             pname = "samael";
             src = ./.;
-            cargoBuildOptions = existingOptions:  existingOptions ++ [ "--features xmlsec" ];
-            cargoTestOptions = existingOptions:  existingOptions ++ [ "--features xmlsec" ];
+            cargoBuildOptions = existingOptions: existingOptions ++ [ "--features xmlsec" ];
+            cargoTestOptions = existingOptions: existingOptions ++ [ "--features xmlsec" ];
             copyBins = false;
             copyLibs = false;
             copyTarget = true;
