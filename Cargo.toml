@@ -11,6 +11,12 @@ keywords = ["saml", "saml2", "xml", "sso"]
 categories = ["authentication"]
 build = "bindings.rs"
 
+[lib]
+# Disabling doctests because they cause nix build check phase to fail
+# I suspect this might be because we have no doctests yet, 
+# can test re-enabling this when we add one
+doctest = false
+
 [features]
 xmlsec = ["libc", "lazy_static", "libxml"]
 

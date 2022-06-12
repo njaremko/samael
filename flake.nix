@@ -23,6 +23,7 @@
             openssl
             pkg-config
             xmlsec
+            libtool
           ];
           naersk-lib = (naersk.lib."${system}".override
             {
@@ -34,6 +35,10 @@
           packages.samael = naersk-lib.buildPackage {
             pname = "samael";
             src = ./.;
+            cargoBuildOptions = existingOptions:  existingOptions ++ [ "--features xmlsec" ];
+            cargoTestOptions = existingOptions:  existingOptions ++ [ "--features xmlsec" ];
+            doCheck = true;
+            doDoc = true;
             nativeBuildInputs = commonNativeBuildInputs;
           };
           defaultPackage = packages.samael;
