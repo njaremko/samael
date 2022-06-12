@@ -23,6 +23,7 @@ If you want to use the `"xmlsec"` feature, you'll need to install the following 
 - xmlsec1
 - libxslt
 - pkg-config
+- libiconv
 
 # Build instructions
 
