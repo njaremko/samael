@@ -25,9 +25,10 @@
             xmlsec
             libtool
           ];
+          rustPackages = fenix.packages.${system};
           naersk-lib = (naersk.lib."${system}".override
             {
-              inherit (fenix.packages.${system}.minimal) cargo rustc;
+              inherit (rustPackages.stable) cargo rustc;
             });
         in
         rec {
@@ -49,8 +50,8 @@
           # `nix develop`
           devShell = pkgs.mkShell {
             nativeBuildInputs = with pkgs; [
-              fenix.packages.${system}.rust-analyzer
-              fenix.packages.${system}.stable.toolchain
+              rustPackages.rust-analyzer
+              rustPackages.stable.toolchain
             ] ++ commonNativeBuildInputs;
           };
         });
