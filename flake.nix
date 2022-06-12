@@ -22,14 +22,16 @@
         let
           pkgs = nixpkgs.legacyPackages."${system}";
           lib = pkgs.lib;
+          stdenv = pkgs.stdenv;
           commonNativeBuildInputs = with pkgs; [
+            libiconv
+            libtool
             libxml2
             libxslt
+            llvmPackages.libclang
             openssl
             pkg-config
             xmlsec
-            libtool
-            pkgs.llvmPackages.libclang
           ];
           rustPackages = fenix.packages.${system};
           naersk-lib = (naersk.lib."${system}".override
@@ -40,6 +42,16 @@
         rec {
           # `nix build`
           packages.samael = naersk-lib.buildPackage {
+            LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
+            BINDGEN_EXTRA_CLANG_ARGS="${builtins.readFile "${stdenv.cc}/nix-support/libc-crt1-cflags"} \
+                ${builtins.readFile "${stdenv.cc}/nix-support/libc-cflags"} \
+                ${builtins.readFile "${stdenv.cc}/nix-support/cc-cflags"} \
+                ${builtins.readFile "${stdenv.cc}/nix-support/libcxx-cxxflags"} \
+                -idirafter ${pkgs.libiconv}/include \
+                ${lib.optionalString stdenv.cc.isClang "-idirafter ${stdenv.cc.cc}/lib/clang/${lib.getVersion stdenv.cc.cc}/include"} \
+                ${lib.optionalString stdenv.cc.isGNU "-isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc} -isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc}/${stdenv.hostPlatform.config} -idirafter ${stdenv.cc.cc}/lib/gcc/${stdenv.hostPlatform.config}/${lib.getVersion stdenv.cc.cc}/include"} \
+            ";
+
             pname = "samael";
             src = ./.;
             cargoBuildOptions = existingOptions: existingOptions ++ [ "--features xmlsec" ];
@@ -56,7 +68,14 @@
           # `nix develop`
           devShell = pkgs.mkShell {
             LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
-            BINDGEN_EXTRA_CLANG_ARGS = "-isystem ${pkgs.llvmPackages.libclang.lib}/lib/clang/${lib.getVersion pkgs.clang}/include";
+            BINDGEN_EXTRA_CLANG_ARGS="${builtins.readFile "${stdenv.cc}/nix-support/libc-crt1-cflags"} \
+                ${builtins.readFile "${stdenv.cc}/nix-support/libc-cflags"} \
+                ${builtins.readFile "${stdenv.cc}/nix-support/cc-cflags"} \
+                ${builtins.readFile "${stdenv.cc}/nix-support/libcxx-cxxflags"} \
+                -idirafter ${pkgs.libiconv}/include \
+                ${lib.optionalString stdenv.cc.isClang "-idirafter ${stdenv.cc.cc}/lib/clang/${lib.getVersion stdenv.cc.cc}/include"} \
+                ${lib.optionalString stdenv.cc.isGNU "-isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc} -isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc}/${stdenv.hostPlatform.config} -idirafter ${stdenv.cc.cc}/lib/gcc/${stdenv.hostPlatform.config}/${lib.getVersion stdenv.cc.cc}/include"} \
+            ";
 
             nativeBuildInputs = with pkgs; [
               rustPackages.rust-analyzer
