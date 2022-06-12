@@ -34,6 +34,7 @@
         rec {
           # `nix build`
           packages.samael = naersk-lib.buildPackage {
+            LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
             pname = "samael";
             src = ./.;
             cargoBuildOptions = existingOptions:  existingOptions ++ [ "--features xmlsec" ];
@@ -49,6 +50,7 @@
 
           # `nix develop`
           devShell = pkgs.mkShell {
+            LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
             nativeBuildInputs = with pkgs; [
               rustPackages.rust-analyzer
               rustPackages.stable.toolchain
