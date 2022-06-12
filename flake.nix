@@ -21,6 +21,7 @@
       (system:
         let
           pkgs = nixpkgs.legacyPackages."${system}";
+          lib = pkgs.lib;
           commonNativeBuildInputs = with pkgs; [
             libxml2
             libxslt
@@ -28,6 +29,7 @@
             pkg-config
             xmlsec
             libtool
+            pkgs.llvmPackages.libclang
           ];
           rustPackages = fenix.packages.${system};
           naersk-lib = (naersk.lib."${system}".override
@@ -53,6 +55,9 @@
 
           # `nix develop`
           devShell = pkgs.mkShell {
+            LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
+            BINDGEN_EXTRA_CLANG_ARGS = "-isystem ${pkgs.llvmPackages.libclang.lib}/lib/clang/${lib.getVersion pkgs.clang}/include";
+
             nativeBuildInputs = with pkgs; [
               rustPackages.rust-analyzer
               rustPackages.stable.toolchain
