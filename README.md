@@ -48,7 +48,8 @@ Just run `nix build`
 
 ## Entering a dev environment
 
-Just run `nix develop`
+If you followed the above instructions, just `cd`-ing into the directory will setup a reproducible dev environment,
+but if you don't want to install `direnv`, then just run `nix develop`
 
 # How do I use this library?
 
