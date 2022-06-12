@@ -153,7 +153,9 @@ impl XmlSecSignatureContext {
     pub fn verify_node(&self, sig_node: &libxml::tree::Node) -> XmlSecResult<bool> {
         self.key_is_set()?;
         if let Some(ns) = sig_node.get_namespace() {
-            if ns.get_href() != "http://www.w3.org/2000/09/xmldsig#" || sig_node.get_name() != "Signature" {
+            if ns.get_href() != "http://www.w3.org/2000/09/xmldsig#"
+                || sig_node.get_name() != "Signature"
+            {
                 return Err(XmlSecError::NotASignatureNode);
             }
         } else {

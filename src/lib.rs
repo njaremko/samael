@@ -7,6 +7,7 @@ pub mod idp;
 pub mod key_info;
 pub mod metadata;
 pub mod schema;
+#[cfg(feature = "xmlsec")]
 pub mod service_provider;
 pub mod signature;
 #[cfg(feature = "xmlsec")]

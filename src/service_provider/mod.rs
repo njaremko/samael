@@ -16,6 +16,9 @@ use std::fmt::Debug;
 use std::io::Write;
 use url::Url;
 
+#[cfg(test)]
+mod tests;
+
 #[cfg(feature = "xmlsec")]
 use crate::crypto::reduce_xml_to_signed;
 
@@ -317,10 +320,10 @@ impl ServiceProvider {
         })
     }
 
-    pub fn parse_response<AsStr: AsRef<str> + Debug>(
+    pub fn parse_base64_response(
         &self,
         encoded_resp: &str,
-        possible_request_ids: &[AsStr],
+        possible_request_ids: Option<&[&str]>,
     ) -> Result<Assertion, Box<dyn std::error::Error>> {
         let bytes = base64::decode(encoded_resp)?;
         let decoded = std::str::from_utf8(&bytes)?;
@@ -328,16 +331,26 @@ impl ServiceProvider {
         Ok(assertion)
     }
 
-    pub fn parse_xml_response<AsStr: AsRef<str> + Debug>(
+    pub(self) fn validate_base64_response(&self, encoded_resp: &str) -> Result<(), Error> {
+        let bytes = base64::decode(encoded_resp).unwrap();
+        let decoded = std::str::from_utf8(&bytes).unwrap();
+        let reduced_xml = if let Some(sign_certs) = self.idp_signing_certs()? {
+            reduce_xml_to_signed(decoded, &sign_certs)
+                .map_err(|_e| Error::FailedToValidateSignature)?
+        } else {
+            return Err(Error::FailedToValidateSignature);
+        };
+        Ok(())
+    }
+
+    pub fn parse_xml_response(
         &self,
         response_xml: &str,
-        possible_request_ids: &[AsStr],
+        possible_request_ids: Option<&[&str]>,
     ) -> Result<Assertion, Error> {
         let reduced_xml = if let Some(sign_certs) = self.idp_signing_certs()? {
-            reduce_xml_to_signed(
-                response_xml,
-                &sign_certs
-            ).map_err(|_e| Error::FailedToValidateSignature)?
+            reduce_xml_to_signed(response_xml, &sign_certs)
+                .map_err(|_e| Error::FailedToValidateSignature)?
         } else {
             String::from(response_xml)
         };
@@ -348,9 +361,11 @@ impl ServiceProvider {
         let mut request_id_valid = false;
         if self.allow_idp_initiated {
             request_id_valid = true;
-        } else if let Some(in_response_to) = &response.in_response_to {
+        } else if let (Some(in_response_to), Some(possible_request_ids)) =
+            (&response.in_response_to, possible_request_ids)
+        {
             for req_id in possible_request_ids {
-                if req_id.as_ref() == in_response_to {
+                if req_id == in_response_to {
                     request_id_valid = true;
                 }
             }
@@ -358,8 +373,9 @@ impl ServiceProvider {
         if !request_id_valid {
             return Err(Error::ResponseInResponseToInvalid {
                 possible_ids: possible_request_ids
-                    .iter()
-                    .map(|e| e.as_ref().to_string())
+                    .into_iter()
+                    .flatten()
+                    .map(|e| e.to_string())
                     .collect(),
             });
         }
@@ -397,10 +413,10 @@ impl ServiceProvider {
         }
     }
 
-    fn validate_assertion<AsStr: AsRef<str> + Debug>(
+    fn validate_assertion(
         &self,
         assertion: &Assertion,
-        _possible_request_ids: &[AsStr],
+        _possible_request_ids: Option<&[&str]>,
     ) -> Result<(), Error> {
         if assertion.issue_instant + self.max_issue_delay < Utc::now() {
             return Err(Error::AssertionExpired {
@@ -594,27 +610,23 @@ impl AuthnRequest {
         //                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
         //
         // then add the "Signature" query parameter afterwards.
-        let string_to_sign: String =
-            unsigned_url
-                .query()
-                .ok_or(Error::UnexpectedError)?
-                .to_string();
+        let string_to_sign: String = unsigned_url
+            .query()
+            .ok_or(Error::UnexpectedError)?
+            .to_string();
 
         // Use openssl's bindings to sign
         let pkey = openssl::rsa::Rsa::private_key_from_der(&private_key_der)?;
         let pkey = openssl::pkey::PKey::from_rsa(pkey)?;
 
-        let mut signer = openssl::sign::Signer::new(
-            openssl::hash::MessageDigest::sha256(),
-            &pkey.as_ref(),
-        )?;
+        let mut signer =
+            openssl::sign::Signer::new(openssl::hash::MessageDigest::sha256(), &pkey.as_ref())?;
 
         signer.update(string_to_sign.as_bytes())?;
 
-        unsigned_url.query_pairs_mut().append_pair(
-            "Signature",
-            &base64::encode(signer.sign_to_vec()?),
-        );
+        unsigned_url
+            .query_pairs_mut()
+            .append_pair("Signature", &base64::encode(signer.sign_to_vec()?));
 
         // Past this point, it's a signed url :)
         Ok(Some(unsigned_url))
