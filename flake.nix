@@ -37,6 +37,8 @@
             src = ./.;
             cargoBuildOptions = existingOptions:  existingOptions ++ [ "--features xmlsec" ];
             cargoTestOptions = existingOptions:  existingOptions ++ [ "--features xmlsec" ];
+            copyBins = false;
+            copyLibs = true;
             doCheck = true;
             doDoc = true;
             nativeBuildInputs = commonNativeBuildInputs;
