@@ -28,7 +28,7 @@
           rustPackages = fenix.packages.${system};
           naersk-lib = (naersk.lib."${system}".override
             {
-              inherit (rustPackages.stable) cargo rustc;
+              inherit (rustPackages.minimal) cargo rustc;
             });
         in
         rec {
