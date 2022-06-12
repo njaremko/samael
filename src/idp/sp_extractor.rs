@@ -64,7 +64,7 @@ impl SPMetadataExtractor {
                     })
                     .collect()
             })
-            .unwrap_or(vec![])
+            .unwrap_or_default()
     }
 
     pub fn verification_cert(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {

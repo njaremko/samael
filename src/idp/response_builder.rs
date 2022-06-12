@@ -67,7 +67,7 @@ fn build_assertion(
     let assertion_id = crypto::gen_saml_assertion_id();
 
     Assertion {
-        id: assertion_id.clone(),
+        id: assertion_id,
         issue_instant: Utc::now(),
         version: "2.0".to_string(),
         issuer,

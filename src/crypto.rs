@@ -45,13 +45,13 @@ pub enum Error {
     #[cfg(feature = "xmlsec")]
     #[snafu(display("failed to remove attribute: {}", error))]
     XmlAttributeRemovalError {
-        error: Box<dyn std::error::Error>
+        error: Box<dyn std::error::Error>,
     },
 
     #[cfg(feature = "xmlsec")]
     #[snafu(display("failed to define namespace: {}", error))]
     XmlNamespaceDefinitionError {
-        error: Box<dyn std::error::Error>
+        error: Box<dyn std::error::Error>,
     },
 
     #[cfg(feature = "xmlsec")]
@@ -143,16 +143,14 @@ fn collect_id_attributes(doc: &mut libxml::tree::Document) -> Result<(), Error> 
             let id_value_cstr = CString::new(id_value).unwrap();
             let node_ptr = node.node_ptr();
             unsafe {
-                let attr = libxml::bindings::xmlHasProp(
-                    node_ptr,
-                    id_attr_name.as_ptr() as *const u8,
-                );
+                let attr =
+                    libxml::bindings::xmlHasProp(node_ptr, id_attr_name.as_ptr() as *const u8);
                 assert!(!attr.is_null());
                 libxml::bindings::xmlAddID(
                     std::ptr::null_mut(),
                     doc.doc_ptr(),
                     id_value_cstr.as_ptr() as *const u8,
-                    attr
+                    attr,
                 );
             }
         }
@@ -198,7 +196,11 @@ pub fn remove_signature_verified_attributes(node: &mut libxml::tree::Node) -> Re
 
 /// Obtains the first child element of the given node that has the given name and namespace.
 #[cfg(feature = "xmlsec")]
-fn get_first_child_name_ns(node: &libxml::tree::Node, name: &str, ns: &str) -> Option<libxml::tree::Node> {
+fn get_first_child_name_ns(
+    node: &libxml::tree::Node,
+    name: &str,
+    ns: &str,
+) -> Option<libxml::tree::Node> {
     let mut found_node = None;
     for child in node.get_child_elements() {
         if let Some(child_ns) = child.get_namespace() {
@@ -210,7 +212,7 @@ fn get_first_child_name_ns(node: &libxml::tree::Node, name: &str, ns: &str) -> O
         }
 
         if child.get_name() == name {
-            found_node = Some(child.clone());
+            found_node = Some(child);
             break;
         }
     }
@@ -241,24 +243,27 @@ fn get_elements_by_predicate<F: FnMut(&libxml::tree::Node) -> bool>(
 /// rooted at the given node.
 #[cfg(feature = "xmlsec")]
 fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree::Node> {
-    let mut elems = get_elements_by_predicate(elem, |node|
+    let mut elems = get_elements_by_predicate(elem, |node| {
         node.get_attribute("ID")
             .map(|node_id| node_id == id)
             .unwrap_or(false)
-    );
-    let elem = elems.drain(..).nth(0);
+    });
+    let elem = elems.drain(..).next();
     elem
 }
 
 /// Searches for and returns the element with the given pointer value from the subtree rooted at the
 /// given node.
 #[cfg(feature = "xmlsec")]
-fn get_node_by_ptr(elem: &libxml::tree::Node, ptr: *const libxml::bindings::xmlNode) -> Option<libxml::tree::Node> {
+fn get_node_by_ptr(
+    elem: &libxml::tree::Node,
+    ptr: *const libxml::bindings::xmlNode,
+) -> Option<libxml::tree::Node> {
     let mut elems = get_elements_by_predicate(elem, |node| {
         let node_ptr = node.node_ptr() as *const _;
         node_ptr == ptr
     });
-    let elem = elems.drain(..).nth(0);
+    let elem = elems.drain(..).next();
     elem
 }
 
@@ -268,7 +273,9 @@ struct XPathContext {
 }
 #[cfg(feature = "xmlsec")]
 impl Drop for XPathContext {
-    fn drop(&mut self) { unsafe { libxml::bindings::xmlXPathFreeContext(self.pointer) } }
+    fn drop(&mut self) {
+        unsafe { libxml::bindings::xmlXPathFreeContext(self.pointer) }
+    }
 }
 
 #[cfg(feature = "xmlsec")]
@@ -277,13 +284,18 @@ struct XPathObject {
 }
 #[cfg(feature = "xmlsec")]
 impl Drop for XPathObject {
-    fn drop(&mut self) { unsafe { libxml::bindings::xmlXPathFreeObject(self.pointer) } }
+    fn drop(&mut self) {
+        unsafe { libxml::bindings::xmlXPathFreeObject(self.pointer) }
+    }
 }
 
 /// Searches for and returns the element at the root of the subtree signed by the given signature
 /// node.
 #[cfg(feature = "xmlsec")]
-fn get_signed_node(signature_node: &libxml::tree::Node, doc: &libxml::tree::Document) -> Option<libxml::tree::Node> {
+fn get_signed_node(
+    signature_node: &libxml::tree::Node,
+    doc: &libxml::tree::Document,
+) -> Option<libxml::tree::Node> {
     let object_elem_opt = get_first_child_name_ns(signature_node, "Object", XMLNS_XML_DSIG);
     if let Some(object_elem) = object_elem_opt {
         return Some(object_elem);
@@ -294,9 +306,9 @@ fn get_signed_node(signature_node: &libxml::tree::Node, doc: &libxml::tree::Docu
         let ref_elem_opt = get_first_child_name_ns(&sig_info_elem, "Reference", XMLNS_XML_DSIG);
         if let Some(ref_elem) = ref_elem_opt {
             if let Some(uri) = ref_elem.get_attribute("URI") {
-                if uri.starts_with('#') {
+                if let Some(stripped) = uri.strip_prefix('#') {
                     // prepare a XPointer context
-                    let c_uri = CString::new(&uri[1..]).unwrap();
+                    let c_uri = CString::new(stripped).unwrap();
                     let ctx_ptr = unsafe {
                         libxml::bindings::xmlXPtrNewContext(
                             doc.doc_ptr(),
@@ -331,9 +343,12 @@ fn get_signed_node(signature_node: &libxml::tree::Node, doc: &libxml::tree::Docu
 
                     // go through the nodes and find them in the document
                     for i in 0..nodeset_count {
-                        let node_ptr_ptr = unsafe { (*obj_nodeset).nodeTab.offset(i.try_into().unwrap()) };
+                        let node_ptr_ptr =
+                            unsafe { (*obj_nodeset).nodeTab.offset(i.try_into().unwrap()) };
                         let node_ptr = unsafe { *node_ptr_ptr };
-                        if let Some(node) = get_node_by_ptr(&doc.get_root_element().unwrap(), node_ptr) {
+                        if let Some(node) =
+                            get_node_by_ptr(&doc.get_root_element().unwrap(), node_ptr)
+                        {
                             return Some(node);
                         }
                     }
@@ -381,7 +396,8 @@ fn place_signature_verified_attributes(
     }
     drop(root_elem);
     for node in ptr_to_required_node.values_mut() {
-        node.set_attribute_ns(ATTRIB_SIGVER, VALUE_SIGVER, ns).unwrap();
+        node.set_attribute_ns(ATTRIB_SIGVER, VALUE_SIGVER, ns)
+            .unwrap();
     }
 }
 
@@ -437,11 +453,7 @@ pub(crate) fn reduce_xml_to_signed(
     }
 
     // define the "signature verified" namespace
-    let sig_ver_ns = libxml::tree::Namespace::new(
-        "sv",
-        XMLNS_SIGVER,
-        &mut root_elem,
-    )
+    let sig_ver_ns = libxml::tree::Namespace::new("sv", XMLNS_SIGVER, &mut root_elem)
         .map_err(|err| Error::XmlNamespaceDefinitionError { error: err })?;
 
     // remove all existing "signature verified" attributes
@@ -472,8 +484,8 @@ pub(crate) fn reduce_xml_to_signed(
 pub fn decode_x509_cert(x509_cert: &str) -> Result<Vec<u8>, base64::DecodeError> {
     let stripped = x509_cert
         .as_bytes()
-        .to_vec()
-        .into_iter()
+        .iter()
+        .copied()
         .filter(|b| !b" \n\t\r\x0b\x0c".contains(b))
         .collect::<Vec<u8>>();
 
@@ -486,11 +498,11 @@ pub fn mime_encode_x509_cert(x509_cert_der: &[u8]) -> String {
 }
 
 pub fn gen_saml_response_id() -> String {
-    format!("id{}", uuid::Uuid::new_v4().to_string())
+    format!("id{}", uuid::Uuid::new_v4())
 }
 
 pub fn gen_saml_assertion_id() -> String {
-    format!("_{}", uuid::Uuid::new_v4().to_string())
+    format!("_{}", uuid::Uuid::new_v4())
 }
 
 #[derive(Debug, PartialEq)]
@@ -503,9 +515,7 @@ impl FromStr for SigAlg {
     type Err = Box<dyn std::error::Error>;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" => {
-                Ok(SigAlg::RsaSha256)
-            },
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" => Ok(SigAlg::RsaSha256),
             _ => Ok(SigAlg::Unimplemented),
         }
     }
@@ -523,25 +533,19 @@ pub struct UrlVerifier {
 }
 
 impl UrlVerifier {
-    pub fn from_rsa_pem(
-        public_key_pem: &[u8],
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn from_rsa_pem(public_key_pem: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
         let public = openssl::rsa::Rsa::public_key_from_pem(public_key_pem)?;
         let keypair = openssl::pkey::PKey::from_rsa(public)?;
         Ok(Self { keypair })
     }
 
-    pub fn from_rsa_der(
-        public_key_der: &[u8],
-    )-> Result<Self, Box<dyn std::error::Error>> {
+    pub fn from_rsa_der(public_key_der: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
         let public = openssl::rsa::Rsa::public_key_from_der(public_key_der)?;
         let keypair = openssl::pkey::PKey::from_rsa(public)?;
         Ok(Self { keypair })
     }
 
-    pub fn from_x509_cert_pem(
-        public_cert_pem: &str,
-    )-> Result<Self, Box<dyn std::error::Error>> {
+    pub fn from_x509_cert_pem(public_cert_pem: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let x509 = openssl::x509::X509::from_pem(public_cert_pem.as_bytes())?;
         let keypair = x509.public_key()?;
         Ok(Self { keypair })
@@ -549,7 +553,7 @@ impl UrlVerifier {
 
     pub fn from_x509(
         public_cert: &openssl::x509::X509,
-    )-> Result<Self, Box<dyn std::error::Error>> {
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         let keypair = public_cert.public_key()?;
         Ok(Self { keypair })
     }
@@ -569,7 +573,7 @@ impl UrlVerifier {
     ) -> Result<bool, Box<dyn std::error::Error>> {
         self.verify_signed_url(
             signed_request_url,
-            &["SAMLRequest".into(), "RelayState".into(), "SigAlg".into()]
+            &["SAMLRequest".into(), "RelayState".into(), "SigAlg".into()],
         )
     }
 
@@ -579,7 +583,7 @@ impl UrlVerifier {
     ) -> Result<bool, Box<dyn std::error::Error>> {
         self.verify_signed_url(
             signed_response_url,
-            &["SAMLResponse".into(), "RelayState".into(), "SigAlg".into()]
+            &["SAMLResponse".into(), "RelayState".into(), "SigAlg".into()],
         )
     }
 
@@ -592,8 +596,7 @@ impl UrlVerifier {
         //
         // convert to a URL, then use verify_request_url
         let signed_request_url: url::Url =
-            format!("http://dummy.fake{}", percent_encoded_uri_string)
-                .parse()?;
+            format!("http://dummy.fake{}", percent_encoded_uri_string).parse()?;
 
         self.verify_signed_request_url(&signed_request_url)
     }
@@ -607,8 +610,7 @@ impl UrlVerifier {
         //
         // convert to a URL, then use verify_response_url
         let signed_response_url: url::Url =
-            format!("http://dummy.fake{}", percent_encoded_uri_string)
-                .parse()?;
+            format!("http://dummy.fake{}", percent_encoded_uri_string).parse()?;
 
         self.verify_signed_response_url(&signed_response_url)
     }
@@ -619,28 +621,28 @@ impl UrlVerifier {
         query_keys: &[String],
     ) -> Result<bool, Box<dyn std::error::Error>> {
         // Collect query params from URL
-        let query_params =
-            signed_url
-                .query_pairs()
-                .into_owned()
-                .collect::<HashMap<String, String>>();
+        let query_params = signed_url
+            .query_pairs()
+            .into_owned()
+            .collect::<HashMap<String, String>>();
 
         // Match against implemented SigAlg
         let sig_alg: SigAlg = SigAlg::from_str(&query_params["SigAlg"])?;
         if sig_alg == SigAlg::Unimplemented {
-            return Err(Box::new(
-                UrlVerifierError::SigAlgUnimplemented {
-                    sigalg: query_params["SigAlg"].clone(),
-                }
-            ));
+            return Err(Box::new(UrlVerifierError::SigAlgUnimplemented {
+                sigalg: query_params["SigAlg"].clone(),
+            }));
         }
 
         // Construct a Url so that percent encoded query can be easily
         // constructed.
         let mut verify_url = url::Url::parse(
-            format!("{}://{}",
-                signed_url.scheme(), signed_url.host_str().unwrap(),
-            ).as_str(),
+            format!(
+                "{}://{}",
+                signed_url.scheme(),
+                signed_url.host_str().unwrap(),
+            )
+            .as_str(),
         )?;
 
         // Section 3.4.4.1 of
@@ -657,21 +659,16 @@ impl UrlVerifier {
         // Order matters!
         for key in query_keys {
             if query_params.contains_key(key) {
-                verify_url.query_pairs_mut().append_pair(
-                    key,
-                    &query_params[key],
-                );
+                verify_url
+                    .query_pairs_mut()
+                    .append_pair(key, &query_params[key]);
             }
         }
 
         let signed_string: String = verify_url.query().unwrap().to_string();
         let signature = base64::decode(&query_params["Signature"])?;
 
-        self.verify_signature(
-            signed_string.as_bytes(),
-            sig_alg,
-            &signature,
-        )
+        self.verify_signature(signed_string.as_bytes(), sig_alg, &signature)
     }
 
     fn verify_signature(
@@ -688,17 +685,17 @@ impl UrlVerifier {
             &self.keypair,
         )?;
 
-        verifier.update(&data)?;
+        verifier.update(data)?;
 
-        Ok(verifier.verify(&signature)?)
+        Ok(verifier.verify(signature)?)
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::UrlVerifier;
-    use chrono::{DateTime, Utc};
     use crate::service_provider::ServiceProvider;
+    use chrono::{DateTime, Utc};
 
     #[test]
     fn test_verify_uri() {
@@ -723,11 +720,14 @@ mod test {
             ..Default::default()
         };
 
-        let authn_request =
-            sp.make_authentication_request("http://dummy.fake/saml").unwrap();
+        let authn_request = sp
+            .make_authentication_request("http://dummy.fake/saml")
+            .unwrap();
 
-        let signed_request_url =
-            authn_request.signed_redirect("", private_key).unwrap().unwrap();
+        let signed_request_url = authn_request
+            .signed_redirect("", private_key)
+            .unwrap()
+            .unwrap();
 
         // percent encoeded URL:
         //   http://dummy.fake/saml?SAMLRequest=..&SigAlg=..&Signature=..
@@ -735,19 +735,14 @@ mod test {
         // percent encoded URI:
         //   /saml?SAMLRequest=..&SigAlg=..&Signature=..
         //
-        let uri_string: &String =
-            &signed_request_url[url::Position::BeforePath..].to_string();
+        let uri_string: &String = &signed_request_url[url::Position::BeforePath..].to_string();
         assert!(uri_string.starts_with("/saml?SAMLRequest="));
 
         let url_verifier =
-            UrlVerifier::from_x509(
-                &sp.idp_signing_certs().unwrap().unwrap()[0],
-            ).unwrap();
+            UrlVerifier::from_x509(&sp.idp_signing_certs().unwrap().unwrap()[0]).unwrap();
 
-        assert!(
-            url_verifier
-                .verify_percent_encoded_request_uri_string(uri_string)
-                .unwrap(),
-        );
+        assert!(url_verifier
+            .verify_percent_encoded_request_uri_string(uri_string)
+            .unwrap(),);
     }
 }

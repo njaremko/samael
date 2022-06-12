@@ -27,7 +27,7 @@ fn reduce_xml_to_signed<T>(xml_str: &str, _keys: &Vec<T>) -> Result<String, Erro
     Ok(String::from(xml_str))
 }
 
-#[derive(Debug, Snafu)]
+#[derive(Debug, Snafu, PartialEq)]
 pub enum Error {
     #[snafu(display(
         "SAML response destination does not match SP ACS URL. {:?} != {:?}",
@@ -235,11 +235,10 @@ impl ServiceProvider {
             entity_id,
             valid_until,
             sp_sso_descriptors: Some(vec![sso_sp_descriptor]),
-            contact_person: if let Some(contact_person) = &self.contact_person {
-                Some(vec![contact_person.clone()])
-            } else {
-                None
-            },
+            contact_person: self
+                .contact_person
+                .as_ref()
+                .map(|contact_person| vec![contact_person.clone()]),
             ..EntityDescriptor::default()
         })
     }
@@ -329,18 +328,6 @@ impl ServiceProvider {
         let decoded = std::str::from_utf8(&bytes)?;
         let assertion = self.parse_xml_response(decoded, possible_request_ids)?;
         Ok(assertion)
-    }
-
-    pub(self) fn validate_base64_response(&self, encoded_resp: &str) -> Result<(), Error> {
-        let bytes = base64::decode(encoded_resp).unwrap();
-        let decoded = std::str::from_utf8(&bytes).unwrap();
-        let reduced_xml = if let Some(sign_certs) = self.idp_signing_certs()? {
-            reduce_xml_to_signed(decoded, &sign_certs)
-                .map_err(|_e| Error::FailedToValidateSignature)?
-        } else {
-            return Err(Error::FailedToValidateSignature);
-        };
-        Ok(())
     }
 
     pub fn parse_xml_response(
@@ -470,8 +457,7 @@ impl ServiceProvider {
 
     fn validate_destination(&self, response: &Response) -> Result<(), Error> {
         if (response.signature.is_some() || response.destination.is_some())
-            && response.destination.as_ref().map(String::as_str)
-                != self.acs_url.as_ref().map(String::as_str)
+            && response.destination.as_deref() != self.acs_url.as_deref()
         {
             return Err(Error::DestinationValidationError {
                 response_destination: response.destination.clone(),
@@ -569,7 +555,7 @@ impl AuthnRequest {
         if let Some(destination) = self.destination.as_ref() {
             let mut url: Url = destination.parse()?;
             url.query_pairs_mut().append_pair("SAMLRequest", &encoded);
-            if relay_state != "" {
+            if !relay_state.is_empty() {
                 url.query_pairs_mut().append_pair("RelayState", relay_state);
             }
             Ok(Some(url))
@@ -601,7 +587,7 @@ impl AuthnRequest {
         // Use rsa-sha256 when signing (see RFC 4051 for choices)
         unsigned_url.query_pairs_mut().append_pair(
             "SigAlg",
-            &"http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
         );
 
         // Sign *only* the existing url's encoded query parameters:
@@ -616,11 +602,11 @@ impl AuthnRequest {
             .to_string();
 
         // Use openssl's bindings to sign
-        let pkey = openssl::rsa::Rsa::private_key_from_der(&private_key_der)?;
+        let pkey = openssl::rsa::Rsa::private_key_from_der(private_key_der)?;
         let pkey = openssl::pkey::PKey::from_rsa(pkey)?;
 
         let mut signer =
-            openssl::sign::Signer::new(openssl::hash::MessageDigest::sha256(), &pkey.as_ref())?;
+            openssl::sign::Signer::new(openssl::hash::MessageDigest::sha256(), pkey.as_ref())?;
 
         signer.update(string_to_sign.as_bytes())?;
 

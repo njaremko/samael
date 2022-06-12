@@ -14,11 +14,11 @@ pub use libxml::tree::document::Document as XmlDocument;
 #[doc(hidden)]
 pub use libxml::tree::node::Node as XmlNode;
 
+mod backend;
 mod error;
 mod keys;
 mod xmldsig;
-mod xmlsec;
-mod backend;
+mod xmlsec_internal;
 
 // exports
 pub use self::error::XmlSecError;
@@ -26,4 +26,4 @@ pub use self::error::XmlSecResult;
 pub use self::keys::XmlSecKey;
 pub use self::keys::XmlSecKeyFormat;
 pub use self::xmldsig::XmlSecSignatureContext;
-pub use self::xmlsec::XmlSecContext;
+pub use self::xmlsec_internal::XmlSecContext;

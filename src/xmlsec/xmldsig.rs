@@ -19,7 +19,7 @@ pub struct XmlSecSignatureContext {
 impl XmlSecSignatureContext {
     /// Builds a context, ensuring xmlsec is initialized.
     pub fn new() -> XmlSecResult<Self> {
-        let _init = super::xmlsec::guarantee_xmlsec_init()?;
+        let _init = super::xmlsec_internal::guarantee_xmlsec_init()?;
 
         let ctx = unsafe { bindings::xmlSecDSigCtxCreate(null_mut()) };
 
@@ -36,7 +36,7 @@ impl XmlSecSignatureContext {
         let mut old = None;
 
         unsafe {
-            if (*self.ctx).signKey != null_mut() {
+            if !(*self.ctx).signKey.is_null() {
                 old = Some(XmlSecKey::from_ptr((*self.ctx).signKey));
             }
 
@@ -50,7 +50,7 @@ impl XmlSecSignatureContext {
     #[allow(unused)]
     pub fn release_key(&mut self) -> Option<XmlSecKey> {
         unsafe {
-            if (*self.ctx).signKey == null_mut() {
+            if (*self.ctx).signKey.is_null() {
                 None
             } else {
                 let key = XmlSecKey::from_ptr((*self.ctx).signKey);
@@ -170,7 +170,7 @@ impl XmlSecSignatureContext {
 impl XmlSecSignatureContext {
     fn key_is_set(&self) -> XmlSecResult<()> {
         unsafe {
-            if (*self.ctx).signKey != null_mut() {
+            if !(*self.ctx).signKey.is_null() {
                 Ok(())
             } else {
                 Err(XmlSecError::KeyNotLoaded)

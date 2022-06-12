@@ -3,10 +3,10 @@
 //!
 use crate::bindings;
 
+use super::backend;
 use super::error::XmlSecError;
 use super::error::XmlSecResult;
-use super::xmlsec;
-use super::backend;
+use super::xmlsec_internal;
 
 use std::ptr::null;
 use std::ptr::null_mut;
@@ -36,7 +36,7 @@ pub struct XmlSecKey(*mut bindings::xmlSecKey);
 impl XmlSecKey {
     /// Load key from buffer in memory, specifying format and optionally the password required to decrypt/unlock.
     pub fn from_memory(buffer: &[u8], format: XmlSecKeyFormat) -> XmlSecResult<Self> {
-        let _ctx = xmlsec::guarantee_xmlsec_init()?;
+        let _ctx = xmlsec_internal::guarantee_xmlsec_init()?;
 
         // Load key from buffer
         let key = unsafe {
@@ -54,13 +54,13 @@ impl XmlSecKey {
             return Err(XmlSecError::KeyLoadError);
         }
 
-        Ok(Self { 0: key })
+        Ok(Self(key))
     }
 
     /// Create from raw pointer to an underlying xmlsec key structure. Henceforth its lifetime will be managed by this
     /// object.
     pub unsafe fn from_ptr(ptr: *mut bindings::xmlSecKey) -> Self {
-        Self { 0: ptr }
+        Self(ptr)
     }
 
     /// Leak the internal resource. This is needed by [`XmlSecSignatureContext`][sigctx], since xmlsec takes over the
@@ -89,7 +89,7 @@ impl Clone for XmlSecKey {
     fn clone(&self) -> Self {
         let new = unsafe { bindings::xmlSecKeyDuplicate(self.0) };
 
-        Self { 0: new }
+        Self(new)
     }
 }
 
