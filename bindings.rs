@@ -17,7 +17,7 @@ fn main() {
         let path_bindings = path_out.join(BINDINGS);
 
         // Determine which API/ABI is available on this platform:
-        let cflags = fetch_xmlsec_config_flags();
+        let mut cflags = fetch_xmlsec_config_flags();
         let dynamic = if cflags
             .iter()
             .any(|s| s == "-DXMLSEC_CRYPTO_DYNAMIC_LOADING=1")
@@ -42,6 +42,14 @@ fn main() {
                 .probe("xmlsec1")
                 .expect("Could not find xmlsec1 using pkg-config");
 
+            if let Ok(nix_cflags) = env::var("NIX_CFLAGS_COMPILE") {
+                let mut flags: Vec<String> = nix_cflags
+                    .split(" ")
+                    .into_iter()
+                    .map(|x| x.to_string())
+                    .collect();
+                cflags.append(&mut flags);
+            }
             let bindbuild = BindgenBuilder::default()
                 .header("bindings.h")
                 .clang_args(cflags)
