@@ -42,8 +42,15 @@
         rec {
           # `nix build`
           packages.samael = naersk-lib.buildPackage {
+            # Need to tell bindgen where to find libclang 
             LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
-            BINDGEN_EXTRA_CLANG_ARGS="${builtins.readFile "${stdenv.cc}/nix-support/libc-crt1-cflags"} \
+
+            # Set C flags for Rust's bindgen program. Unlike ordinary C
+            # compilation, bindgen does not invoke $CC directly. Instead it
+            # uses LLVM's libclang. To make sure all necessary flags are
+            # included we need to look in a few places.
+            # See https://web.archive.org/web/20220523141208/https://hoverbear.org/blog/rust-bindgen-in-nix/
+            BINDGEN_EXTRA_CLANG_ARGS = "${builtins.readFile "${stdenv.cc}/nix-support/libc-crt1-cflags"} \
                 ${builtins.readFile "${stdenv.cc}/nix-support/libc-cflags"} \
                 ${builtins.readFile "${stdenv.cc}/nix-support/cc-cflags"} \
                 ${builtins.readFile "${stdenv.cc}/nix-support/libcxx-cxxflags"} \
@@ -67,8 +74,15 @@
 
           # `nix develop`
           devShell = pkgs.mkShell {
+            # Need to tell bindgen where to find libclang 
             LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
-            BINDGEN_EXTRA_CLANG_ARGS="${builtins.readFile "${stdenv.cc}/nix-support/libc-crt1-cflags"} \
+
+            # Set C flags for Rust's bindgen program. Unlike ordinary C
+            # compilation, bindgen does not invoke $CC directly. Instead it
+            # uses LLVM's libclang. To make sure all necessary flags are
+            # included we need to look in a few places.
+            # See https://web.archive.org/web/20220523141208/https://hoverbear.org/blog/rust-bindgen-in-nix/
+            BINDGEN_EXTRA_CLANG_ARGS = "${builtins.readFile "${stdenv.cc}/nix-support/libc-crt1-cflags"} \
                 ${builtins.readFile "${stdenv.cc}/nix-support/libc-cflags"} \
                 ${builtins.readFile "${stdenv.cc}/nix-support/cc-cflags"} \
                 ${builtins.readFile "${stdenv.cc}/nix-support/libcxx-cxxflags"} \
