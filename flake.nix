@@ -55,8 +55,7 @@
                 ${builtins.readFile "${stdenv.cc}/nix-support/cc-cflags"} \
                 ${builtins.readFile "${stdenv.cc}/nix-support/libcxx-cxxflags"} \
                 -idirafter ${pkgs.libiconv}/include \
-                ${lib.optionalString stdenv.cc.isClang "-idirafter ${stdenv.cc.cc}/lib/clang/${lib.getVersion stdenv.cc.cc}/include"} \
-                ${lib.optionalString stdenv.cc.isGNU "-isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc} -isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc}/${stdenv.hostPlatform.config} -idirafter ${stdenv.cc.cc}/lib/gcc/${stdenv.hostPlatform.config}/${lib.getVersion stdenv.cc.cc}/include"} \
+                -idirafter ${stdenv.cc.cc}/lib/clang/${lib.getVersion stdenv.cc.cc}/include
             ";
 
             pname = "samael";
@@ -87,8 +86,7 @@
                 ${builtins.readFile "${stdenv.cc}/nix-support/cc-cflags"} \
                 ${builtins.readFile "${stdenv.cc}/nix-support/libcxx-cxxflags"} \
                 -idirafter ${pkgs.libiconv}/include \
-                ${lib.optionalString stdenv.cc.isClang "-idirafter ${stdenv.cc.cc}/lib/clang/${lib.getVersion stdenv.cc.cc}/include"} \
-                ${lib.optionalString stdenv.cc.isGNU "-isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc} -isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc}/${stdenv.hostPlatform.config} -idirafter ${stdenv.cc.cc}/lib/gcc/${stdenv.hostPlatform.config}/${lib.getVersion stdenv.cc.cc}/include"} \
+                -idirafter ${stdenv.cc.cc}/lib/clang/${lib.getVersion stdenv.cc.cc}/include
             ";
 
             nativeBuildInputs = with pkgs; [
