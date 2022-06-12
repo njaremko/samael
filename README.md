@@ -18,12 +18,14 @@ The `"xmlsec"` feature flag adds basic support for verifying and signing SAML me
 
 If you want to use the `"xmlsec"` feature, you'll need to install the following C libs:
 
-- libxml2
-- openssl
-- xmlsec1
-- libxslt
-- pkg-config
 - libiconv
+- libtool
+- libxml2
+- libxslt
+- libclang
+- openssl
+- pkg-config
+- xmlsec1
 
 # Build instructions
 
