@@ -49,7 +49,13 @@ Just run `nix build`
 ## Entering a dev environment
 
 If you followed the above instructions, just `cd`-ing into the directory will setup a reproducible dev environment,
-but if you don't want to install `direnv`, then just run `nix develop`
+but if you don't want to install `direnv`, then just run `nix develop`.
+
+From their you can build as normal:
+```sh
+cargo build --features xmlsec
+cargo test --features xmlsec
+```
 
 # How do I use this library?
 
