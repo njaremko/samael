@@ -16,7 +16,10 @@ build = "bindings.rs"
 doctest = false
 
 [features]
+default = ["openssl"]
 xmlsec = ["libc", "lazy_static", "libxml"]
+openssl = ["openssl", "openssl-sys", "openssl-probe"]
+rustcrypto = ["rsa", "x509-parser"]
 
 [build-dependencies]
 pkg-config =  "^0.3.17"
@@ -33,10 +36,17 @@ libc        = {version = "^0.2.66", optional = true}
 libxml = { version = "0.3.0", optional = true}
 quick-xml = { version = "0.23.0", features = [ "serialize" ] }
 rand = "0.8.4"
-rsa = "0.5.0"
 serde = { version = "1.0", features = ["derive"] }
 sha2 = "0.9"
 snafu = "0.7"
 url = "2.1.1"
 uuid = { version = ">=0.8.0, <2.0.0", features = [ "v4" ] }
-x509-parser = "0.13.0"
+
+# openssl
+openssl = { version = "0.10", optional = true }
+openssl-sys = { version = "0.9", optional = true }
+openssl-probe = { version = "0.1.2", optional = true }
+
+# rustcrypto
+rsa = { version = "0.5.0", optional = true }
+x509-parser = { version = "0.13.0", optional = true }
