@@ -212,12 +212,6 @@ impl AuthnRequest {
 mod test {
     use super::*;
     use crate::crypto::UrlVerifier;
-    use std::collections::HashMap;
-
-    use rsa::{pkcs8::FromPublicKey, Hash, PaddingScheme, PublicKey, RsaPublicKey};
-    use sha2::{Digest, Sha256};
-
-    use super::*;
 
     #[test]
     #[cfg(feature = "xmlsec")]
@@ -250,52 +244,6 @@ mod test {
         .is_ok());
 
         Ok(())
-    }
-
-    pub fn verify_signed_redirect_url(
-        signed_authn_redirect_url: &url::Url,
-        public_key_pem: &[u8],
-    ) -> Result<bool, Box<dyn std::error::Error>> {
-        // Should look like:
-        //
-        // http://idp.example.com/SSOService.php?SAMLRequest=...&SigAlg=...&Signature=...
-        //
-        // Remove Signature, then verify percent encoded query string using
-        // openssl bindings.
-
-        let query_params = signed_authn_redirect_url
-            .query_pairs()
-            .into_owned()
-            .collect::<HashMap<String, String>>();
-        let signature: &String = &query_params["Signature"];
-
-        let mut verify_url = url::Url::parse(
-            format!(
-                "{}://{}",
-                signed_authn_redirect_url.scheme(),
-                signed_authn_redirect_url.host_str().unwrap(),
-            )
-            .as_str(),
-        )?;
-
-        for key in vec!["SAMLRequest", "RelayState", "SigAlg"] {
-            if query_params.contains_key(key) {
-                verify_url
-                    .query_pairs_mut()
-                    .append_pair(key, &query_params[key]);
-            }
-        }
-
-        let signed_string: String = verify_url.query().unwrap().to_string();
-        let public = RsaPublicKey::from_public_key_pem(std::str::from_utf8(public_key_pem)?)?;
-
-        let hashed = Sha256::digest(signed_string.as_bytes());
-        let signature_bytes = base64::decode(signature)?;
-        let padding = PaddingScheme::new_pkcs1v15_sign(Some(Hash::SHA2_256));
-
-        public.verify(padding, &hashed[..], signature_bytes.as_slice())?;
-
-        Ok(true)
     }
 
     #[test]
