@@ -1,4 +1,4 @@
-use crate::crypto;
+use crate::crypto::{self, rsa, x509};
 use crate::metadata::{Endpoint, IndexedEndpoint, KeyDescriptor, NameIdFormat, SpSsoDescriptor};
 use crate::schema::{Assertion, Response};
 use crate::{
@@ -9,14 +9,12 @@ use crate::{
 use chrono::prelude::*;
 use chrono::Duration;
 use flate2::{write::DeflateEncoder, Compression};
-use rsa::pkcs1::FromRsaPrivateKey;
-use rsa::{Hash, PaddingScheme, RsaPrivateKey};
-use sha2::{Digest, Sha256};
 use snafu::Snafu;
 use std::fmt::Debug;
 use std::io::Write;
 use url::Url;
-use x509_parser::parse_x509_certificate;
+#[cfg(feature = "rustcrypto")]
+pub use x509_cert::der::{Decode, Encode};
 
 #[cfg(test)]
 mod tests;
@@ -114,11 +112,11 @@ pub enum Error {
 
 #[derive(Builder, Clone)]
 #[builder(default, setter(into))]
-pub struct ServiceProvider {
+pub struct ServiceProvider<'a> {
     pub entity_id: Option<String>,
-    pub key: Option<RsaPrivateKey>,
-    pub certificate: Option<String>,
-    pub intermediates: Option<Vec<String>>,
+    pub key: Option<rsa::PrivateKey>,
+    pub certificate: Option<x509::Certificate<'a>>,
+    pub intermediates: Option<Vec<x509::Certificate<'a>>>,
     pub metadata_url: Option<String>,
     pub acs_url: Option<String>,
     pub slo_url: Option<String>,
@@ -132,7 +130,7 @@ pub struct ServiceProvider {
     pub max_clock_skew: Duration,
 }
 
-impl Default for ServiceProvider {
+impl<'a> Default for ServiceProvider<'a> {
     fn default() -> Self {
         ServiceProvider {
             entity_id: None,
@@ -154,7 +152,7 @@ impl Default for ServiceProvider {
     }
 }
 
-impl ServiceProvider {
+impl<'a> ServiceProvider<'a> {
     pub fn metadata(&self) -> Result<EntityDescriptor, Box<dyn std::error::Error>> {
         let valid_duration = if let Some(duration) = self.metadata_valid_duration {
             Some(duration)
@@ -172,10 +170,10 @@ impl ServiceProvider {
 
         let mut key_descriptors = vec![];
         if let Some(cert) = &self.certificate {
-            let mut cert_bytes: Vec<u8> = cert.as_bytes().into();
+            let mut cert_bytes: Vec<u8> = cert.to_vec()?;
             if let Some(intermediates) = &self.intermediates {
                 for intermediate in intermediates {
-                    cert_bytes.append(&mut intermediate.as_bytes().to_vec());
+                    cert_bytes.append(&mut intermediate.to_vec()?);
                 }
             }
             key_descriptors.push(KeyDescriptor {
@@ -286,7 +284,7 @@ impl ServiceProvider {
         None
     }
 
-    pub fn idp_signing_certs(&self) -> Result<Option<Vec<String>>, Error> {
+    pub fn idp_signing_certs(&self) -> Result<Option<Vec<x509::Certificate>>, Error> {
         let mut result = vec![];
         if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
             for idp_sso_descriptor in idp_sso_descriptors {
@@ -297,26 +295,7 @@ impl ServiceProvider {
                         .filter(|key_use| *key_use == "signing")
                         .is_some()
                     {
-                        if let Some(cert) = key_descriptor
-                            .key_info
-                            .x509_data
-                            .as_ref()
-                            .and_then(|data| data.certificate.as_ref())
-                        {
-                            if let Ok(decoded) = base64::decode(cert.as_bytes()) {
-                                if let Ok((_, parsed)) = parse_x509_certificate(&decoded) {
-                                    result.push(parsed.raw_serial_as_string())
-                                } else {
-                                    return Err(Error::FailedToParseCert {
-                                        cert: cert.to_string(),
-                                    });
-                                }
-                            } else {
-                                return Err(Error::FailedToParseCert {
-                                    cert: cert.to_string(),
-                                });
-                            }
-                        }
+                        result.append(&mut parse_certificates(key_descriptor)?);
                     }
                 }
             }
@@ -327,26 +306,7 @@ impl ServiceProvider {
                         if key_descriptor.key_use == None
                             || key_descriptor.key_use == Some("".to_string())
                         {
-                            if let Some(cert) = key_descriptor
-                                .key_info
-                                .x509_data
-                                .as_ref()
-                                .and_then(|data| data.certificate.as_ref())
-                            {
-                                if let Ok(decoded) = base64::decode(cert.as_bytes()) {
-                                    if let Ok((_, parsed)) = parse_x509_certificate(&decoded) {
-                                        result.push(parsed.raw_serial_as_string())
-                                    } else {
-                                        return Err(Error::FailedToParseCert {
-                                            cert: cert.to_string(),
-                                        });
-                                    }
-                                } else {
-                                    return Err(Error::FailedToParseCert {
-                                        cert: cert.to_string(),
-                                    });
-                                }
-                            }
+                            result.append(&mut parse_certificates(key_descriptor)?);
                         }
                     }
                 }
@@ -359,10 +319,10 @@ impl ServiceProvider {
         })
     }
 
-    pub fn parse_base64_response(
+    pub fn parse_response<AsStr: AsRef<str> + Debug>(
         &self,
         encoded_resp: &str,
-        possible_request_ids: Option<&[&str]>,
+        possible_request_ids: &[AsStr],
     ) -> Result<Assertion, Box<dyn std::error::Error>> {
         let bytes = base64::decode(encoded_resp)?;
         let decoded = std::str::from_utf8(&bytes)?;
@@ -370,10 +330,10 @@ impl ServiceProvider {
         Ok(assertion)
     }
 
-    pub fn parse_xml_response(
+    pub fn parse_xml_response<AsStr: AsRef<str> + Debug>(
         &self,
         response_xml: &str,
-        possible_request_ids: Option<&[&str]>,
+        possible_request_ids: &[AsStr],
     ) -> Result<Assertion, Error> {
         let reduced_xml = if let Some(sign_certs) = self.idp_signing_certs()? {
             reduce_xml_to_signed(response_xml, &sign_certs)
@@ -388,11 +348,9 @@ impl ServiceProvider {
         let mut request_id_valid = false;
         if self.allow_idp_initiated {
             request_id_valid = true;
-        } else if let (Some(in_response_to), Some(possible_request_ids)) =
-            (&response.in_response_to, possible_request_ids)
-        {
+        } else if let Some(in_response_to) = &response.in_response_to {
             for req_id in possible_request_ids {
-                if req_id == in_response_to {
+                if req_id.as_ref() == in_response_to {
                     request_id_valid = true;
                 }
             }
@@ -400,9 +358,8 @@ impl ServiceProvider {
         if !request_id_valid {
             return Err(Error::ResponseInResponseToInvalid {
                 possible_ids: possible_request_ids
-                    .into_iter()
-                    .flatten()
-                    .map(|e| e.to_string())
+                    .iter()
+                    .map(|e| e.as_ref().to_string())
                     .collect(),
             });
         }
@@ -440,10 +397,10 @@ impl ServiceProvider {
         }
     }
 
-    fn validate_assertion(
+    fn validate_assertion<AsStr: AsRef<str> + Debug>(
         &self,
         assertion: &Assertion,
-        _possible_request_ids: Option<&[&str]>,
+        _possible_request_ids: &[AsStr],
     ) -> Result<(), Error> {
         if assertion.issue_instant + self.max_issue_delay < Utc::now() {
             return Err(Error::AssertionExpired {
@@ -540,7 +497,7 @@ impl ServiceProvider {
     }
 }
 
-fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<x509::X509>, Error> {
+fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<x509::Certificate>, Error> {
     key_descriptor
         .key_info
         .x509_data
@@ -551,7 +508,7 @@ fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<x509::X509>,
                 .map(|cert| {
                     crypto::decode_x509_cert(cert)
                         .ok()
-                        .and_then(|decoded| openssl::x509::X509::from_der(&decoded).ok())
+                        .and_then(|decoded| x509::Certificate::from_der(&decoded).ok())
                         .ok_or_else(|| Error::FailedToParseCert {
                             cert: cert.to_string(),
                         })
@@ -636,20 +593,17 @@ impl AuthnRequest {
         //                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
         //
         // then add the "Signature" query parameter afterwards.
-        let string_to_sign: String = unsigned_url
+        let query_string: String = unsigned_url
             .query()
             .ok_or(Error::UnexpectedError)?
             .to_string();
 
-        // Use openssl's bindings to sign
-        let pkey = RsaPrivateKey::from_pkcs1_der(&private_key_der)?;
-        let padding = PaddingScheme::new_pkcs1v15_sign(Some(Hash::SHA2_256));
-        let hashed = Sha256::digest(string_to_sign.as_bytes());
-        let signature = pkey.sign(padding, &hashed[..])?;
+        let private_key = rsa::PrivateKey::from_der(private_key_der)?;
 
-        unsigned_url
-            .query_pairs_mut()
-            .append_pair("Signature", &base64::encode(signature));
+        unsigned_url.query_pairs_mut().append_pair(
+            "Signature",
+            &base64::encode(private_key.sign_sha256(query_string)?),
+        );
 
         // Past this point, it's a signed url :)
         Ok(Some(unsigned_url))

@@ -5,6 +5,15 @@ use std::str::FromStr;
 
 use snafu::Snafu;
 
+#[cfg(not(any(feature = "rustcrypto", feature = "openssl")))]
+compile_error!("No crypto backend is enabled! Please enable either rustcrypto or openssl.");
+
+#[cfg(all(feature = "rustcrypto", feature = "openssl"))]
+compile_error!("Only one crypto backend may be enabled!");
+
+pub mod rsa;
+pub mod x509;
+
 #[cfg(feature = "xmlsec")]
 use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
 #[cfg(feature = "xmlsec")]
@@ -54,7 +63,7 @@ pub enum Error {
         error: Box<dyn std::error::Error>,
     },
 
-    #[cfg(feature = "xmlsec")]
+    #[cfg(all(feature = "xmlsec", feature = "openssl"))]
     #[snafu(display("OpenSSL error stack: {}", error))]
     OpenSSLError {
         error: openssl::error::ErrorStack,
@@ -81,7 +90,7 @@ impl From<libxml::parser::XmlParseError> for Error {
     }
 }
 
-#[cfg(feature = "xmlsec")]
+#[cfg(all(feature = "xmlsec", feature = "openssl"))]
 impl From<openssl::error::ErrorStack> for Error {
     fn from(error: openssl::error::ErrorStack) -> Self {
         Error::OpenSSLError { error }
@@ -422,7 +431,7 @@ fn remove_unverified_elements(node: &mut libxml::tree::Node) {
 #[cfg(feature = "xmlsec")]
 pub(crate) fn reduce_xml_to_signed(
     xml_str: &str,
-    certs: &[openssl::x509::X509],
+    certs: &[x509::Certificate],
 ) -> Result<String, Error> {
     let mut xml = XmlParser::default().parse_string(xml_str)?;
     let mut root_elem = xml.get_root_element().ok_or(Error::XmlMissingRootElement)?;
@@ -436,8 +445,8 @@ pub(crate) fn reduce_xml_to_signed(
         for sig_node in signature_nodes.drain(..) {
             let mut sig_ctx = XmlSecSignatureContext::new()?;
             let mut verified = false;
-            for openssl_key in certs {
-                let key_data = openssl_key.to_der()?;
+            for cert in certs {
+                let key_data = cert.public_key();
                 let key = XmlSecKey::from_memory(&key_data, XmlSecKeyFormat::CertDer)?;
                 sig_ctx.insert_key(key);
                 verified = sig_ctx.verify_node(&sig_node)?;
@@ -529,33 +538,27 @@ pub enum UrlVerifierError {
 }
 
 pub struct UrlVerifier {
-    keypair: openssl::pkey::PKey<openssl::pkey::Public>,
+    keypair: rsa::PublicKey,
 }
 
 impl UrlVerifier {
     pub fn from_rsa_pem(public_key_pem: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let public = openssl::rsa::Rsa::public_key_from_pem(public_key_pem)?;
-        let keypair = openssl::pkey::PKey::from_rsa(public)?;
+        let keypair = rsa::PublicKey::from_pem(public_key_pem)?;
         Ok(Self { keypair })
     }
 
     pub fn from_rsa_der(public_key_der: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let public = openssl::rsa::Rsa::public_key_from_der(public_key_der)?;
-        let keypair = openssl::pkey::PKey::from_rsa(public)?;
+        let keypair = rsa::PublicKey::from_der(public_key_der)?;
         Ok(Self { keypair })
+    }
+
+    pub fn from_x509(public_cert: &x509::Certificate) -> Result<Self, Box<dyn std::error::Error>> {
+        Self::from_rsa_der(public_cert.public_key())
     }
 
     pub fn from_x509_cert_pem(public_cert_pem: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let x509 = openssl::x509::X509::from_pem(public_cert_pem.as_bytes())?;
-        let keypair = x509.public_key()?;
-        Ok(Self { keypair })
-    }
-
-    pub fn from_x509(
-        public_cert: &openssl::x509::X509,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
-        let keypair = public_cert.public_key()?;
-        Ok(Self { keypair })
+        let x509 = x509::Certificate::from_der(public_cert_pem.as_bytes())?;
+        Self::from_x509(&x509)
     }
 
     // Signed url should look like:
@@ -674,20 +677,10 @@ impl UrlVerifier {
     fn verify_signature(
         &self,
         data: &[u8],
-        sig_alg: SigAlg,
+        _sig_alg: SigAlg,
         signature: &[u8],
     ) -> Result<bool, Box<dyn std::error::Error>> {
-        let mut verifier = openssl::sign::Verifier::new(
-            match sig_alg {
-                SigAlg::RsaSha256 => openssl::hash::MessageDigest::sha256(),
-                _ => panic!("sig_alg is bad!"),
-            },
-            &self.keypair,
-        )?;
-
-        verifier.update(data)?;
-
-        Ok(verifier.verify(signature)?)
+        Ok(self.keypair.verify_sha256(signature, data)?)
     }
 }
 
