@@ -1,3 +1,4 @@
+use crate::crypto::rsa::PrivateKeyLike;
 use crate::crypto::{self, rsa, x509};
 use crate::metadata::{Endpoint, IndexedEndpoint, KeyDescriptor, NameIdFormat, SpSsoDescriptor};
 use crate::schema::{Assertion, Response};
@@ -112,11 +113,14 @@ pub enum Error {
 
 #[derive(Builder, Clone)]
 #[builder(default, setter(into))]
-pub struct ServiceProvider<'a> {
+pub struct ServiceProvider<Certificate>
+where
+    ServiceProvider<Certificate>: Default,
+{
     pub entity_id: Option<String>,
     pub key: Option<rsa::PrivateKey>,
-    pub certificate: Option<x509::Certificate<'a>>,
-    pub intermediates: Option<Vec<x509::Certificate<'a>>>,
+    pub certificate: Option<Certificate>,
+    pub intermediates: Option<Vec<Certificate>>,
     pub metadata_url: Option<String>,
     pub acs_url: Option<String>,
     pub slo_url: Option<String>,
@@ -130,7 +134,7 @@ pub struct ServiceProvider<'a> {
     pub max_clock_skew: Duration,
 }
 
-impl<'a> Default for ServiceProvider<'a> {
+impl Default for ServiceProvider<x509::Certificate<'_>> {
     fn default() -> Self {
         ServiceProvider {
             entity_id: None,
@@ -152,7 +156,7 @@ impl<'a> Default for ServiceProvider<'a> {
     }
 }
 
-impl<'a> ServiceProvider<'a> {
+impl ServiceProvider<x509::Certificate<'_>> {
     pub fn metadata(&self) -> Result<EntityDescriptor, Box<dyn std::error::Error>> {
         let valid_duration = if let Some(duration) = self.metadata_valid_duration {
             Some(duration)

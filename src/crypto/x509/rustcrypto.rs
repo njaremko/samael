@@ -1,24 +1,18 @@
 use crate::crypto::rsa;
 use x509_cert::der::{Decode, Encode};
-pub use x509_cert::{
-    der::{
-        asn1::{BitStringRef, UIntRef},
-        Sequence,
-    },
-    name::{Name, RdnSequence},
-    TbsCertificate, Version,
-};
 
+use super::CertificateLike;
 use crate::idp::CertificateParams;
+pub use x509_cert::Certificate;
 
-#[derive(Clone)]
-pub struct Certificate<'a>(pub x509_cert::Certificate<'a>);
+// #[derive(Clone)]
+// pub struct Certificate<'a>(pub x509_cert::Certificate<'a>);
 
-impl<'a> Certificate<'a> {
-    pub fn new(
-        private_key: &rsa::RsaPrivateKey,
+impl<'a> CertificateLike<rsa::PrivateKey> for Certificate<'a> {
+    fn new(
+        private_key: &rsa::PrivateKey,
         params: &CertificateParams,
-    ) -> Result<Certificate<'static>, Box<dyn std::error::Error>> {
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         todo!("Certificate creation is not yet supported for the rustcrypto backend");
         // let sn: [u8; 0] = [];
         // Certificate {
@@ -43,17 +37,16 @@ impl<'a> Certificate<'a> {
         // }
     }
 
-    pub fn to_vec(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-        Ok(self.0.to_vec()?)
+    fn to_vec(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+        Ok(Encode::to_vec(self)?)
     }
 
-    pub fn from_der(bytes: &'a [u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        Ok(Self(x509_cert::Certificate::from_der(bytes)?))
+    fn from_der(der: &[u8]) -> Result<Self, Box<(dyn std::error::Error)>> {
+        Ok(Decode::from_der(der)?)
     }
 
-    pub fn public_key(&self) -> &'a [u8] {
-        self.0
-            .tbs_certificate
+    fn public_key(&self) -> &[u8] {
+        self.tbs_certificate
             .subject_public_key_info
             .subject_public_key
     }

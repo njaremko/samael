@@ -50,6 +50,13 @@ impl From<Box<dyn std::error::Error>> for Error {
     }
 }
 
+#[cfg(feature = "rustcrypto")]
+impl From<rsa::errors::Error> for Error {
+    fn from(error: rsa::errors::Error) -> Self {
+        Error::Unknown
+    }
+}
+
 impl From<crate::crypto::Error> for Error {
     fn from(error: crate::crypto::Error) -> Self {
         Error::VerificationError { error }

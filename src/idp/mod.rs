@@ -11,13 +11,18 @@ mod tests;
 
 use std::str::FromStr;
 
+use crate::crypto::rsa::PrivateKeyLike;
+use crate::crypto::x509::CertificateLike;
 use crate::crypto::{self, rsa, x509};
 
 use crate::idp::response_builder::{build_response_template, ResponseAttribute};
 use crate::schema::Response;
 
-pub struct IdentityProvider {
-    private_key: rsa::PrivateKey,
+pub struct IdentityProvider<PrivateKey>
+where
+    PrivateKey: rsa::PrivateKeyLike,
+{
+    private_key: PrivateKey,
 }
 
 pub enum KeyType {
@@ -42,9 +47,10 @@ pub struct CertificateParams<'a> {
     pub days_until_expiration: u32,
 }
 
-impl IdentityProvider {
+impl IdentityProvider<rsa::PrivateKey> {
     pub fn generate_new(key_type: KeyType) -> Result<Self, Error> {
-        let private_key = rsa::PrivateKey::new(usize::try_from(key_type.bit_length()).unwrap())?;
+        let private_key =
+            rsa::PrivateKeyLike::new(usize::try_from(key_type.bit_length()).unwrap())?;
 
         Ok(IdentityProvider { private_key })
     }
@@ -60,7 +66,7 @@ impl IdentityProvider {
     }
 
     pub fn create_certificate(&self, params: &CertificateParams) -> Result<Vec<u8>, Error> {
-        Ok(x509::Certificate::new(&self.private_key.0, params)?.to_vec()?)
+        Ok(x509::Certificate::new(&self.private_key, params)?.to_vec()?)
     }
 
     pub fn sign_authn_response(

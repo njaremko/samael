@@ -1,3 +1,4 @@
+use crate::crypto::x509::CertificateLike;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::ffi::CString;
@@ -18,6 +19,8 @@ pub mod x509;
 use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
 #[cfg(feature = "xmlsec")]
 use libxml::parser::Parser as XmlParser;
+
+use self::rsa::PublicKeyLike;
 
 #[cfg(feature = "xmlsec")]
 const XMLNS_XML_DSIG: &str = "http://www.w3.org/2000/09/xmldsig#";
@@ -537,18 +540,21 @@ pub enum UrlVerifierError {
     SigAlgUnimplemented { sigalg: String },
 }
 
-pub struct UrlVerifier {
-    keypair: rsa::PublicKey,
+pub struct UrlVerifier<PublicKey>
+where
+    PublicKey: rsa::PublicKeyLike,
+{
+    keypair: PublicKey,
 }
 
-impl UrlVerifier {
+impl UrlVerifier<rsa::PublicKey> {
     pub fn from_rsa_pem(public_key_pem: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let keypair = rsa::PublicKey::from_pem(public_key_pem)?;
+        let keypair = rsa::PublicKeyLike::from_pem(public_key_pem)?;
         Ok(Self { keypair })
     }
 
     pub fn from_rsa_der(public_key_der: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let keypair = rsa::PublicKey::from_der(public_key_der)?;
+        let keypair = rsa::PublicKeyLike::from_der(public_key_der)?;
         Ok(Self { keypair })
     }
 
@@ -557,7 +563,7 @@ impl UrlVerifier {
     }
 
     pub fn from_x509_cert_pem(public_cert_pem: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let x509 = x509::Certificate::from_der(public_cert_pem.as_bytes())?;
+        let x509 = x509::CertificateLike::from_der(public_cert_pem.as_bytes())?;
         Self::from_x509(&x509)
     }
 

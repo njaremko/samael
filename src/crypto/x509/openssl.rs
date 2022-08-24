@@ -7,13 +7,14 @@ use openssl::x509::{X509Name as Name, X509};
 use crate::crypto::rsa;
 use crate::idp::CertificateParams;
 
-#[derive(Clone)]
-pub struct Certificate<'a>(pub X509);
+use crate::crypto::x509::CertificateLike;
 
-impl<'a> Certificate {
-    pub fn new(
-        &self,
-        private_key: &rsa::PrivateKey,
+// #[derive(Clone)]
+// pub struct Certificate<'a>(pub X509);
+
+impl<Key: rsa::PrivateKeyLike> CertificateLike<Key> for X509 {
+    fn new(
+        private_key: &Key,
         params: &CertificateParams,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let mut name = Name::builder()?;
@@ -36,7 +37,7 @@ impl<'a> Certificate {
         builder.set_version(2)?;
         builder.set_subject_name(&name)?;
         builder.set_issuer_name(&iss)?;
-        builder.set_pubkey(&self.private_key.0)?;
+        builder.set_pubkey(&private_key)?;
 
         let starts = Asn1Time::days_from_now(0)?; // now
         builder.set_not_before(&starts)?;
@@ -49,11 +50,11 @@ impl<'a> Certificate {
         Ok(Self(builder.build()?))
     }
 
-    pub fn to_vec(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    fn to_vec(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
         self.0.to_der()
     }
 
-    pub fn public_key(&self) -> &[u8] {
+    fn public_key(&self) -> &[u8] {
         self.0.public_key()
     }
 }
