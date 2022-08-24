@@ -23,6 +23,7 @@ pub enum Error {
         error: crate::schema::authn_request::Error,
     },
 
+    #[cfg(feature = "openssl")]
     #[snafu(display("OpenSSL Error: {}", stack))]
     OpenSSLError {
         stack: openssl::error::ErrorStack,
@@ -32,11 +33,27 @@ pub enum Error {
     VerificationError {
         error: crate::crypto::Error,
     },
+
+    Unknown,
 }
 
+#[cfg(feature = "openssl")]
 impl From<openssl::error::ErrorStack> for Error {
     fn from(error: openssl::error::ErrorStack) -> Self {
         Error::OpenSSLError { stack: error }
+    }
+}
+
+impl From<Box<dyn std::error::Error>> for Error {
+    fn from(error: Box<dyn std::error::Error>) -> Self {
+        Error::Unknown
+    }
+}
+
+#[cfg(feature = "rustcrypto")]
+impl From<rsa::errors::Error> for Error {
+    fn from(error: rsa::errors::Error) -> Self {
+        Error::Unknown
     }
 }
 

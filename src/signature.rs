@@ -64,9 +64,7 @@ impl Signature {
             key_info: Some(vec![KeyInfo {
                 id: None,
                 x509_data: Some(X509Data {
-                    certificates: vec![
-                        crate::crypto::mime_encode_x509_cert(x509_cert_der)
-                    ],
+                    certificates: vec![crate::crypto::mime_encode_x509_cert(x509_cert_der)],
                 }),
             }]),
         }
@@ -124,9 +122,7 @@ impl SignatureValue {
         }
         writer.write_event(Event::Start(root))?;
         if let Some(ref base64_content) = self.base64_content {
-            writer.write_event(Event::Text(BytesText::from_plain_str(
-                base64_content,
-            )))?;
+            writer.write_event(Event::Text(BytesText::from_plain_str(base64_content)))?;
         }
         writer.write_event(Event::End(BytesEnd::borrowed(
             SIGNATURE_VALUE_NAME.as_bytes(),
@@ -332,9 +328,7 @@ impl DigestValue {
         let root = BytesStart::borrowed(DIGEST_VALUE_NAME.as_bytes(), DIGEST_VALUE_NAME.len());
         writer.write_event(Event::Start(root))?;
         if let Some(ref base64_content) = self.base64_content {
-            writer.write_event(Event::Text(BytesText::from_plain_str(
-                base64_content,
-            )))?;
+            writer.write_event(Event::Text(BytesText::from_plain_str(base64_content)))?;
         }
         writer.write_event(Event::End(BytesEnd::borrowed(DIGEST_VALUE_NAME.as_bytes())))?;
         Ok(String::from_utf8(write_buf)?)

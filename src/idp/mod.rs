@@ -1,4 +1,5 @@
 pub mod error;
+
 use self::error::Error;
 
 pub mod response_builder;
@@ -8,19 +9,20 @@ pub mod verified_request;
 #[cfg(test)]
 mod tests;
 
-use openssl::bn::{BigNum, MsbOption};
-use openssl::nid::Nid;
-use openssl::pkey::Private;
-use openssl::{asn1::Asn1Time, pkey, rsa::Rsa, x509};
 use std::str::FromStr;
 
-use crate::crypto::{self};
+use crate::crypto::rsa::PrivateKeyLike;
+use crate::crypto::x509::CertificateLike;
+use crate::crypto::{self, rsa, x509};
 
 use crate::idp::response_builder::{build_response_template, ResponseAttribute};
 use crate::schema::Response;
 
-pub struct IdentityProvider {
-    private_key: pkey::PKey<Private>,
+pub struct IdentityProvider<PrivateKey>
+where
+    PrivateKey: rsa::PrivateKeyLike,
+{
+    private_key: PrivateKey,
 }
 
 pub enum KeyType {
@@ -45,59 +47,26 @@ pub struct CertificateParams<'a> {
     pub days_until_expiration: u32,
 }
 
-impl IdentityProvider {
+impl IdentityProvider<rsa::PrivateKey> {
     pub fn generate_new(key_type: KeyType) -> Result<Self, Error> {
-        let rsa = Rsa::generate(key_type.bit_length())?;
-        let private_key = pkey::PKey::from_rsa(rsa)?;
+        let private_key =
+            rsa::PrivateKeyLike::new(usize::try_from(key_type.bit_length()).unwrap())?;
 
         Ok(IdentityProvider { private_key })
     }
 
     pub fn from_private_key_der(der_bytes: &[u8]) -> Result<Self, Error> {
-        let rsa = Rsa::private_key_from_der(der_bytes)?;
-        let private_key = pkey::PKey::from_rsa(rsa)?;
+        let private_key = rsa::PrivateKey::from_der(der_bytes)?;
 
         Ok(IdentityProvider { private_key })
     }
 
     pub fn export_private_key_der(&self) -> Result<Vec<u8>, Error> {
-        let rsa: Rsa<Private> = self.private_key.rsa()?;
-        Ok(rsa.private_key_to_der()?)
+        Ok(self.private_key.to_der()?)
     }
 
     pub fn create_certificate(&self, params: &CertificateParams) -> Result<Vec<u8>, Error> {
-        let mut name = x509::X509Name::builder()?;
-        name.append_entry_by_nid(Nid::COMMONNAME, params.common_name)?;
-        let name = name.build();
-
-        let mut iss = x509::X509Name::builder()?;
-        iss.append_entry_by_nid(Nid::COMMONNAME, params.issuer_name)?;
-        let iss = iss.build();
-
-        let mut builder = x509::X509::builder()?;
-
-        let serial_number = {
-            let mut serial = BigNum::new()?;
-            serial.rand(159, MsbOption::MAYBE_ZERO, false)?;
-            serial.to_asn1_integer()?
-        };
-
-        builder.set_serial_number(&serial_number)?;
-        builder.set_version(2)?;
-        builder.set_subject_name(&name)?;
-        builder.set_issuer_name(&iss)?;
-        builder.set_pubkey(&self.private_key)?;
-
-        let starts = Asn1Time::days_from_now(0)?; // now
-        builder.set_not_before(&starts)?;
-
-        let expires = Asn1Time::days_from_now(params.days_until_expiration)?;
-        builder.set_not_after(&expires)?;
-
-        builder.sign(&self.private_key, openssl::hash::MessageDigest::sha256())?;
-
-        let certificate: x509::X509 = builder.build();
-        Ok(certificate.to_der()?)
+        Ok(x509::Certificate::new(&self.private_key, params)?.to_vec()?)
     }
 
     pub fn sign_authn_response(

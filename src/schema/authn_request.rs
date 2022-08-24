@@ -199,13 +199,12 @@ impl AuthnRequest {
     }
 
     #[cfg(feature = "xmlsec")]
-    pub fn to_signed_xml(&self,
+    pub fn to_signed_xml(
+        &self,
         private_key_der: &[u8],
     ) -> Result<String, Box<dyn std::error::Error>> {
         crypto::sign_xml(self.to_xml()?, private_key_der)
-            .map_err(|crypto_error|
-                Box::new(crypto_error) as Box<dyn std::error::Error>
-            )
+            .map_err(|crypto_error| Box::new(crypto_error) as Box<dyn std::error::Error>)
     }
 }
 
@@ -232,19 +231,17 @@ mod test {
             "/test_vectors/authn_request_sign_template.xml"
         ));
 
-        let signed_authn_request =
-            authn_request_sign_template
-                .parse::<AuthnRequest>()?
-                .add_key_info(public_cert)
-                .to_signed_xml(private_key)?;
+        let signed_authn_request = authn_request_sign_template
+            .parse::<AuthnRequest>()?
+            .add_key_info(public_cert)
+            .to_signed_xml(private_key)?;
 
-        assert!(
-            crate::crypto::verify_signed_xml(
-                &signed_authn_request,
-                &public_cert[..],
-                Some("ID"),
-            ).is_ok()
-        );
+        assert!(crate::crypto::verify_signed_xml(
+            &signed_authn_request,
+            &public_cert[..],
+            Some("ID"),
+        )
+        .is_ok());
 
         Ok(())
     }
@@ -266,16 +263,13 @@ mod test {
             "/test_vectors/authn_request_sign_template.xml"
         ));
 
-        let signed_authn_redirect_url =
-            authn_request_sign_template
-                .parse::<AuthnRequest>()?
-                .signed_redirect("", private_key)?
-                .unwrap();
+        let signed_authn_redirect_url = authn_request_sign_template
+            .parse::<AuthnRequest>()?
+            .signed_redirect("", private_key)?
+            .unwrap();
 
         let url_verifier = UrlVerifier::from_rsa_pem(public_key)?;
-        assert!(
-            url_verifier.verify_signed_request_url(&signed_authn_redirect_url)?
-        );
+        assert!(url_verifier.verify_signed_request_url(&signed_authn_redirect_url)?);
 
         Ok(())
     }
@@ -297,22 +291,20 @@ mod test {
             "/test_vectors/authn_request_sign_template.xml"
         ));
 
-        let signed_authn_redirect_url =
-            authn_request_sign_template
-                .parse::<AuthnRequest>()?
-                .signed_redirect("some_relay_state_here", private_key)?
-                .unwrap();
+        let signed_authn_redirect_url = authn_request_sign_template
+            .parse::<AuthnRequest>()?
+            .signed_redirect("some_relay_state_here", private_key)?
+            .unwrap();
 
         let url_verifier = UrlVerifier::from_rsa_der(public_key)?;
-        assert!(
-            url_verifier.verify_signed_request_url(&signed_authn_redirect_url)?
-        );
+        assert!(url_verifier.verify_signed_request_url(&signed_authn_redirect_url)?);
 
         Ok(())
     }
 
     #[test]
-    pub fn test_redirect_signature_with_relaystate_using_x509_cert() -> Result<(), Box<dyn std::error::Error>> {
+    pub fn test_redirect_signature_with_relaystate_using_x509_cert(
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let private_key = include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_vectors/private.der"
@@ -328,16 +320,13 @@ mod test {
             "/test_vectors/authn_request_sign_template.xml"
         ));
 
-        let signed_authn_redirect_url =
-            authn_request_sign_template
-                .parse::<AuthnRequest>()?
-                .signed_redirect("some_relay_state_here", private_key)?
-                .unwrap();
+        let signed_authn_redirect_url = authn_request_sign_template
+            .parse::<AuthnRequest>()?
+            .signed_redirect("some_relay_state_here", private_key)?
+            .unwrap();
 
         let url_verifier = UrlVerifier::from_x509_cert_pem(public_cert)?;
-        assert!(
-            url_verifier.verify_signed_request_url(&signed_authn_redirect_url)?
-        );
+        assert!(url_verifier.verify_signed_request_url(&signed_authn_redirect_url)?);
 
         Ok(())
     }

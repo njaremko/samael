@@ -60,10 +60,9 @@ impl std::fmt::Display for XmlSecError {
             Self::NodeNotFound => write!(fmt, "Failed to find node"),
             Self::NotASignatureNode => write!(fmt, "Node is not a signature node"),
 
-            Self::SigningError => write!(
-                fmt,
-                "An error has ocurred while attemting to sign document"
-            ),
+            Self::SigningError => {
+                write!(fmt, "An error has ocurred while attemting to sign document")
+            }
             Self::VerifyError => write!(fmt, "Verification failed"),
         }
     }
