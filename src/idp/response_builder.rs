@@ -7,7 +7,7 @@ use crate::schema::{
 use crate::signature::Signature;
 use chrono::Utc;
 
-use super::sp_extractor::RequiredAttribute;
+use super::{sp_extractor::RequiredAttribute, AuthenticationContextClass};
 use crate::crypto;
 use crate::idp::ResponseParams;
 
@@ -23,7 +23,7 @@ fn build_conditions(audience: &str) -> Conditions {
     }
 }
 
-fn build_authn_statement(class: &str) -> AuthnStatement {
+fn build_authn_statement(class: AuthenticationContextClass) -> AuthnStatement {
     AuthnStatement {
         authn_instant: Some(Utc::now()),
         session_index: None,
@@ -68,8 +68,9 @@ fn build_assertion(params: &ResponseParams)
         issuer,
         in_response_to_id,
         attributes,
+        authentication_context,
         not_before,
-        not_on_or_after
+        not_on_or_after,
     } = *params;
 
     let assertion_id = crypto::gen_saml_assertion_id();
@@ -112,9 +113,7 @@ fn build_assertion(params: &ResponseParams)
             }]),
         }),
         conditions: Some(build_conditions(audience)),
-        authn_statements: Some(vec![build_authn_statement(
-            "urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified",
-        )]),
+        authn_statements: Some(vec![build_authn_statement(authentication_context)]),
         attribute_statements,
     }
 }

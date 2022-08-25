@@ -4,6 +4,8 @@ use self::error::Error;
 pub mod response_builder;
 pub mod sp_extractor;
 pub mod verified_request;
+mod authentication_context_class;
+pub use authentication_context_class::*;
 
 #[cfg(test)]
 mod tests;
@@ -55,6 +57,7 @@ pub struct ResponseParams<'a> {
     pub issuer: &'a str,
     pub in_response_to_id: &'a str,
     pub attributes: &'a [ResponseAttribute<'a>],
+    pub authentication_context: AuthenticationContextClass,
     pub not_before: Option<DateTime<Utc>>,
     pub not_on_or_after: Option<DateTime<Utc>>,
 }
