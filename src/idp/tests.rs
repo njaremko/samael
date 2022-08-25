@@ -98,6 +98,7 @@ fn test_signed_response() {
         issuer: "https://idp.example.com",
         in_response_to_id: &verified.id.as_str(),
         attributes: &attrs,
+        authentication_context: AuthenticationContextClass::default(),
         not_before: None,
         not_on_or_after: Some(Utc::now()),
     };
@@ -158,6 +159,7 @@ fn test_signed_response_fingerprint() {
         issuer: "https://idp.example.com",
         in_response_to_id: "",
         attributes: &[],
+        authentication_context: AuthenticationContextClass::default(),
         not_before: None,
         not_on_or_after: Some(Utc::now()),
     };
