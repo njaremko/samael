@@ -14,6 +14,7 @@ build = "bindings.rs"
 [lib]
 # Disabling doctests because they cause nix build check phase to fail
 doctest = false
+crate-type = ["staticlib", "rlib"]
 
 [features]
 xmlsec = ["libc", "lazy_static", "libxml"]
