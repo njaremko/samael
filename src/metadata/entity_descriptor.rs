@@ -14,15 +14,15 @@ use std::str::FromStr;
 #[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 #[serde(rename = "md:EntityDescriptor")]
 pub struct EntityDescriptor {
-    #[serde(rename = "entityID")]
+    #[serde(rename = "@entityID")]
     pub entity_id: Option<String>,
-    #[serde(rename = "ID")]
+    #[serde(rename = "@ID")]
     pub id: Option<String>,
     #[serde(rename = "Signature")]
     pub signature: Option<Signature>,
-    #[serde(rename = "validUntil")]
+    #[serde(rename = "@validUntil")]
     pub valid_until: Option<DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
+    #[serde(rename = "@cacheDuration")]
     pub cache_duration: Option<String>,
     #[serde(rename = "RoleDescriptor")]
     pub role_descriptors: Option<Vec<RoleDescriptor>>,
@@ -64,7 +64,7 @@ impl EntityDescriptor {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
         let root_name = "md:EntityDescriptor";
-        let mut root = BytesStart::borrowed(root_name.as_bytes(), root_name.len());
+        let mut root = BytesStart::new(root_name);
         if let Some(entity_id) = &self.entity_id {
             root.push_attribute(("entityID", entity_id.as_ref()))
         }
@@ -92,23 +92,27 @@ impl EntityDescriptor {
         root.push_attribute(("xmlns:ds", "http://www.w3.org/2000/09/xmldsig#"));
         writer.write_event(Event::Start(root))?;
         for descriptor in self.sp_sso_descriptors.as_ref().unwrap_or(&vec![]) {
-            writer.write(descriptor.to_xml()?.as_bytes())?;
+            let event: Event<'_> = descriptor.try_into()?;
+            writer.write_event(event)?;
         }
 
         for descriptor in self.idp_sso_descriptors.as_ref().unwrap_or(&vec![]) {
-            writer.write(descriptor.to_xml()?.as_bytes())?;
+            let event: Event<'_> = descriptor.try_into()?;
+            writer.write_event(event)?;
         }
 
         if let Some(organization) = &self.organization {
-            writer.write(organization.to_xml()?.as_bytes())?;
+            let event: Event<'_> = organization.try_into()?;
+            writer.write_event(event)?;
         }
 
         if let Some(contact_persons) = &self.contact_person {
             for contact_person in contact_persons {
-                writer.write(contact_person.to_xml()?.as_bytes())?;
+                let event: Event<'_> = contact_person.try_into()?;
+                writer.write_event(event)?;
             }
         }
-        writer.write_event(Event::End(BytesEnd::borrowed(root_name.as_bytes())))?;
+        writer.write_event(Event::End(BytesEnd::new(root_name)))?;
 
         Ok(String::from_utf8(write_buf)?)
     }
@@ -124,6 +128,7 @@ mod test {
             env!("CARGO_MANIFEST_DIR"),
             "/test_vectors/sp_metadata.xml"
         ));
+        println!("{}", &input_xml);
         let entity_descriptor: EntityDescriptor = input_xml
             .parse()
             .expect("Failed to parse sp_metadata.xml into an EntityDescriptor");

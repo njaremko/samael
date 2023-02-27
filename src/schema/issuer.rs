@@ -8,42 +8,54 @@ const SCHEMA: (&str, &str) = ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assert
 
 #[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Issuer {
-    #[serde(rename = "NameQualifier")]
+    #[serde(rename = "@NameQualifier")]
     pub name_qualifier: Option<String>,
-    #[serde(rename = "SPNameQualifier")]
+    #[serde(rename = "@SPNameQualifier")]
     pub sp_name_qualifier: Option<String>,
-    #[serde(rename = "Format")]
+    #[serde(rename = "@Format")]
     pub format: Option<String>,
-    #[serde(rename = "SPProvidedID")]
+    #[serde(rename = "@SPProvidedID")]
     pub sp_provided_id: Option<String>,
     #[serde(rename = "$value")]
     pub value: Option<String>,
 }
 
-impl Issuer {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+impl TryFrom<Issuer> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: Issuer) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&Issuer> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &Issuer) -> Result<Self, Self::Error> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
+        let mut root = BytesStart::new(NAME);
         root.push_attribute(SCHEMA);
 
-        if let Some(name_qualifier) = &self.name_qualifier {
+        if let Some(name_qualifier) = &value.name_qualifier {
             root.push_attribute(("NameQualifier", name_qualifier.as_ref()));
         }
-        if let Some(sp_name_qualifier) = &self.sp_name_qualifier {
+        if let Some(sp_name_qualifier) = &value.sp_name_qualifier {
             root.push_attribute(("SPNameQualifier", sp_name_qualifier.as_ref()));
         }
-        if let Some(format) = &self.format {
+        if let Some(format) = &value.format {
             root.push_attribute(("Format", format.as_ref()));
         }
-        if let Some(sp_provided_id) = &self.sp_provided_id {
+        if let Some(sp_provided_id) = &value.sp_provided_id {
             root.push_attribute(("SPProvidedID", sp_provided_id.as_ref()));
         }
         writer.write_event(Event::Start(root))?;
-        if let Some(value) = &self.value {
-            writer.write_event(Event::Text(BytesText::from_plain_str(value.as_ref())))?;
+        if let Some(value) = &value.value {
+            writer.write_event(Event::Text(BytesText::from_escaped(value)))?;
         }
-        writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        writer.write_event(Event::End(BytesEnd::new(NAME)))?;
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
     }
 }

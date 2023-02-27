@@ -7,10 +7,10 @@ pub fn write_plain_element<W: Write>(
     element_name: &str,
     text: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let element = BytesStart::borrowed(element_name.as_bytes(), element_name.len());
+    let element = BytesStart::new(element_name);
     writer.write_event(Event::Start(element))?;
-    writer.write_event(Event::Text(BytesText::from_plain_str(text)))?;
-    writer.write_event(Event::End(BytesEnd::borrowed(element_name.as_bytes())))?;
+    writer.write_event(Event::Text(BytesText::from_escaped(text)))?;
+    writer.write_event(Event::End(BytesEnd::new(element_name)))?;
     Ok(())
 }
 

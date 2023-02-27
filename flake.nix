@@ -149,9 +149,9 @@
             };
 
             # Audit dependencies
-            # samael-audit = craneLib.cargoAudit {
-            #   inherit src advisory-db;
-            # };
+            samael-audit = craneLib.cargoAudit {
+              inherit src advisory-db;
+            };
 
             # Run tests with cargo-nextest
             # Consider setting `doCheck = false` on `samael` if you do not want

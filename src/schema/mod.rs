@@ -17,35 +17,36 @@ use crate::signature::Signature;
 use chrono::prelude::*;
 use serde::Deserialize;
 
-use quick_xml::events::{BytesEnd, BytesStart, Event};
+use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
+
 use std::io::Cursor;
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct LogoutRequest {
-    #[serde(rename = "ID")]
+    #[serde(rename = "@ID")]
     pub id: Option<String>,
-    #[serde(rename = "Version")]
+    #[serde(rename = "@Version")]
     pub version: Option<String>,
-    #[serde(rename = "IssueInstant")]
+    #[serde(rename = "@IssueInstant")]
     pub issue_instant: Option<chrono::DateTime<Utc>>,
-    #[serde(rename = "Destination")]
+    #[serde(rename = "@Destination")]
     pub destination: Option<String>,
     #[serde(rename = "Issuer")]
     pub issuer: Option<Issuer>,
     #[serde(rename = "Signature")]
     pub signature: Option<Signature>,
-    #[serde(rename = "SessionIndex")]
+    #[serde(rename = "@SessionIndex")]
     pub session_index: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Assertion {
-    #[serde(rename = "ID")]
+    #[serde(rename = "@ID")]
     pub id: String,
-    #[serde(rename = "IssueInstant")]
+    #[serde(rename = "@IssueInstant")]
     pub issue_instant: DateTime<Utc>,
-    #[serde(rename = "Version")]
+    #[serde(rename = "@Version")]
     pub version: String,
     #[serde(rename = "Issuer")]
     pub issuer: Issuer,
@@ -72,55 +73,76 @@ impl Assertion {
             ("xmlns:xsd", "http://www.w3.org/2001/XMLSchema"),
         ]
     }
+}
 
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+impl TryFrom<Assertion> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: Assertion) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&Assertion> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &Assertion) -> Result<Self, Self::Error> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        let mut root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
+        let mut root = BytesStart::new(Assertion::name());
 
-        for attr in Self::schema() {
+        for attr in Assertion::schema() {
             root.push_attribute((attr.0, attr.1));
         }
 
-        root.push_attribute(("ID", self.id.as_ref()));
-        root.push_attribute(("Version", self.version.as_ref()));
+        root.push_attribute(("ID", value.id.as_ref()));
+        root.push_attribute(("Version", value.version.as_ref()));
         root.push_attribute((
             "IssueInstant",
-            self.issue_instant
+            value
+                .issue_instant
                 .to_rfc3339_opts(SecondsFormat::Millis, true)
                 .as_ref(),
         ));
 
         writer.write_event(Event::Start(root))?;
-        writer.write(self.issuer.to_xml()?.as_bytes())?;
+        let event: Event<'_> = (&value.issuer).try_into()?;
+        writer.write_event(event)?;
 
-        if let Some(signature) = &self.signature {
-            writer.write(signature.to_xml()?.as_bytes())?;
+        if let Some(signature) = &value.signature {
+            let event: Event<'_> = signature.try_into()?;
+            writer.write_event(event)?;
         }
 
-        if let Some(subject) = &self.subject {
-            writer.write(subject.to_xml()?.as_bytes())?;
+        if let Some(subject) = &value.subject {
+            let event: Event<'_> = subject.try_into()?;
+            writer.write_event(event)?;
         }
 
-        if let Some(conditions) = &self.conditions {
-            writer.write(conditions.to_xml()?.as_bytes())?;
+        if let Some(conditions) = &value.conditions {
+            let event: Event<'_> = conditions.try_into()?;
+            writer.write_event(event)?;
         }
 
-        if let Some(statements) = &self.authn_statements {
+        if let Some(statements) = &value.authn_statements {
             for statement in statements {
-                writer.write(statement.to_xml()?.as_bytes())?;
+                let event: Event<'_> = statement.try_into()?;
+                writer.write_event(event)?;
             }
         }
 
-        if let Some(statements) = &self.attribute_statements {
+        if let Some(statements) = &value.attribute_statements {
             for statement in statements {
-                writer.write(statement.to_xml()?.as_bytes())?;
+                let event: Event<'_> = statement.try_into()?;
+                writer.write_event(event)?;
             }
         }
 
         //TODO: attributeStatement
-        writer.write_event(Event::End(BytesEnd::borrowed(Self::name().as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        writer.write_event(Event::End(BytesEnd::new(Assertion::name())))?;
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
     }
 }
 
@@ -138,34 +160,49 @@ impl AttributeStatement {
     fn schema() -> &'static [(&'static str, &'static str)] {
         &[("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion")]
     }
+}
 
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+impl TryFrom<AttributeStatement> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: AttributeStatement) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&AttributeStatement> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &AttributeStatement) -> Result<Self, Self::Error> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        let mut root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
+        let mut root = BytesStart::new(AttributeStatement::name());
 
-        for attr in Self::schema() {
+        for attr in AttributeStatement::schema() {
             root.push_attribute((attr.0, attr.1));
         }
 
         writer.write_event(Event::Start(root))?;
 
-        for attr in &self.attributes {
-            writer.write(attr.to_xml()?.as_bytes())?;
+        for attr in &value.attributes {
+            let event: Event<'_> = attr.try_into()?;
+            writer.write_event(event)?;
         }
 
-        writer.write_event(Event::End(BytesEnd::borrowed(Self::name().as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        writer.write_event(Event::End(BytesEnd::new(AttributeStatement::name())))?;
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
     }
 }
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AuthnStatement {
-    #[serde(rename = "AuthnInstant")]
+    #[serde(rename = "@AuthnInstant")]
     pub authn_instant: Option<chrono::DateTime<Utc>>,
-    #[serde(rename = "SessionIndex")]
+    #[serde(rename = "@SessionIndex")]
     pub session_index: Option<String>,
-    #[serde(rename = "SessionNotOnOrAfter")]
+    #[serde(rename = "@SessionNotOnOrAfter")]
     pub session_not_on_or_after: Option<chrono::DateTime<Utc>>,
     #[serde(rename = "SubjectLocality")]
     pub subject_locality: Option<SubjectLocality>,
@@ -177,17 +214,29 @@ impl AuthnStatement {
     fn name() -> &'static str {
         "saml2:AuthnStatement"
     }
+}
 
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+impl TryFrom<AuthnStatement> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: AuthnStatement) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&AuthnStatement> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &AuthnStatement) -> Result<Self, Self::Error> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        let mut root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
+        let mut root = BytesStart::new(AuthnStatement::name());
 
-        if let Some(session) = &self.session_index {
+        if let Some(session) = &value.session_index {
             root.push_attribute(("SessionIndex", session.as_ref()));
         }
 
-        if let Some(instant) = &self.authn_instant {
+        if let Some(instant) = &value.authn_instant {
             root.push_attribute((
                 "AuthnInstant",
                 instant
@@ -196,7 +245,7 @@ impl AuthnStatement {
             ));
         }
 
-        if let Some(not_after) = &self.session_not_on_or_after {
+        if let Some(not_after) = &value.session_not_on_or_after {
             root.push_attribute((
                 "SessionNotOnOrAfter",
                 not_after
@@ -209,20 +258,23 @@ impl AuthnStatement {
 
         writer.write_event(Event::Start(root))?;
 
-        if let Some(context) = &self.authn_context {
-            writer.write(context.to_xml()?.as_bytes())?;
+        if let Some(context) = &value.authn_context {
+            let event: Event<'_> = context.try_into()?;
+            writer.write_event(event)?;
         }
 
-        writer.write_event(Event::End(BytesEnd::borrowed(Self::name().as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        writer.write_event(Event::End(BytesEnd::new(AuthnStatement::name())))?;
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
     }
 }
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct SubjectLocality {
-    #[serde(rename = "Address")]
+    #[serde(rename = "@Address")]
     pub address: Option<String>,
-    #[serde(rename = "DNSName")]
+    #[serde(rename = "@DNSName")]
     pub dns_name: Option<String>,
 }
 
@@ -236,19 +288,34 @@ impl AuthnContext {
     fn name() -> &'static str {
         "saml2:AuthnContext"
     }
+}
 
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        if let Some(value) = &self.value {
+impl TryFrom<AuthnContext> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: AuthnContext) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&AuthnContext> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &AuthnContext) -> Result<Self, Self::Error> {
+        if let Some(value) = &value.value {
             let mut write_buf = Vec::new();
             let mut writer = Writer::new(Cursor::new(&mut write_buf));
-            let root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
+            let root = BytesStart::new(AuthnContext::name());
 
             writer.write_event(Event::Start(root))?;
-            writer.write(value.to_xml()?.as_bytes())?;
-            writer.write_event(Event::End(BytesEnd::borrowed(Self::name().as_bytes())))?;
-            Ok(String::from_utf8(write_buf)?)
+            let event: Event<'_> = value.try_into()?;
+            writer.write_event(event)?;
+            writer.write_event(Event::End(BytesEnd::new(AuthnContext::name())))?;
+            Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+                write_buf,
+            )?)))
         } else {
-            Ok(String::new())
+            Ok(Event::Text(BytesText::from_escaped(String::new())))
         }
     }
 }
@@ -263,19 +330,33 @@ impl AuthnContextClassRef {
     fn name() -> &'static str {
         "saml2:AuthnContextClassRef"
     }
+}
 
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        if let Some(value) = &self.value {
+impl TryFrom<AuthnContextClassRef> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: AuthnContextClassRef) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&AuthnContextClassRef> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &AuthnContextClassRef) -> Result<Self, Self::Error> {
+        if let Some(value) = &value.value {
             let mut write_buf = Vec::new();
             let mut writer = Writer::new(Cursor::new(&mut write_buf));
-            let root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
+            let root = BytesStart::new(AuthnContextClassRef::name());
 
             writer.write_event(Event::Start(root))?;
-            writer.write(value.as_bytes())?;
-            writer.write_event(Event::End(BytesEnd::borrowed(Self::name().as_bytes())))?;
-            Ok(String::from_utf8(write_buf)?)
+            writer.write_event(Event::Text(BytesText::from_escaped(value)))?;
+            writer.write_event(Event::End(BytesEnd::new(AuthnContextClassRef::name())))?;
+            Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+                write_buf,
+            )?)))
         } else {
-            Ok(String::new())
+            Ok(Event::Text(BytesText::from_escaped(String::new())))
         }
     }
 }
@@ -294,21 +375,37 @@ impl Status {
     fn name() -> &'static str {
         "saml2p:Status"
     }
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
+}
+
+impl TryFrom<Status> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: Status) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&Status> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &Status) -> Result<Self, Self::Error> {
+        let mut write_buf: Vec<u8> = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        let root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
+        let root = BytesStart::new(Status::name());
 
         writer.write_event(Event::Start(root))?;
-        writer.write(self.status_code.to_xml()?.as_bytes())?;
-        writer.write_event(Event::End(BytesEnd::borrowed(Self::name().as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        let event: Event<'_> = (&value.status_code).try_into()?;
+        writer.write_event(event)?;
+        writer.write_event(Event::End(BytesEnd::new(Status::name())))?;
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
     }
 }
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct StatusCode {
-    #[serde(rename = "Value")]
+    #[serde(rename = "@Value")]
     pub value: Option<String>,
 }
 
@@ -316,45 +413,60 @@ impl StatusCode {
     fn name() -> &'static str {
         "saml2p:StatusCode"
     }
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+}
+
+impl TryFrom<StatusCode> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: StatusCode) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&StatusCode> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &StatusCode) -> Result<Self, Self::Error> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        let mut root = BytesStart::borrowed(Self::name().as_bytes(), Self::name().len());
+        let mut root = BytesStart::new(StatusCode::name());
 
-        if let Some(value) = &self.value {
+        if let Some(value) = &value.value {
             root.push_attribute(("Value", value.as_ref()));
         }
 
         writer.write_event(Event::Empty(root))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
     }
 }
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct StatusMessage {
-    #[serde(rename = "Value")]
+    #[serde(rename = "@Value")]
     pub value: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct StatusDetail {
-    #[serde(rename = "Children")]
+    #[serde(rename = "@Children")]
     pub children: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct LogoutResponse {
-    #[serde(rename = "ID")]
+    #[serde(rename = "@ID")]
     pub id: Option<String>,
-    #[serde(rename = "InResponseTo")]
+    #[serde(rename = "@InResponseTo")]
     pub in_response_to: Option<String>,
-    #[serde(rename = "Version")]
+    #[serde(rename = "@Version")]
     pub version: Option<String>,
-    #[serde(rename = "IssueInstant")]
+    #[serde(rename = "@IssueInstant")]
     pub issue_instant: Option<chrono::DateTime<Utc>>,
-    #[serde(rename = "Destination")]
+    #[serde(rename = "@Destination")]
     pub destination: Option<String>,
-    #[serde(rename = "Consent")]
+    #[serde(rename = "@Consent")]
     pub consent: Option<String>,
     #[serde(rename = "Issuer")]
     pub issuer: Option<Issuer>,

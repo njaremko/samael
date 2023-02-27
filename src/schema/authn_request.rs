@@ -1,7 +1,7 @@
 use crate::schema::{Conditions, Issuer, NameIdPolicy, Subject};
 use crate::signature::Signature;
 use chrono::prelude::*;
-use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, Event};
+use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
 use snafu::Snafu;
@@ -16,15 +16,15 @@ const SCHEMA: (&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:proto
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AuthnRequest {
-    #[serde(rename = "ID")]
+    #[serde(rename = "@ID")]
     pub id: String,
-    #[serde(rename = "Version")]
+    #[serde(rename = "@Version")]
     pub version: String,
-    #[serde(rename = "IssueInstant")]
+    #[serde(rename = "@IssueInstant")]
     pub issue_instant: DateTime<Utc>,
-    #[serde(rename = "Destination")]
+    #[serde(rename = "@Destination")]
     pub destination: Option<String>,
-    #[serde(rename = "Consent")]
+    #[serde(rename = "@Consent")]
     pub consent: Option<String>,
     #[serde(rename = "Issuer")]
     pub issuer: Option<Issuer>,
@@ -36,19 +36,19 @@ pub struct AuthnRequest {
     pub name_id_policy: Option<NameIdPolicy>,
     #[serde(rename = "Conditions")]
     pub conditions: Option<Conditions>,
-    #[serde(rename = "ForceAuthn")]
+    #[serde(rename = "@ForceAuthn")]
     pub force_authn: Option<bool>,
-    #[serde(rename = "IsPassive")]
+    #[serde(rename = "@IsPassive")]
     pub is_passive: Option<bool>,
-    #[serde(rename = "AssertionConsumerServiceIndex")]
+    #[serde(rename = "@AssertionConsumerServiceIndex")]
     pub assertion_consumer_service_index: Option<usize>,
-    #[serde(rename = "AssertionConsumerServiceURL")]
+    #[serde(rename = "@AssertionConsumerServiceURL")]
     pub assertion_consumer_service_url: Option<String>,
-    #[serde(rename = "ProtocolBinding")]
+    #[serde(rename = "@ProtocolBinding")]
     pub protocol_binding: Option<String>,
-    #[serde(rename = "AttributeConsumingServiceIndex")]
+    #[serde(rename = "@AttributeConsumingServiceIndex")]
     pub attribute_consuming_service_index: Option<usize>,
-    #[serde(rename = "ProviderName")]
+    #[serde(rename = "@ProviderName")]
     pub provider_name: Option<String>,
 }
 
@@ -113,84 +113,6 @@ impl AuthnRequest {
         self.issuer.clone().and_then(|iss| iss.value)
     }
 
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut write_buf = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        writer.write_event(Event::Decl(BytesDecl::new(
-            "1.0".as_bytes(),
-            Some("UTF-8".as_bytes()),
-            None,
-        )))?;
-
-        let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
-        root.push_attribute(SCHEMA);
-        root.push_attribute(("ID", self.id.as_ref()));
-        root.push_attribute(("Version", self.version.as_ref()));
-        root.push_attribute((
-            "IssueInstant",
-            self.issue_instant
-                .to_rfc3339_opts(SecondsFormat::Millis, true)
-                .as_ref(),
-        ));
-
-        if let Some(destination) = &self.destination {
-            root.push_attribute(("Destination", destination.as_ref()));
-        }
-        if let Some(consent) = &self.consent {
-            root.push_attribute(("Consent", consent.as_ref()));
-        }
-        if let Some(force_authn) = &self.force_authn {
-            root.push_attribute(("ForceAuthn", force_authn.to_string().as_ref()));
-        }
-        if let Some(is_passive) = &self.is_passive {
-            root.push_attribute(("IsPassive", is_passive.to_string().as_ref()));
-        }
-        if let Some(protocol_binding) = &self.protocol_binding {
-            root.push_attribute(("ProtocolBinding", protocol_binding.as_ref()));
-        }
-        if let Some(assertion_consumer_service_index) = &self.assertion_consumer_service_index {
-            root.push_attribute((
-                "AssertionConsumerServiceIndex",
-                assertion_consumer_service_index.to_string().as_ref(),
-            ));
-        }
-        if let Some(assertion_consumer_service_url) = &self.assertion_consumer_service_url {
-            root.push_attribute((
-                "AssertionConsumerServiceURL",
-                assertion_consumer_service_url.as_ref(),
-            ));
-        }
-        if let Some(attribute_consuming_service_index) = &self.attribute_consuming_service_index {
-            root.push_attribute((
-                "AttributeConsumingServiceIndex	",
-                attribute_consuming_service_index.to_string().as_ref(),
-            ));
-        }
-        if let Some(provider_name) = &self.provider_name {
-            root.push_attribute(("ProviderName", provider_name.as_ref()));
-        }
-        writer.write_event(Event::Start(root))?;
-
-        if let Some(issuer) = &self.issuer {
-            writer.write(issuer.to_xml()?.as_bytes())?;
-        }
-        if let Some(signature) = &self.signature {
-            writer.write(signature.to_xml()?.as_bytes())?;
-        }
-        if let Some(subject) = &self.subject {
-            writer.write(subject.to_xml()?.as_bytes())?;
-        }
-        if let Some(name_id_policy) = &self.name_id_policy {
-            writer.write(name_id_policy.to_xml()?.as_bytes())?;
-        }
-        if let Some(conditions) = &self.conditions {
-            writer.write(conditions.to_xml()?.as_bytes())?;
-        }
-
-        writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
-    }
-
     pub fn add_key_info(&mut self, public_cert_der: &[u8]) -> &mut Self {
         if let Some(ref mut signature) = self.signature {
             signature.add_key_info(public_cert_der);
@@ -203,8 +125,105 @@ impl AuthnRequest {
         &self,
         private_key_der: &[u8],
     ) -> Result<String, Box<dyn std::error::Error>> {
+        use crate::traits::ToXml;
+
         crypto::sign_xml(self.to_xml()?, private_key_der)
             .map_err(|crypto_error| Box::new(crypto_error) as Box<dyn std::error::Error>)
+    }
+}
+
+impl TryFrom<AuthnRequest> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: AuthnRequest) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&AuthnRequest> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &AuthnRequest) -> Result<Self, Self::Error> {
+        let mut write_buf = Vec::new();
+        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+        writer.write_event(Event::Decl(BytesDecl::new("1.0", Some("UTF-8"), None)))?;
+
+        let mut root = BytesStart::new(NAME);
+        root.push_attribute(SCHEMA);
+        root.push_attribute(("ID", value.id.as_ref()));
+        root.push_attribute(("Version", value.version.as_ref()));
+        root.push_attribute((
+            "IssueInstant",
+            value
+                .issue_instant
+                .to_rfc3339_opts(SecondsFormat::Millis, true)
+                .as_ref(),
+        ));
+
+        if let Some(destination) = &value.destination {
+            root.push_attribute(("Destination", destination.as_ref()));
+        }
+        if let Some(consent) = &value.consent {
+            root.push_attribute(("Consent", consent.as_ref()));
+        }
+        if let Some(force_authn) = &value.force_authn {
+            root.push_attribute(("ForceAuthn", force_authn.to_string().as_ref()));
+        }
+        if let Some(is_passive) = &value.is_passive {
+            root.push_attribute(("IsPassive", is_passive.to_string().as_ref()));
+        }
+        if let Some(protocol_binding) = &value.protocol_binding {
+            root.push_attribute(("ProtocolBinding", protocol_binding.as_ref()));
+        }
+        if let Some(assertion_consumer_service_index) = &value.assertion_consumer_service_index {
+            root.push_attribute((
+                "AssertionConsumerServiceIndex",
+                assertion_consumer_service_index.to_string().as_ref(),
+            ));
+        }
+        if let Some(assertion_consumer_service_url) = &value.assertion_consumer_service_url {
+            root.push_attribute((
+                "AssertionConsumerServiceURL",
+                assertion_consumer_service_url.as_ref(),
+            ));
+        }
+        if let Some(attribute_consuming_service_index) = &value.attribute_consuming_service_index {
+            root.push_attribute((
+                "AttributeConsumingServiceIndex	",
+                attribute_consuming_service_index.to_string().as_ref(),
+            ));
+        }
+        if let Some(provider_name) = &value.provider_name {
+            root.push_attribute(("ProviderName", provider_name.as_ref()));
+        }
+        writer.write_event(Event::Start(root))?;
+
+        if let Some(issuer) = &value.issuer {
+            let event: Event<'_> = issuer.try_into()?;
+            writer.write_event(event)?;
+        }
+        if let Some(signature) = &value.signature {
+            let event: Event<'_> = signature.try_into()?;
+            writer.write_event(event)?;
+        }
+        if let Some(subject) = &value.subject {
+            let event: Event<'_> = subject.try_into()?;
+            writer.write_event(event)?;
+        }
+        if let Some(name_id_policy) = &value.name_id_policy {
+            let event: Event<'_> = name_id_policy.try_into()?;
+            writer.write_event(event)?;
+        }
+        if let Some(conditions) = &value.conditions {
+            let event: Event<'_> = conditions.try_into()?;
+            writer.write_event(event)?;
+        }
+
+        writer.write_event(Event::End(BytesEnd::new(NAME)))?;
+
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
     }
 }
 

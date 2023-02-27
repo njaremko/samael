@@ -1,3 +1,5 @@
+use quick_xml::events::Event;
+
 use crate::crypto::{self, verify_signed_xml};
 use crate::schema::AuthnRequest;
 
@@ -66,9 +68,27 @@ impl std::ops::Deref for VerifiedAuthnRequest {
     }
 }
 
+impl TryFrom<VerifiedAuthnRequest> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: VerifiedAuthnRequest) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&VerifiedAuthnRequest> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &VerifiedAuthnRequest) -> Result<Self, Self::Error> {
+        value.0.clone().try_into()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::UnverifiedAuthnRequest;
+    use crate::traits::ToXml;
+
     #[test]
     fn test_request_deserialize_and_serialize() {
         let authn_request_xml = include_str!("../../test_vectors/authn_request.xml");
