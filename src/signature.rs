@@ -1,4 +1,6 @@
 use crate::key_info::{KeyInfo, X509Data};
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
@@ -64,9 +66,7 @@ impl Signature {
             key_info: Some(vec![KeyInfo {
                 id: None,
                 x509_data: Some(X509Data {
-                    certificates: vec![
-                        crate::crypto::mime_encode_x509_cert(x509_cert_der)
-                    ],
+                    certificates: vec![crate::crypto::mime_encode_x509_cert(x509_cert_der)],
                 }),
             }]),
         }
@@ -96,7 +96,7 @@ impl Signature {
         self.key_info.get_or_insert(Vec::new()).push(KeyInfo {
             id: None,
             x509_data: Some(X509Data {
-                certificates: vec![base64::encode(public_cert_der)],
+                certificates: vec![STANDARD.encode(public_cert_der)],
             }),
         });
         self
@@ -124,9 +124,7 @@ impl SignatureValue {
         }
         writer.write_event(Event::Start(root))?;
         if let Some(ref base64_content) = self.base64_content {
-            writer.write_event(Event::Text(BytesText::from_plain_str(
-                base64_content,
-            )))?;
+            writer.write_event(Event::Text(BytesText::from_plain_str(base64_content)))?;
         }
         writer.write_event(Event::End(BytesEnd::borrowed(
             SIGNATURE_VALUE_NAME.as_bytes(),
@@ -332,9 +330,7 @@ impl DigestValue {
         let root = BytesStart::borrowed(DIGEST_VALUE_NAME.as_bytes(), DIGEST_VALUE_NAME.len());
         writer.write_event(Event::Start(root))?;
         if let Some(ref base64_content) = self.base64_content {
-            writer.write_event(Event::Text(BytesText::from_plain_str(
-                base64_content,
-            )))?;
+            writer.write_event(Event::Text(BytesText::from_plain_str(base64_content)))?;
         }
         writer.write_event(Event::End(BytesEnd::borrowed(DIGEST_VALUE_NAME.as_bytes())))?;
         Ok(String::from_utf8(write_buf)?)
