@@ -1,6 +1,6 @@
 [package]
 name = "samael"
-version = "0.0.9"
+version = "0.0.10"
 authors = ["Nathan Jaremko <nathan@jaremko.ca>", "Alex Grinman <me@alexgr.in>"]
 edition = "2021"
 license = "MIT"
