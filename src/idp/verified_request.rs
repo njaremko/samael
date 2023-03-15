@@ -57,6 +57,11 @@ impl<'a> UnverifiedAuthnRequest<'a> {
         verify_signed_xml(self.xml.as_bytes(), der_cert, Some("ID"))?;
         Ok(VerifiedAuthnRequest(self.request))
     }
+    pub fn try_verify_with_cert_lazily_cloned(&self, der_cert: &[u8]) -> Result<VerifiedAuthnRequest, Error> {
+        verify_signed_xml(self.xml.as_bytes(), der_cert, Some("ID"))?;
+        Ok(VerifiedAuthnRequest(self.request.clone()))
+    }
+
 }
 
 pub struct VerifiedAuthnRequest(AuthnRequest);
