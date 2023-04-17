@@ -16,7 +16,7 @@ xmlsec = ["libc", "lazy_static", "libxml"]
 
 [build-dependencies]
 pkg-config =  "^0.3.17"
-bindgen    = "0.59.1"
+bindgen    = "^0.64.0"
 
 [dependencies]
 openssl = "0.10"
