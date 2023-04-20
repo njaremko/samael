@@ -305,7 +305,7 @@ impl ServiceProvider {
             if result.is_empty() {
                 for idp_sso_descriptor in idp_sso_descriptors {
                     for key_descriptor in &idp_sso_descriptor.key_descriptors {
-                        if key_descriptor.key_use == None
+                        if key_descriptor.key_use.is_none()
                             || key_descriptor.key_use == Some("".to_string())
                         {
                             result.append(&mut parse_certificates(key_descriptor)?);

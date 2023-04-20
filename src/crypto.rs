@@ -491,7 +491,7 @@ pub fn decode_x509_cert(x509_cert: &str) -> Result<Vec<u8>, base64::DecodeError>
         .filter(|b| !b" \n\t\r\x0b\x0c".contains(b))
         .collect::<Vec<u8>>();
 
-    STANDARD.decode(&stripped)
+    STANDARD.decode(stripped)
 }
 
 // 76-width base64 encoding (MIME)
