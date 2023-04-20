@@ -36,7 +36,7 @@ pub struct XmlSecKey(*mut bindings::xmlSecKey);
 impl XmlSecKey {
     /// Load key from buffer in memory, specifying format and optionally the password required to decrypt/unlock.
     pub fn from_memory(buffer: &[u8], format: XmlSecKeyFormat) -> XmlSecResult<Self> {
-        let _ctx = xmlsec_internal::guarantee_xmlsec_init()?;
+        xmlsec_internal::guarantee_xmlsec_init()?;
 
         // Load key from buffer
         let key = unsafe {

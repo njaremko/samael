@@ -237,7 +237,7 @@ mod test {
             .to_signed_xml(private_key)?;
 
         assert!(crate::crypto::verify_signed_xml(
-            &signed_authn_request,
+            signed_authn_request,
             &public_cert[..],
             Some("ID"),
         )

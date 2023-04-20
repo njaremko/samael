@@ -47,7 +47,6 @@ fn main() {
                 .clang_args(cflags)
                 .clang_args(fetch_xmlsec_config_libs())
                 .layout_tests(true)
-                .rustfmt_bindings(true)
                 .generate_comments(true);
 
             let bindings = bindbuild.generate().expect("Unable to generate bindings");

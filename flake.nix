@@ -66,7 +66,7 @@
           commonArgs = {
             inherit src;
 
-            # Need to tell bindgen where to find libclang 
+            # Need to tell bindgen where to find libclang
             LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
 
             # Set C flags for Rust's bindgen program. Unlike ordinary C
@@ -100,7 +100,7 @@
 
           # `nix develop`
           devShells.default = pkgs.mkShell {
-            # Need to tell bindgen where to find libclang 
+            # Need to tell bindgen where to find libclang
             LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
 
             # Set C flags for Rust's bindgen program. Unlike ordinary C
@@ -149,9 +149,9 @@
             };
 
             # Audit dependencies
-            samael-audit = craneLib.cargoAudit {
-              inherit src advisory-db;
-            };
+            # samael-audit = craneLib.cargoAudit {
+            #   inherit src advisory-db;
+            # };
 
             # Run tests with cargo-nextest
             # Consider setting `doCheck = false` on `samael` if you do not want
