@@ -12,4 +12,6 @@ jobs:
       - uses: cachix/cachix-action@v12
         with:
           name: nix-community
-      - run: nix build
+      - run: |
+        nix build
+        nix flake check

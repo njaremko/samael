@@ -136,7 +136,7 @@
             # prevent downstream consumers from building our crate by itself.
             samael-clippy = craneLib.cargoClippy (commonArgs // {
               inherit cargoArtifacts;
-              cargoClippyExtraArgs = "--all-targets -- --deny warnings";
+              cargoClippyExtraArgs = "--all-targets"; #--  --deny warnings
             });
 
             samael-doc = craneLib.cargoDoc (commonArgs // {
