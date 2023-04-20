@@ -13,5 +13,5 @@ jobs:
         with:
           name: nix-community
       - run: |
-        nix build
-        nix flake check
+          nix build
+          nix flake check
