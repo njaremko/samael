@@ -7,28 +7,41 @@ const NAME: &str = "ds:KeyInfo";
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct KeyInfo {
-    #[serde(rename = "Id")]
+    #[serde(rename = "@Id")]
     pub id: Option<String>,
     #[serde(rename = "X509Data")]
     pub x509_data: Option<X509Data>,
 }
 
-impl KeyInfo {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+impl TryFrom<KeyInfo> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: KeyInfo) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&KeyInfo> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &KeyInfo) -> Result<Self, Self::Error> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
-        if let Some(id) = &self.id {
+        let mut root = BytesStart::new(NAME);
+        if let Some(id) = &value.id {
             root.push_attribute(("Id", id.as_ref()));
         }
         writer.write_event(Event::Start(root))?;
 
-        if let Some(x509_data) = &self.x509_data {
-            writer.write(x509_data.to_xml()?.as_bytes())?;
+        if let Some(x509_data) = &value.x509_data {
+            let event: Event<'_> = x509_data.try_into()?;
+            writer.write_event(event)?;
         }
 
-        writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        writer.write_event(Event::End(BytesEnd::new(NAME)))?;
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
     }
 }
 
@@ -40,24 +53,33 @@ pub struct X509Data {
     pub certificates: Vec<String>,
 }
 
-impl X509Data {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+impl TryFrom<X509Data> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: X509Data) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&X509Data> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &X509Data) -> Result<Self, Self::Error> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        let root = BytesStart::borrowed(X509_DATA_NAME.as_bytes(), X509_DATA_NAME.len());
+        let root = BytesStart::new(X509_DATA_NAME);
         writer.write_event(Event::Start(root))?;
 
-        for certificate in &self.certificates {
+        for certificate in &value.certificates {
             let name = "ds:X509Certificate";
-            writer.write_event(Event::Start(BytesStart::borrowed(
-                name.as_bytes(),
-                name.len(),
-            )))?;
-            writer.write_event(Event::Text(BytesText::from_plain_str(certificate.as_str())))?;
-            writer.write_event(Event::End(BytesEnd::borrowed(name.as_bytes())))?;
+            writer.write_event(Event::Start(BytesStart::new(name)))?;
+            writer.write_event(Event::Text(BytesText::from_escaped(certificate.as_str())))?;
+            writer.write_event(Event::End(BytesEnd::new(name)))?;
         }
 
-        writer.write_event(Event::End(BytesEnd::borrowed(X509_DATA_NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        writer.write_event(Event::End(BytesEnd::new(X509_DATA_NAME)))?;
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
     }
 }

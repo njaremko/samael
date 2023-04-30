@@ -1,13 +1,13 @@
 use crate::crypto;
 use crate::metadata::{Endpoint, IndexedEndpoint, KeyDescriptor, NameIdFormat, SpSsoDescriptor};
 use crate::schema::{Assertion, Response};
+use crate::traits::ToXml;
 use crate::{
     key_info::{KeyInfo, X509Data},
     metadata::{ContactPerson, EncryptionMethod, EntityDescriptor, HTTP_POST_BINDING},
     schema::{AuthnRequest, Issuer, NameIdPolicy},
 };
-use base64::engine::general_purpose::STANDARD;
-use base64::Engine;
+use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
 use chrono::Duration;
 use flate2::{write::DeflateEncoder, Compression};
@@ -184,7 +184,7 @@ impl ServiceProvider {
                 key_info: KeyInfo {
                     id: None,
                     x509_data: Some(X509Data {
-                        certificates: vec![STANDARD.encode(&cert_bytes)],
+                        certificates: vec![general_purpose::STANDARD.encode(&cert_bytes)],
                     }),
                 },
             });
@@ -193,7 +193,7 @@ impl ServiceProvider {
                 key_info: KeyInfo {
                     id: None,
                     x509_data: Some(X509Data {
-                        certificates: vec![STANDARD.encode(&cert_bytes)],
+                        certificates: vec![general_purpose::STANDARD.encode(&cert_bytes)],
                     }),
                 },
                 encryption_methods: Some(vec![
@@ -326,7 +326,7 @@ impl ServiceProvider {
         encoded_resp: &str,
         possible_request_ids: Option<&[&str]>,
     ) -> Result<Assertion, Box<dyn std::error::Error>> {
-        let bytes = STANDARD.decode(encoded_resp)?;
+        let bytes = general_purpose::STANDARD.decode(encoded_resp)?;
         let decoded = std::str::from_utf8(&bytes)?;
         let assertion = self.parse_xml_response(decoded, possible_request_ids)?;
         Ok(assertion)
@@ -525,7 +525,7 @@ fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<x509::X509>,
 
 impl AuthnRequest {
     pub fn post(&self, relay_state: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let encoded = STANDARD.encode(self.to_xml()?.as_bytes());
+        let encoded = general_purpose::STANDARD.encode(self.to_xml()?.as_bytes());
         if let Some(dest) = &self.destination {
             Ok(Some(format!(
                 r#"
@@ -552,7 +552,7 @@ impl AuthnRequest {
             let mut encoder = DeflateEncoder::new(&mut compressed_buf, Compression::default());
             encoder.write_all(self.to_xml()?.as_bytes())?;
         }
-        let encoded = STANDARD.encode(&compressed_buf);
+        let encoded = general_purpose::STANDARD.encode(&compressed_buf);
 
         if let Some(destination) = self.destination.as_ref() {
             let mut url: Url = destination.parse()?;
@@ -612,9 +612,10 @@ impl AuthnRequest {
 
         signer.update(string_to_sign.as_bytes())?;
 
-        unsigned_url
-            .query_pairs_mut()
-            .append_pair("Signature", &STANDARD.encode(signer.sign_to_vec()?));
+        unsigned_url.query_pairs_mut().append_pair(
+            "Signature",
+            &general_purpose::STANDARD.encode(signer.sign_to_vec()?),
+        );
 
         // Past this point, it's a signed url :)
         Ok(Some(unsigned_url))

@@ -4,13 +4,13 @@ use serde::Deserialize;
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AffiliationDescriptor {
-    #[serde(rename = "affiliationOwnerID")]
+    #[serde(rename = "@affiliationOwnerID")]
     pub affiliation_descriptors: String,
-    #[serde(rename = "ID")]
+    #[serde(rename = "@ID")]
     pub id: String,
-    #[serde(rename = "validUntil")]
+    #[serde(rename = "@validUntil")]
     pub valid_until: Option<DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
+    #[serde(rename = "@cacheDuration")]
     pub cache_duration: String,
     #[serde(rename = "AffiliateMember", default)]
     pub affiliate_members: Vec<String>,

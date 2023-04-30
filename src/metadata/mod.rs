@@ -23,7 +23,7 @@ pub use sp_sso_descriptor::SpSsoDescriptor;
 pub mod de {
     pub use quick_xml::de::*;
 }
-use quick_xml::events::{BytesEnd, BytesStart, Event};
+use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 use std::io::Cursor;
 
@@ -69,15 +69,15 @@ impl NameIdFormat {
 
 #[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct RoleDescriptor {
-    #[serde(rename = "ID")]
+    #[serde(rename = "@ID")]
     pub id: Option<String>,
-    #[serde(rename = "validUntil")]
+    #[serde(rename = "@validUntil")]
     pub valid_until: Option<chrono::DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
+    #[serde(rename = "@cacheDuration")]
     pub cache_duration: Option<usize>,
-    #[serde(rename = "protocolSupportEnumeration")]
+    #[serde(rename = "@protocolSupportEnumeration")]
     pub protocol_support_enumeration: Option<String>,
-    #[serde(rename = "errorURL")]
+    #[serde(rename = "@errorURL")]
     pub error_url: Option<String>,
     #[serde(rename = "Signature")]
     pub signature: Option<Signature>,
@@ -91,15 +91,15 @@ pub struct RoleDescriptor {
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct SSODescriptor {
-    #[serde(rename = "ID")]
+    #[serde(rename = "@ID")]
     pub id: Option<String>,
-    #[serde(rename = "validUntil")]
+    #[serde(rename = "@validUntil")]
     pub valid_until: Option<chrono::DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
+    #[serde(rename = "@cacheDuration")]
     pub cache_duration: Option<usize>,
-    #[serde(rename = "protocolSupportEnumeration")]
+    #[serde(rename = "@protocolSupportEnumeration")]
     pub protocol_support_enumeration: Option<String>,
-    #[serde(rename = "errorURL")]
+    #[serde(rename = "@errorURL")]
     pub error_url: Option<String>,
     #[serde(rename = "Signature")]
     pub signature: Option<Signature>,
@@ -122,15 +122,15 @@ pub struct SSODescriptor {
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct IdpSsoDescriptor {
-    #[serde(rename = "ID")]
+    #[serde(rename = "@ID")]
     pub id: Option<String>,
-    #[serde(rename = "validUntil")]
+    #[serde(rename = "@validUntil")]
     pub valid_until: Option<chrono::DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
+    #[serde(rename = "@cacheDuration")]
     pub cache_duration: Option<usize>,
-    #[serde(rename = "protocolSupportEnumeration")]
+    #[serde(rename = "@protocolSupportEnumeration")]
     pub protocol_support_enumeration: Option<String>,
-    #[serde(rename = "errorURL")]
+    #[serde(rename = "@errorURL")]
     pub error_url: Option<String>,
     pub signature: Option<String>,
     #[serde(rename = "KeyDescriptor", default)]
@@ -148,7 +148,7 @@ pub struct IdpSsoDescriptor {
     #[serde(rename = "NameIDFormat", default)]
     pub name_id_formats: Vec<String>,
     // ^-SSODescriptor
-    #[serde(rename = "WantAuthnRequestsSigned")]
+    #[serde(rename = "@WantAuthnRequestsSigned")]
     pub want_authn_requests_signed: Option<bool>,
     #[serde(rename = "SingleSignOnService", default)]
     pub single_sign_on_services: Vec<Endpoint>,
@@ -164,17 +164,27 @@ pub struct IdpSsoDescriptor {
 
 const NAME: &str = "md:IDPSSODescriptor";
 
-impl IdpSsoDescriptor {
-    fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+impl TryFrom<IdpSsoDescriptor> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: IdpSsoDescriptor) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&IdpSsoDescriptor> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &IdpSsoDescriptor) -> Result<Self, Self::Error> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
+        let mut root = BytesStart::new(NAME);
 
-        if let Some(id) = &self.id {
+        if let Some(id) = &value.id {
             root.push_attribute(("ID", id.as_ref()));
         }
 
-        if let Some(valid_until) = &self.valid_until {
+        if let Some(valid_until) = &value.valid_until {
             root.push_attribute((
                 "validUntil",
                 valid_until
@@ -183,71 +193,76 @@ impl IdpSsoDescriptor {
             ));
         }
 
-        if let Some(cache_duration) = &self.cache_duration {
+        if let Some(cache_duration) = &value.cache_duration {
             root.push_attribute(("cacheDuration", cache_duration.to_string().as_ref()));
         }
 
-        if let Some(protocol_support_enumeration) = &self.protocol_support_enumeration {
+        if let Some(protocol_support_enumeration) = &value.protocol_support_enumeration {
             root.push_attribute((
                 "protocolSupportEnumeration",
                 protocol_support_enumeration.as_ref(),
             ));
         }
 
-        if let Some(error_url) = &self.error_url {
+        if let Some(error_url) = &value.error_url {
             root.push_attribute(("errorURL", error_url.as_ref()));
         }
 
         writer.write_event(Event::Start(root))?;
 
-        for descriptor in &self.key_descriptors {
-            writer.write(descriptor.to_xml()?.as_bytes())?;
+        for descriptor in &value.key_descriptors {
+            let event: Event<'_> = descriptor.try_into()?;
+            writer.write_event(event)?;
         }
 
-        if let Some(organization) = &self.organization {
-            writer.write(organization.to_xml()?.as_bytes())?;
+        if let Some(organization) = &value.organization {
+            let event: Event<'_> = organization.try_into()?;
+            writer.write_event(event)?;
         }
 
-        for contact in &self.contact_people {
-            writer.write(contact.to_xml()?.as_bytes())?;
+        for contact in &value.contact_people {
+            let event: Event<'_> = contact.try_into()?;
+            writer.write_event(event)?;
         }
 
-        for service in &self.artifact_resolution_service {
-            writer.write(service.to_xml("md:ArtifactResolutionService")?.as_bytes())?;
+        for service in &value.artifact_resolution_service {
+            writer.write_event(service.to_xml("md:ArtifactResolutionService")?)?;
         }
 
-        for service in &self.single_logout_services {
-            writer.write(service.to_xml("md:SingleLogoutService")?.as_bytes())?;
+        for service in &value.single_logout_services {
+            writer.write_event(service.to_xml("md:SingleLogoutService")?)?;
         }
 
-        for service in &self.single_sign_on_services {
-            writer.write(service.to_xml("md:SingleSignOnService")?.as_bytes())?;
+        for service in &value.single_sign_on_services {
+            writer.write_event(service.to_xml("md:SingleSignOnService")?)?;
         }
 
-        for service in &self.manage_name_id_services {
-            writer.write(service.to_xml("md:ManageNameIDService")?.as_bytes())?;
+        for service in &value.manage_name_id_services {
+            writer.write_event(service.to_xml("md:ManageNameIDService")?)?;
         }
 
-        for format in &self.name_id_formats {
+        for format in &value.name_id_formats {
             write_plain_element(&mut writer, "md:NameIDFormat", format.as_ref())?;
         }
 
-        writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        writer.write_event(Event::End(BytesEnd::new(NAME)))?;
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
     }
 }
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AuthnAuthorityDescriptors {
-    #[serde(rename = "ID")]
+    #[serde(rename = "@ID")]
     pub id: Option<String>,
-    #[serde(rename = "validUntil")]
+    #[serde(rename = "@validUntil")]
     pub valid_until: Option<chrono::DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
+    #[serde(rename = "@cacheDuration")]
     pub cache_duration: Option<usize>,
-    #[serde(rename = "protocolSupportEnumeration")]
+    #[serde(rename = "@protocolSupportEnumeration")]
     pub protocol_support_enumeration: Option<String>,
-    #[serde(rename = "errorURL")]
+    #[serde(rename = "@errorURL")]
     pub error_url: Option<String>,
     #[serde(rename = "Signature")]
     pub signature: Option<Signature>,
@@ -268,15 +283,15 @@ pub struct AuthnAuthorityDescriptors {
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct AttributeAuthorityDescriptors {
-    #[serde(rename = "ID")]
+    #[serde(rename = "@ID")]
     pub id: Option<String>,
-    #[serde(rename = "validUntil")]
+    #[serde(rename = "@validUntil")]
     pub valid_until: Option<chrono::DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
+    #[serde(rename = "@cacheDuration")]
     pub cache_duration: Option<usize>,
-    #[serde(rename = "protocolSupportEnumeration")]
+    #[serde(rename = "@protocolSupportEnumeration")]
     pub protocol_support_enumeration: Option<String>,
-    #[serde(rename = "errorURL")]
+    #[serde(rename = "@errorURL")]
     pub error_url: Option<String>,
     #[serde(rename = "Signature")]
     pub signature: Option<Signature>,
@@ -301,15 +316,15 @@ pub struct AttributeAuthorityDescriptors {
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct PdpDescriptors {
-    #[serde(rename = "ID")]
+    #[serde(rename = "@ID")]
     pub id: Option<String>,
-    #[serde(rename = "validUntil")]
+    #[serde(rename = "@validUntil")]
     pub valid_until: Option<chrono::DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
+    #[serde(rename = "@cacheDuration")]
     pub cache_duration: Option<usize>,
-    #[serde(rename = "protocolSupportEnumeration")]
+    #[serde(rename = "@protocolSupportEnumeration")]
     pub protocol_support_enumeration: Option<String>,
-    #[serde(rename = "errorURL")]
+    #[serde(rename = "@errorURL")]
     pub error_url: Option<String>,
     #[serde(rename = "Signature")]
     pub signature: Option<Signature>,

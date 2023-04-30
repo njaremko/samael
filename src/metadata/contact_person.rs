@@ -1,5 +1,5 @@
 use crate::metadata::helpers::write_plain_element;
-use quick_xml::events::{BytesEnd, BytesStart, Event};
+use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
 use std::io::Cursor;
@@ -28,7 +28,7 @@ impl ContactType {
 
 #[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct ContactPerson {
-    #[serde(rename = "contactType")]
+    #[serde(rename = "@contactType")]
     pub contact_type: Option<String>,
     #[serde(rename = "Company")]
     pub company: Option<String>,
@@ -42,39 +42,54 @@ pub struct ContactPerson {
     pub telephone_numbers: Option<Vec<String>>,
 }
 
-impl ContactPerson {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+impl TryFrom<ContactPerson> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: ContactPerson) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&ContactPerson> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &ContactPerson) -> Result<Self, Self::Error> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
-        if let Some(contact_type) = &self.contact_type {
+        let mut root = BytesStart::new(NAME);
+        if let Some(contact_type) = &value.contact_type {
             root.push_attribute(("contactType", contact_type.as_ref()))
         }
         writer.write_event(Event::Start(root))?;
 
-        self.company
+        value
+            .company
             .as_ref()
             .map(|company| write_plain_element(&mut writer, "md:Company", company));
-        self.sur_name
+        value
+            .sur_name
             .as_ref()
             .map(|sur_name| write_plain_element(&mut writer, "md:SurName", sur_name));
-        self.given_name
+        value
+            .given_name
             .as_ref()
             .map(|given_name| write_plain_element(&mut writer, "md:GivenName", given_name));
 
-        if let Some(email_addresses) = &self.email_addresses {
+        if let Some(email_addresses) = &value.email_addresses {
             for email in email_addresses {
                 write_plain_element(&mut writer, "md:EmailAddress", email)?;
             }
         }
 
-        if let Some(telephone_numbers) = &self.telephone_numbers {
+        if let Some(telephone_numbers) = &value.telephone_numbers {
             for number in telephone_numbers {
                 write_plain_element(&mut writer, "md:TelephoneNumber", number)?;
             }
         }
 
-        writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        writer.write_event(Event::End(BytesEnd::new(NAME)))?;
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
     }
 }

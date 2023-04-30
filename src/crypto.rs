@@ -3,8 +3,7 @@ use std::convert::TryInto;
 use std::ffi::CString;
 use std::str::FromStr;
 
-use base64::engine::general_purpose::STANDARD;
-use base64::Engine;
+use base64::{engine::general_purpose, Engine as _};
 use snafu::Snafu;
 
 #[cfg(feature = "xmlsec")]
@@ -491,7 +490,7 @@ pub fn decode_x509_cert(x509_cert: &str) -> Result<Vec<u8>, base64::DecodeError>
         .filter(|b| !b" \n\t\r\x0b\x0c".contains(b))
         .collect::<Vec<u8>>();
 
-    STANDARD.decode(stripped)
+    general_purpose::STANDARD.decode(stripped)
 }
 
 // 76-width base64 encoding (MIME)
@@ -668,7 +667,7 @@ impl UrlVerifier {
         }
 
         let signed_string: String = verify_url.query().unwrap().to_string();
-        let signature = STANDARD.decode(&query_params["Signature"])?;
+        let signature = general_purpose::STANDARD.decode(&query_params["Signature"])?;
 
         self.verify_signature(signed_string.as_bytes(), sig_alg, &signature)
     }

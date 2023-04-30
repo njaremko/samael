@@ -4,7 +4,7 @@ use crate::metadata::{
     Organization,
 };
 use chrono::prelude::*;
-use quick_xml::events::{BytesEnd, BytesStart, Event};
+use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
 use std::io::Cursor;
@@ -13,15 +13,15 @@ const NAME: &str = "md:SPSSODescriptor";
 
 #[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct SpSsoDescriptor {
-    #[serde(rename = "ID")]
+    #[serde(rename = "@ID")]
     pub id: Option<String>,
-    #[serde(rename = "validUntil")]
+    #[serde(rename = "@validUntil")]
     pub valid_until: Option<DateTime<Utc>>,
-    #[serde(rename = "cacheDuration")]
+    #[serde(rename = "@cacheDuration")]
     pub cache_duration: Option<usize>,
-    #[serde(rename = "protocolSupportEnumeration")]
+    #[serde(rename = "@protocolSupportEnumeration")]
     pub protocol_support_enumeration: Option<String>,
-    #[serde(rename = "errorURL")]
+    #[serde(rename = "@errorURL")]
     pub error_url: Option<String>,
     #[serde(rename = "KeyDescriptor")]
     pub key_descriptors: Option<Vec<KeyDescriptor>>,
@@ -38,9 +38,9 @@ pub struct SpSsoDescriptor {
     #[serde(rename = "NameIDFormat")]
     pub name_id_formats: Option<Vec<String>>,
     // ^-SSODescriptor
-    #[serde(rename = "AuthnRequestsSigned")]
+    #[serde(rename = "@AuthnRequestsSigned")]
     pub authn_requests_signed: Option<bool>,
-    #[serde(rename = "WantAssertionsSigned")]
+    #[serde(rename = "@WantAssertionsSigned")]
     pub want_assertions_signed: Option<bool>,
     #[serde(rename = "AssertionConsumerService")]
     pub assertion_consumer_services: Vec<IndexedEndpoint>,
@@ -48,17 +48,27 @@ pub struct SpSsoDescriptor {
     pub attribute_consuming_services: Option<Vec<AttributeConsumingService>>,
 }
 
-impl SpSsoDescriptor {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+impl TryFrom<SpSsoDescriptor> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: SpSsoDescriptor) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&SpSsoDescriptor> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &SpSsoDescriptor) -> Result<Self, Self::Error> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
-        let mut root = BytesStart::borrowed(NAME.as_bytes(), NAME.len());
+        let mut root = BytesStart::new(NAME);
 
-        if let Some(id) = &self.id {
+        if let Some(id) = &value.id {
             root.push_attribute(("ID", id.as_ref()));
         }
 
-        if let Some(valid_until) = &self.valid_until {
+        if let Some(valid_until) = &value.valid_until {
             root.push_attribute((
                 "validUntil",
                 valid_until
@@ -67,29 +77,29 @@ impl SpSsoDescriptor {
             ));
         }
 
-        if let Some(cache_duration) = &self.cache_duration {
+        if let Some(cache_duration) = &value.cache_duration {
             root.push_attribute(("cacheDuration", cache_duration.to_string().as_ref()));
         }
 
-        if let Some(protocol_support_enumeration) = &self.protocol_support_enumeration {
+        if let Some(protocol_support_enumeration) = &value.protocol_support_enumeration {
             root.push_attribute((
                 "protocolSupportEnumeration",
                 protocol_support_enumeration.as_ref(),
             ));
         }
 
-        if let Some(error_url) = &self.error_url {
+        if let Some(error_url) = &value.error_url {
             root.push_attribute(("errorURL", error_url.as_ref()));
         }
 
-        if let Some(want_assertions_signed) = &self.want_assertions_signed {
+        if let Some(want_assertions_signed) = &value.want_assertions_signed {
             root.push_attribute((
                 "WantAssertionsSigned",
                 want_assertions_signed.to_string().as_ref(),
             ));
         }
 
-        if let Some(authn_requests_signed) = &self.authn_requests_signed {
+        if let Some(authn_requests_signed) = &value.authn_requests_signed {
             root.push_attribute((
                 "AuthnRequestsSigned",
                 authn_requests_signed.to_string().as_ref(),
@@ -98,57 +108,63 @@ impl SpSsoDescriptor {
 
         writer.write_event(Event::Start(root))?;
 
-        if let Some(key_descriptors) = &self.key_descriptors {
+        if let Some(key_descriptors) = &value.key_descriptors {
             for descriptor in key_descriptors {
-                writer.write(descriptor.to_xml()?.as_bytes())?;
+                let event: Event<'_> = descriptor.try_into()?;
+                writer.write_event(event)?;
             }
         }
 
-        if let Some(organization) = &self.organization {
-            writer.write(organization.to_xml()?.as_bytes())?;
+        if let Some(organization) = &value.organization {
+            let event: Event<'_> = organization.try_into()?;
+            writer.write_event(event)?;
         }
 
-        if let Some(contact_people) = &self.contact_people {
+        if let Some(contact_people) = &value.contact_people {
             for contact in contact_people {
-                writer.write(contact.to_xml()?.as_bytes())?;
+                let event: Event<'_> = contact.try_into()?;
+                writer.write_event(event)?;
             }
         }
 
-        if let Some(artifact_resolution_service) = &self.artifact_resolution_service {
+        if let Some(artifact_resolution_service) = &value.artifact_resolution_service {
             for service in artifact_resolution_service {
-                writer.write(service.to_xml("md:ArtifactResolutionService")?.as_bytes())?;
+                writer.write_event(service.to_xml("md:ArtifactResolutionService")?)?;
             }
         }
 
-        if let Some(single_logout_services) = &self.single_logout_services {
+        if let Some(single_logout_services) = &value.single_logout_services {
             for service in single_logout_services {
-                writer.write(service.to_xml("md:SingleLogoutService")?.as_bytes())?;
+                writer.write_event(service.to_xml("md:SingleLogoutService")?)?;
             }
         }
 
-        if let Some(manage_name_id_services) = &self.manage_name_id_services {
+        if let Some(manage_name_id_services) = &value.manage_name_id_services {
             for service in manage_name_id_services {
-                writer.write(service.to_xml("md:ManageNameIDService")?.as_bytes())?;
+                writer.write_event(service.to_xml("md:ManageNameIDService")?)?;
             }
         }
 
-        if let Some(name_id_formats) = &self.name_id_formats {
+        if let Some(name_id_formats) = &value.name_id_formats {
             for format in name_id_formats {
                 write_plain_element(&mut writer, "md:NameIDFormat", format.as_ref())?;
             }
         }
 
-        for service in &self.assertion_consumer_services {
-            writer.write(service.to_xml("md:AssertionConsumerService")?.as_bytes())?;
+        for service in &value.assertion_consumer_services {
+            writer.write_event(service.to_xml("md:AssertionConsumerService")?)?;
         }
 
-        if let Some(attribute_consuming_services) = &self.attribute_consuming_services {
+        if let Some(attribute_consuming_services) = &value.attribute_consuming_services {
             for service in attribute_consuming_services {
-                writer.write(service.to_xml()?.as_bytes())?;
+                let event: Event<'_> = service.try_into()?;
+                writer.write_event(event)?;
             }
         }
 
-        writer.write_event(Event::End(BytesEnd::borrowed(NAME.as_bytes())))?;
-        Ok(String::from_utf8(write_buf)?)
+        writer.write_event(Event::End(BytesEnd::new(NAME)))?;
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
     }
 }

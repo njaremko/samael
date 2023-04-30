@@ -18,6 +18,7 @@ use crate::crypto::{self};
 
 use crate::idp::response_builder::{build_response_template, ResponseAttribute};
 use crate::schema::Response;
+use crate::traits::ToXml;
 
 pub struct IdentityProvider {
     private_key: pkey::PKey<Private>,
