@@ -1,3 +1,5 @@
 /target
 /.direnv
 /result
+.idea
+.DS_Store
