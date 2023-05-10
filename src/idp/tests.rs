@@ -1,5 +1,6 @@
 use super::*;
 use chrono::prelude::*;
+use std::borrow::Cow;
 
 use crate::crypto::verify_signed_xml;
 use crate::idp::sp_extractor::{RequiredAttribute, SPMetadataExtractor};
@@ -83,7 +84,7 @@ fn test_signed_response() {
                 name: attr.1.to_string(),
                 format: Some(attr.0.to_string()),
             },
-            value: attr.2,
+            values: Cow::from(vec![attr.2]),
         })
         .collect::<Vec<ResponseAttribute>>();
 

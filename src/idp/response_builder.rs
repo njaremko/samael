@@ -6,6 +6,7 @@ use crate::schema::{
 };
 use crate::signature::Signature;
 use chrono::Utc;
+use std::borrow::Cow;
 
 use super::{sp_extractor::RequiredAttribute, AuthenticationContextClass};
 use crate::crypto;
@@ -39,7 +40,7 @@ fn build_authn_statement(class: AuthenticationContextClass) -> AuthnStatement {
 
 pub struct ResponseAttribute<'a> {
     pub required_attribute: RequiredAttribute,
-    pub values: &'a [&'a str],
+    pub values: Cow<'a, [&'a str]>,
 }
 
 fn build_attributes(formats_names_values: &[ResponseAttribute]) -> Vec<Attribute> {
