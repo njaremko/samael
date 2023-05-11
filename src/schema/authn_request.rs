@@ -4,9 +4,9 @@ use chrono::prelude::*;
 use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
-use snafu::Snafu;
 use std::io::Cursor;
 use std::str::FromStr;
+use thiserror::Error;
 
 #[cfg(feature = "xmlsec")]
 use crate::crypto;
@@ -76,14 +76,15 @@ impl Default for AuthnRequest {
     }
 }
 
-#[derive(Debug, Snafu)]
+#[derive(Debug, Error)]
 pub enum Error {
-    #[snafu(display("Failed to deserialize AuthnRequest: {:?}", source))]
-    #[snafu(context(false))]
+    #[error("Failed to deserialize AuthnRequest: {:?}", source)]
     ParseError {
+        #[from]
         source: quick_xml::DeError,
     },
 
+    #[error("No subject name ID")]
     NoSubjectNameID,
 }
 

@@ -7,9 +7,9 @@ use chrono::prelude::*;
 use quick_xml::events::{BytesEnd, BytesStart, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
-use snafu::Snafu;
 use std::io::Cursor;
 use std::str::FromStr;
+use thiserror::Error;
 
 #[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 #[serde(rename = "md:EntityDescriptor")]
@@ -44,11 +44,13 @@ pub struct EntityDescriptor {
     pub organization: Option<Organization>,
 }
 
-#[derive(Debug, Snafu)]
+#[derive(Debug, Error)]
 pub enum Error {
-    #[snafu(display("Failed to deserialize SAML response: {:?}", source))]
-    #[snafu(context(false))]
-    ParseError { source: quick_xml::DeError },
+    #[error("Failed to deserialize SAML response: {:?}", source)]
+    ParseError {
+        #[from]
+        source: quick_xml::DeError,
+    },
 }
 
 impl FromStr for EntityDescriptor {

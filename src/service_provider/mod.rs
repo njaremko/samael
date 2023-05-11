@@ -13,9 +13,9 @@ use chrono::Duration;
 use flate2::{write::DeflateEncoder, Compression};
 use openssl::pkey::Private;
 use openssl::{rsa, x509};
-use snafu::Snafu;
 use std::fmt::Debug;
 use std::io::Write;
+use thiserror::Error;
 use url::Url;
 
 #[cfg(test)]
@@ -29,86 +29,73 @@ fn reduce_xml_to_signed<T>(xml_str: &str, _keys: &Vec<T>) -> Result<String, Erro
     Ok(String::from(xml_str))
 }
 
-#[derive(Debug, Snafu, PartialEq)]
+#[derive(Debug, Error, PartialEq)]
 pub enum Error {
-    #[snafu(display(
+    #[error(
         "SAML response destination does not match SP ACS URL. {:?} != {:?}",
         response_destination,
         sp_acs_url
-    ))]
+    )]
     DestinationValidationError {
         response_destination: Option<String>,
         sp_acs_url: Option<String>,
     },
-    #[snafu(display("SAML Assertion expired at: {}", time))]
-    AssertionExpired {
-        time: String,
-    },
-    #[snafu(display(
+    #[error("SAML Assertion expired at: {}", time)]
+    AssertionExpired { time: String },
+    #[error(
         "SAML Assertion Issuer does not match IDP entity ID: {:?} != {:?}",
         issuer,
         entity_id
-    ))]
+    )]
     AssertionIssuerMismatch {
         issuer: Option<String>,
         entity_id: Option<String>,
     },
-    #[snafu(display("SAML Assertion Condition expired at: {}", time))]
-    AssertionConditionExpired {
-        time: String,
-    },
-    #[snafu(display("SAML Assertion Condition is not valid until: {}", time))]
-    AssertionConditionExpiredBefore {
-        time: String,
-    },
-    #[snafu(display(
+    #[error("SAML Assertion Condition expired at: {}", time)]
+    AssertionConditionExpired { time: String },
+    #[error("SAML Assertion Condition is not valid until: {}", time)]
+    AssertionConditionExpiredBefore { time: String },
+    #[error(
         "SAML Assertion Condition has unfulfilled AudienceRequirement: {}",
         requirement
-    ))]
-    AssertionConditionAudienceRestrictionFailed {
-        requirement: String,
-    },
-    #[snafu(display(
+    )]
+    AssertionConditionAudienceRestrictionFailed { requirement: String },
+    #[error(
         "SAML Response 'InResponseTo' does not match any of the possible request IDs: {:?}",
         possible_ids
-    ))]
-    ResponseInResponseToInvalid {
-        possible_ids: Vec<String>,
-    },
-    #[snafu(display(
+    )]
+    ResponseInResponseToInvalid { possible_ids: Vec<String> },
+    #[error(
         "SAML Response Issuer does not match IDP entity ID: {:?} != {:?}",
         issuer,
         entity_id
-    ))]
+    )]
     ResponseIssuerMismatch {
         issuer: Option<String>,
         entity_id: Option<String>,
     },
-    #[snafu(display("SAML Response expired at: {}", time))]
-    ResponseExpired {
-        time: String,
-    },
-    #[snafu(display("SAML Response StatusCode is not successful: {}", code))]
-    ResponseBadStatusCode {
-        code: String,
-    },
-    #[snafu(display("Encrypted SAML Assertions are not yet supported"))]
+    #[error("SAML Response expired at: {}", time)]
+    ResponseExpired { time: String },
+    #[error("SAML Response StatusCode is not successful: {}", code)]
+    ResponseBadStatusCode { code: String },
+    #[error("Encrypted SAML Assertions are not yet supported")]
     EncryptedAssertionsNotYetSupported,
-    #[snafu(display("SAML Response and all assertions must be signed"))]
+    #[error("SAML Response and all assertions must be signed")]
     FailedToValidateSignature,
-    #[snafu(display("Failed to deserialize SAML response."))]
+    #[error("Failed to deserialize SAML response.")]
     DeserializeResponseError,
-    #[snafu(display("Failed to parse cert '{}'. Assumed DER format.", cert))]
-    FailedToParseCert {
-        cert: String,
-    },
-    #[snafu(display("Unexpected Error Occurred!"))]
+    #[error("Failed to parse cert '{}'. Assumed DER format.", cert)]
+    FailedToParseCert { cert: String },
+    #[error("Unexpected Error Occurred!")]
     UnexpectedError,
 
-    #[snafu(display("Failed to parse SAMLResponse"))]
+    #[error("Failed to parse SAMLResponse")]
     FailedToParseSamlResponse,
 
+    #[error("ACS url is missing")]
     MissingAcsUrl,
+
+    #[error("SLO url is missing")]
     MissingSloUrl,
 }
 

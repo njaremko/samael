@@ -1,10 +1,9 @@
+use base64::{engine::general_purpose, Engine as _};
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::ffi::CString;
 use std::str::FromStr;
-
-use base64::{engine::general_purpose, Engine as _};
-use snafu::Snafu;
+use thiserror::Error;
 
 #[cfg(feature = "xmlsec")]
 use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
@@ -20,73 +19,54 @@ const ATTRIB_SIGVER: &str = "sv";
 #[cfg(feature = "xmlsec")]
 const VALUE_SIGVER: &str = "verified";
 
-#[derive(Debug, Snafu)]
+#[derive(Debug, Error)]
 pub enum Error {
+    #[error("Encountered an invalid signature")]
     InvalidSignature,
 
-    #[snafu(display("base64 decoding Error: {}", error))]
+    #[error("base64 decoding Error: {}", error)]
     Base64Error {
+        #[from]
         error: base64::DecodeError,
     },
 
+    #[error("The given XML is missing a root element")]
     XmlMissingRootElement,
 
     #[cfg(feature = "xmlsec")]
-    #[snafu(display("xml sec Error: {}", error))]
+    #[error("xml sec Error: {}", error)]
     XmlParseError {
+        #[from]
         error: libxml::parser::XmlParseError,
     },
 
     #[cfg(feature = "xmlsec")]
-    #[snafu(display("xml sec Error: {}", error))]
+    #[error("xml sec Error: {}", error)]
     XmlSecError {
+        #[from]
         error: xmlsec::XmlSecError,
     },
 
     #[cfg(feature = "xmlsec")]
-    #[snafu(display("failed to remove attribute: {}", error))]
+    #[error("failed to remove attribute: {}", error)]
     XmlAttributeRemovalError {
-        error: Box<dyn std::error::Error>,
+        #[source]
+        error: Box<dyn std::error::Error + Send + Sync>,
     },
 
     #[cfg(feature = "xmlsec")]
-    #[snafu(display("failed to define namespace: {}", error))]
+    #[error("failed to define namespace: {}", error)]
     XmlNamespaceDefinitionError {
-        error: Box<dyn std::error::Error>,
+        #[source]
+        error: Box<dyn std::error::Error + Send + Sync>,
     },
 
     #[cfg(feature = "xmlsec")]
-    #[snafu(display("OpenSSL error stack: {}", error))]
+    #[error("OpenSSL error stack: {}", error)]
     OpenSSLError {
+        #[from]
         error: openssl::error::ErrorStack,
     },
-}
-
-impl From<base64::DecodeError> for Error {
-    fn from(error: base64::DecodeError) -> Self {
-        Error::Base64Error { error }
-    }
-}
-
-#[cfg(feature = "xmlsec")]
-impl From<xmlsec::XmlSecError> for Error {
-    fn from(error: xmlsec::XmlSecError) -> Self {
-        Error::XmlSecError { error }
-    }
-}
-
-#[cfg(feature = "xmlsec")]
-impl From<libxml::parser::XmlParseError> for Error {
-    fn from(error: libxml::parser::XmlParseError) -> Self {
-        Error::XmlParseError { error }
-    }
-}
-
-#[cfg(feature = "xmlsec")]
-impl From<openssl::error::ErrorStack> for Error {
-    fn from(error: openssl::error::ErrorStack) -> Self {
-        Error::OpenSSLError { error }
-    }
 }
 
 #[cfg(feature = "xmlsec")]
@@ -522,10 +502,9 @@ impl FromStr for SigAlg {
     }
 }
 
-#[derive(Debug, Snafu, Clone)]
+#[derive(Debug, Error, Clone)]
 pub enum UrlVerifierError {
-    #[snafu(display("Unimplemented SigAlg: {:?}", sigalg))]
-    #[snafu(context(true))]
+    #[error("Unimplemented SigAlg: {:?}", sigalg)]
     SigAlgUnimplemented { sigalg: String },
 }
 

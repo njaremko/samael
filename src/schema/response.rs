@@ -4,9 +4,9 @@ use chrono::prelude::*;
 use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
-use snafu::Snafu;
 use std::io::Cursor;
 use std::str::FromStr;
+use thiserror::Error;
 
 const NAME: &str = "saml2p:Response";
 const SCHEMA: (&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
@@ -37,11 +37,13 @@ pub struct Response {
     pub assertion: Option<Assertion>,
 }
 
-#[derive(Debug, Snafu)]
+#[derive(Debug, Error)]
 pub enum Error {
-    #[snafu(display("Failed to deserialize SAMLResponse: {:?}", source))]
-    #[snafu(context(false))]
-    ParseError { source: quick_xml::DeError },
+    #[error("Failed to deserialize SAMLResponse: {:?}", source)]
+    ParseError {
+        #[from]
+        source: quick_xml::DeError,
+    },
 }
 
 impl FromStr for Response {

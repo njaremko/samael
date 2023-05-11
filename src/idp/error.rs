@@ -1,53 +1,51 @@
-use snafu::Snafu;
+use thiserror::Error;
 
-#[derive(Debug, Snafu)]
+#[derive(Debug, Error)]
 pub enum Error {
+    #[error("")]
     NoSignature,
+    #[error("")]
     NoKeyInfo,
+    #[error("")]
     NoCertificate,
+    #[error("")]
     NoSPSsoDescriptors,
+    #[error("")]
     SignatureFailed,
+    #[error("")]
     UnexpectedError,
+    #[error("")]
     MismatchedCertificate,
+    #[error("")]
     InvalidCertificateEncoding,
 
+    #[error("")]
     MissingAudience,
+    #[error("")]
     MissingAcsUrl,
+    #[error("")]
     NonHttpPostBindingUnsupported,
 
+    #[error("")]
     MissingAuthnRequestSubjectNameID,
+    #[error("")]
     MissingAuthnRequestIssuer,
 
-    #[snafu(display("Invalid AuthnRequest: {}", error))]
+    #[error("Invalid AuthnRequest: {}", error)]
     InvalidAuthnRequest {
+        #[from]
         error: crate::schema::authn_request::Error,
     },
 
-    #[snafu(display("OpenSSL Error: {}", stack))]
+    #[error("OpenSSL Error: {}", stack)]
     OpenSSLError {
+        #[from]
         stack: openssl::error::ErrorStack,
     },
 
-    #[snafu(display("Verification Error: {}", error))]
+    #[error("Verification Error: {}", error)]
     VerificationError {
+        #[from]
         error: crate::crypto::Error,
     },
-}
-
-impl From<openssl::error::ErrorStack> for Error {
-    fn from(error: openssl::error::ErrorStack) -> Self {
-        Error::OpenSSLError { stack: error }
-    }
-}
-
-impl From<crate::crypto::Error> for Error {
-    fn from(error: crate::crypto::Error) -> Self {
-        Error::VerificationError { error }
-    }
-}
-
-impl From<crate::schema::authn_request::Error> for Error {
-    fn from(error: crate::schema::authn_request::Error) -> Self {
-        Error::InvalidAuthnRequest { error }
-    }
 }
