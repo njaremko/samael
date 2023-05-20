@@ -59,6 +59,18 @@ cargo test --features xmlsec
 
 # How do I use this library?
 
+You'll need these dependencies for this example
+
+```toml
+[dependencies]
+tokio = { version = "1.28.1", features = ["full"] }
+samael = { version = "0.0.12", features = ["xmlsec"] }
+warp = "0.3.5"
+reqwest = "0.11.18"
+openssl = "0.10.52"
+openssl-probe = "0.1.5"
+```
+
 Here is some sample code using this library:
 
 ```rust
@@ -108,7 +120,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(move |s: HashMap<String, String>| {
             if let Some(encoded_resp) = s.get("SAMLResponse") {
                 let t = sp
-                    .parse_response(encoded_resp, &["a_possible_request_id".to_string()])
+                    .parse_base64_response(encoded_resp, Some(&["a_possible_request_id"]))
                     .unwrap();
                 return format!("{:?}", t);
             }
