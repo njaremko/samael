@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<samlp:LogoutResponse xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" ID="123" InResponseTo="id-2282157865" Version="2.0" IssueInstant="2023-10-07T10:31:49.000Z">
+  <saml2:Issuer xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion">http://sp.example.com/demo1/metadata.php</saml2:Issuer>
+  <samlp:Status>
+    <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
+  </samlp:Status>
+</samlp:LogoutResponse>
