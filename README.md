@@ -29,18 +29,20 @@ If you want to use the `"xmlsec"` feature, you'll need to install the following 
 
 # Build instructions
 
-We use [nix](https://nixos.org/download.html) to faciliate reproducible builds of `samael`.
+We use [nix](https://nixos.org) to faciliate reproducible builds of `samael`.
 It will ensure you have the required libraries installed in a way that won't cause any issues with the rest of your system.
 If you want to take advantage of this, you'll need to put in a little bit of work.
 
-1. [Install nix](https://nixos.org/download.html)
-2. Enable [nix flake support](https://nixos.wiki/wiki/Flakes#Non-NixOS)
-3. Install [direnv](https://direnv.net/)
-4. Install [cachix](https://docs.cachix.org/installation)
-5. Run `cachix use nix-community` to enable a binary cache for the rust toolchain (otherwise you'll build the rust toolchain from scratch)
-6. Run `nix-env -f '<nixpkgs>' -iA nix-direnv` and `echo "source $HOME/.nix-profile/share/nix-direnv/direnvrc" > $HOME/.direnvrc` to improve nix support for direnv
-7. `cd` into this repo and run `nix build` then, after that finishes, `direnv allow`
-8. Install the [direnv VS Code extension](https://marketplace.visualstudio.com/items?itemName=mkhl.direnv)
+1. [Install nix](https://github.com/DeterminateSystems/nix-installer)
+1. Install [direnv](https://direnv.net/) and [cachix](https://docs.cachix.org)
+   ```
+   # Add ~/.nix-profile/bin to your path first
+   nix profile install nixpkgs/release-23.05#direnv
+   nix profile install nixpkgs/release-23.05#cachix
+   ```
+1. Run `cachix use nix-community` to enable a binary cache for the rust toolchain (otherwise you'll build the rust toolchain from scratch)
+1. `cd` into this repo and run `direnv allow`
+1. Install the [direnv VS Code extension](https://marketplace.visualstudio.com/items?itemName=mkhl.direnv)
 
 ## Building the library
 
@@ -52,6 +54,7 @@ If you followed the above instructions, just `cd`-ing into the directory will se
 but if you don't want to install `direnv`, then just run `nix develop`.
 
 From their you can build as normal:
+
 ```sh
 cargo build --features xmlsec
 cargo test --features xmlsec
