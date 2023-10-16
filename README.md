@@ -1,5 +1,13 @@
 ## Samael
 
+[![Crates.io][crates-badge]][crates-url]
+[![MIT licensed][mit-badge]][mit-url]
+
+[crates-badge]: https://img.shields.io/crates/v/samael.svg
+[crates-url]: https://crates.io/crates/samael
+[mit-badge]: https://img.shields.io/crates/l/samael
+[mit-url]: https://github.com/njaremko/samael/blob/master/LICENSE
+
 This is a SAML2 library for rust.
 
 This is a work in progress. Pull Requests are welcome.
