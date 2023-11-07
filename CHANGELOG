@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.0.14
+
+- Check blocks against each cert individually (Thanks @janst97)
+
 ### 0.0.13
 
 - Ability to serialize logout requests
