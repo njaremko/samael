@@ -5,10 +5,21 @@ use std::ffi::CString;
 use std::str::FromStr;
 use thiserror::Error;
 
+#[cfg(not(any(feature = "rustcrypto", feature = "openssl")))]
+compile_error!("No crypto backend is enabled! Please enable either rustcrypto or openssl.");
+
+#[cfg(all(feature = "rustcrypto", feature = "openssl"))]
+compile_error!("Only one crypto backend may be enabled!");
+
+pub mod rsa;
+pub mod x509;
+
 #[cfg(feature = "xmlsec")]
 use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
 #[cfg(feature = "xmlsec")]
 use libxml::parser::Parser as XmlParser;
+use x509_cert::der::{DecodePem, Encode};
+use crate::crypto::x509::CertificateLike;
 
 #[cfg(feature = "xmlsec")]
 const XMLNS_XML_DSIG: &str = "http://www.w3.org/2000/09/xmldsig#";
@@ -61,7 +72,7 @@ pub enum Error {
         error: Box<dyn std::error::Error + Send + Sync>,
     },
 
-    #[cfg(feature = "xmlsec")]
+    #[cfg(all(feature = "xmlsec", feature = "openssl"))]
     #[error("OpenSSL error stack: {}", error)]
     OpenSSLError {
         #[from]
@@ -403,7 +414,7 @@ fn remove_unverified_elements(node: &mut libxml::tree::Node) {
 #[cfg(feature = "xmlsec")]
 pub(crate) fn reduce_xml_to_signed(
     xml_str: &str,
-    certs: &[openssl::x509::X509],
+    certs: &Vec<x509::Certificate>,
 ) -> Result<String, Error> {
     let mut xml = XmlParser::default().parse_string(xml_str)?;
     let mut root_elem = xml.get_root_element().ok_or(Error::XmlMissingRootElement)?;
@@ -526,13 +537,13 @@ impl UrlVerifier {
     }
 
     pub fn from_x509_cert_pem(public_cert_pem: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let x509 = openssl::x509::X509::from_pem(public_cert_pem.as_bytes())?;
+        let x509 = x509::Certificate::from_pem(public_cert_pem.as_bytes())?;
         let keypair = x509.public_key()?;
         Ok(Self { keypair })
     }
 
     pub fn from_x509(
-        public_cert: &openssl::x509::X509,
+        public_cert: &x509::Certificate,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let keypair = public_cert.public_key()?;
         Ok(Self { keypair })
@@ -622,7 +633,7 @@ impl UrlVerifier {
                 signed_url.scheme(),
                 signed_url.host_str().unwrap(),
             )
-            .as_str(),
+                .as_str(),
         )?;
 
         // Section 3.4.4.1 of
@@ -680,13 +691,13 @@ mod test {
     #[test]
     fn test_verify_uri() {
         let private_key = include_bytes!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/test_vectors/private.der"
+        env!("CARGO_MANIFEST_DIR"),
+        "/test_vectors/private.der"
         ));
 
         let idp_metadata_xml = include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/test_vectors/idp_2_metadata.xml"
+        env!("CARGO_MANIFEST_DIR"),
+        "/test_vectors/idp_2_metadata.xml"
         ));
 
         let response_instant = "2014-07-17T01:01:48Z".parse::<DateTime<Utc>>().unwrap();
