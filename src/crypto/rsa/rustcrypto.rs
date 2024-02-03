@@ -10,7 +10,6 @@ use super::{PrivateKeyLike, PublicKeyLike};
 
 pub use rsa::RsaPrivateKey as PrivateKey;
 pub use rsa::RsaPublicKey as PublicKey;
-use rsa::signature::Signer;
 
 impl PrivateKeyLike for PrivateKey {
     fn new(bit_size: usize) -> Result<Self, Box<dyn std::error::Error>> {

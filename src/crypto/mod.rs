@@ -4,6 +4,7 @@ use std::convert::TryInto;
 use std::ffi::CString;
 use std::str::FromStr;
 use thiserror::Error;
+use x509_cert::der::DecodePem;
 
 #[cfg(not(any(feature = "rustcrypto", feature = "openssl")))]
 compile_error!("No crypto backend is enabled! Please enable either rustcrypto or openssl.");
@@ -18,8 +19,6 @@ pub mod x509;
 use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
 #[cfg(feature = "xmlsec")]
 use libxml::parser::Parser as XmlParser;
-use x509_cert::der::{DecodePem, Encode};
-use crate::crypto::x509::CertificateLike;
 
 #[cfg(feature = "xmlsec")]
 const XMLNS_XML_DSIG: &str = "http://www.w3.org/2000/09/xmldsig#";

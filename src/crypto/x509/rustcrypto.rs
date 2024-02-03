@@ -34,7 +34,7 @@ impl<'a> CertificateLike<crate::crypto::rsa::PrivateKey> for Certificate {
     }
 
     fn to_vec(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-        Ok(Encode::to_vec(self)?)
+        Ok(Encode::to_der(self)?)
     }
 
     fn from_der(der: &[u8]) -> Result<Self, Box<(dyn std::error::Error)>> {
