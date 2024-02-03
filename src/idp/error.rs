@@ -37,6 +37,7 @@ pub enum Error {
         error: crate::schema::authn_request::Error,
     },
 
+    #[cfg(feature = "openssl")]
     #[error("OpenSSL Error: {}", stack)]
     OpenSSLError {
         #[from]
@@ -48,4 +49,6 @@ pub enum Error {
         #[from]
         error: crate::crypto::Error,
     },
+
+    Unknown,
 }
