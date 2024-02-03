@@ -1,5 +1,5 @@
 use crate::crypto::rsa;
-// use crate::idp::CertificateParams;
+use crate::idp::CertificateParams;
 
 #[cfg(feature = "openssl")]
 mod openssl;

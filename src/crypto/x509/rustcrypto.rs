@@ -1,17 +1,19 @@
 use std::str::FromStr;
 use std::time::Duration;
 use sha2::Sha256;
-use x509_cert::builder::{Builder, CertificateBuilder, Profile};
 use rsa::pkcs1v15::SigningKey;
-use x509_cert::der::{Decode, Encode};
+use x509_cert::{
+    Certificate,
+    der::{Decode, Encode},
+    builder::{Builder, CertificateBuilder, Profile},
+    name::Name,
+    serial_number::SerialNumber,
+    spki::SubjectPublicKeyInfoOwned,
+    time::Validity
+};
 
 use super::CertificateLike;
 use crate::idp::CertificateParams;
-pub use x509_cert::Certificate;
-use x509_cert::name::Name;
-use x509_cert::serial_number::SerialNumber;
-use x509_cert::spki::SubjectPublicKeyInfoOwned;
-use x509_cert::time::Validity;
 use crate::crypto::rsa::PublicKeyLike;
 
 impl<'a> CertificateLike<crate::crypto::rsa::PrivateKey> for Certificate {
