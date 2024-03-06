@@ -223,6 +223,7 @@ fn get_elements_by_predicate<F: FnMut(&libxml::tree::Node) -> bool>(
 /// Searches for and returns the element with the given value of the `ID` attribute from the subtree
 /// rooted at the given node.
 #[cfg(feature = "xmlsec")]
+#[allow(dead_code)]
 fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree::Node> {
     let mut elems = get_elements_by_predicate(elem, |node| {
         node.get_attribute("ID")

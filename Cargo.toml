@@ -18,6 +18,7 @@ crate-type = ["staticlib", "rlib"]
 
 [features]
 xmlsec = ["libc", "lazy_static", "libxml"]
+xmlsec_dynamic = []
 
 [build-dependencies]
 pkg-config = "^0.3.17"
