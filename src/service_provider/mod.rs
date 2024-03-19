@@ -1,4 +1,5 @@
-use crate::crypto;
+use crate::crypto::rsa::PrivateKeyLike;
+use crate::crypto::{self, rsa, x509};
 use crate::metadata::{Endpoint, IndexedEndpoint, KeyDescriptor, NameIdFormat, SpSsoDescriptor};
 use crate::schema::{Assertion, Response};
 use crate::traits::ToXml;
@@ -11,12 +12,11 @@ use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
 use chrono::Duration;
 use flate2::{write::DeflateEncoder, Compression};
-use openssl::pkey::Private;
-use openssl::{rsa, x509};
 use std::fmt::Debug;
 use std::io::Write;
 use thiserror::Error;
 use url::Url;
+use x509_cert::der::{Decode, Encode};
 
 #[cfg(test)]
 mod tests;
@@ -101,11 +101,14 @@ pub enum Error {
 
 #[derive(Builder, Clone)]
 #[builder(default, setter(into))]
-pub struct ServiceProvider {
+pub struct ServiceProvider<Certificate>
+    where
+        ServiceProvider<Certificate>: Default,
+{
     pub entity_id: Option<String>,
-    pub key: Option<rsa::Rsa<Private>>,
-    pub certificate: Option<x509::X509>,
-    pub intermediates: Option<Vec<x509::X509>>,
+    pub key: Option<rsa::PrivateKey>,
+    pub certificate: Option<Certificate>,
+    pub intermediates: Option<Vec<Certificate>>,
     pub metadata_url: Option<String>,
     pub acs_url: Option<String>,
     pub slo_url: Option<String>,
@@ -119,7 +122,7 @@ pub struct ServiceProvider {
     pub max_clock_skew: Duration,
 }
 
-impl Default for ServiceProvider {
+impl Default for ServiceProvider<x509::Certificate> {
     fn default() -> Self {
         ServiceProvider {
             entity_id: None,
@@ -141,7 +144,7 @@ impl Default for ServiceProvider {
     }
 }
 
-impl ServiceProvider {
+impl ServiceProvider<x509::Certificate> {
     pub fn metadata(&self) -> Result<EntityDescriptor, Box<dyn std::error::Error>> {
         let valid_duration = if let Some(duration) = self.metadata_valid_duration {
             Some(duration)
@@ -273,7 +276,7 @@ impl ServiceProvider {
         None
     }
 
-    pub fn idp_signing_certs(&self) -> Result<Option<Vec<openssl::x509::X509>>, Error> {
+    pub fn idp_signing_certs(&self) -> Result<Option<Vec<x509::Certificate>>, Error> {
         let mut result = vec![];
         if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
             for idp_sso_descriptor in idp_sso_descriptors {
@@ -489,7 +492,7 @@ impl ServiceProvider {
     }
 }
 
-fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<x509::X509>, Error> {
+fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<x509::Certificate>, Error> {
     key_descriptor
         .key_info
         .x509_data
@@ -500,7 +503,7 @@ fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<x509::X509>,
                 .map(|cert| {
                     crypto::decode_x509_cert(cert)
                         .ok()
-                        .and_then(|decoded| openssl::x509::X509::from_der(&decoded).ok())
+                        .and_then(|decoded| x509::Certificate::from_der(&decoded).ok())
                         .ok_or_else(|| Error::FailedToParseCert {
                             cert: cert.to_string(),
                         })
@@ -584,24 +587,17 @@ impl AuthnRequest {
         // http://some.idp.com?SAMLRequest=value&RelayState=value&SigAlg=value
         //                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
         //
-        // then add the "Signature" query parameter afterwards.
+        // then add the "Signature" query parameter afterward.
         let string_to_sign: String = unsigned_url
             .query()
             .ok_or(Error::UnexpectedError)?
             .to_string();
 
-        // Use openssl's bindings to sign
-        let pkey = openssl::rsa::Rsa::private_key_from_der(private_key_der)?;
-        let pkey = openssl::pkey::PKey::from_rsa(pkey)?;
-
-        let mut signer =
-            openssl::sign::Signer::new(openssl::hash::MessageDigest::sha256(), pkey.as_ref())?;
-
-        signer.update(string_to_sign.as_bytes())?;
+        let private_key = rsa::PrivateKey::from_der(private_key_der)?;
 
         unsigned_url.query_pairs_mut().append_pair(
             "Signature",
-            &general_purpose::STANDARD.encode(signer.sign_to_vec()?),
+            &general_purpose::STANDARD.encode(private_key.sign_sha256(string_to_sign)?),
         );
 
         // Past this point, it's a signed url :)
