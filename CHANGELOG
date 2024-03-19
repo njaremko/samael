@@ -1,5 +1,11 @@
 # Changelog
 
+### 0.0.15
+
+- Updates dependencies
+- Removes bad openssl import that broke builds against recent openssl releases
+- Fix failing test due to expired certs
+
 ### 0.0.14
 
 - Check blocks against each cert individually (Thanks @janst97)

@@ -45,8 +45,8 @@ If you want to take advantage of this, you'll need to put in a little bit of wor
 1. Install [direnv](https://direnv.net/) and [cachix](https://docs.cachix.org)
    ```
    # Add ~/.nix-profile/bin to your path first
-   nix profile install nixpkgs/release-23.05#direnv
-   nix profile install nixpkgs/release-23.05#cachix
+   nix profile install nixpkgs/release-23.11#direnv
+   nix profile install nixpkgs/release-23.11#cachix
    ```
 1. Run `cachix use nix-community` to enable a binary cache for the rust toolchain (otherwise you'll build the rust toolchain from scratch)
 1. `cd` into this repo and run `direnv allow`
