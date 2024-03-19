@@ -14,7 +14,6 @@
       url = "github:ipetkov/crane";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "flake-utils";
       };
     };
     advisory-db = {
@@ -117,7 +116,7 @@
                 ${lib.optionalString stdenv.cc.isGNU "-isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc} -isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc}/${stdenv.hostPlatform.config} -idirafter ${stdenv.cc.cc}/lib/gcc/${stdenv.hostPlatform.config}/${lib.getVersion stdenv.cc.cc}/include"} \
             ";
 
-            buildInputs = with pkgs; [ rust-dev-toolchain ];
+            buildInputs = with pkgs; [ rust-dev-toolchain nixpkgs-fmt ];
             nativeBuildInputs = commonNativeBuildInputs;
             shellHook = ''
               export DIRENV_LOG_FORMAT=""
