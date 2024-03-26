@@ -3,7 +3,6 @@ use std::time::Duration;
 use sha2::Sha256;
 use rsa::pkcs1v15::SigningKey;
 use x509_cert::{
-    Certificate,
     der::{Decode, Encode},
     builder::{Builder, CertificateBuilder, Profile},
     name::Name,
@@ -15,6 +14,7 @@ use x509_cert::{
 use super::CertificateLike;
 use crate::idp::CertificateParams;
 use crate::crypto::rsa::PublicKeyLike;
+pub use x509_cert::Certificate;
 
 impl<'a> CertificateLike<crate::crypto::rsa::PrivateKey> for Certificate {
     fn new(
@@ -24,13 +24,13 @@ impl<'a> CertificateLike<crate::crypto::rsa::PrivateKey> for Certificate {
         // Create a new certificate
         let profile = Profile::Root;
         let serial_number = SerialNumber::from(rand::random::<u8>());
-        let mut validity = Validity::from_now(Duration::from_secs((params.days_until_expiration / 24 / 60 / 60) as u64)).unwrap();
+        let validity = Validity::from_now(Duration::from_secs((params.days_until_expiration / 24 / 60 / 60) as u64)).unwrap();
         let subject = Name::from_str(format!("CN={},O={},C={}", params.common_name,params.issuer_name,params.issuer_country_code).as_str()).unwrap();
         let public_key_der = private_key.to_public_key().to_der().unwrap();
         let public_key = SubjectPublicKeyInfoOwned::from_der(&public_key_der).unwrap();
-        let mut signer = SigningKey::<Sha256>::new(private_key.clone());
-        let mut builder = CertificateBuilder::new(profile,serial_number,validity,subject,public_key,&signer).unwrap();
-        Ok(builder.build().unwrap())
+        let signer = SigningKey::<Sha256>::new(private_key.clone());
+        let builder = CertificateBuilder::new(profile,serial_number,validity,subject,public_key).unwrap();
+        Ok(builder.build(&signer).unwrap())
     }
 
     fn to_vec(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
@@ -43,5 +43,9 @@ impl<'a> CertificateLike<crate::crypto::rsa::PrivateKey> for Certificate {
 
     fn public_key(&self) -> &[u8] {
         self.tbs_certificate.subject_public_key_info.subject_public_key.raw_bytes()
+    }
+
+    fn from_pem(pem: &[u8]) -> Result<Self, Box<(dyn std::error::Error)>> {
+        Ok(Self::from_pem(pem)?)
     }
 }

@@ -50,4 +50,4 @@ openssl-sys = { version = "0.9", optional = true }
 # rustcrypto
 rsa = { version = "0.10.0-pre.1", features = ["sha2"], optional = true}
 sha2 = { version = "0.11.0-pre.3", optional = true }
-x509-cert = { git = "https://github.com/baloo/formats.git", branch = "baloo/prerelease-feb-2024", features = ["pem","builder","std"],optional = true }
+x509-cert = { git = "https://github.com/RustCrypto/formats.git", rev="809df65b20d61e88afb7f514b5cfdd3d1958a40f", features = ["pem","builder","std"],optional = true, default-features = false }

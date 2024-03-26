@@ -54,4 +54,8 @@ impl<Key: rsa::PrivateKeyLike> CertificateLike<Key> for X509 {
     fn public_key(&self) -> &[u8] {
         self.0.public_key()
     }
+
+    fn from_pem(pem: &[u8]) -> Result<Self, Box<(dyn std::error::Error)>> {
+        Ok(self.0.from_pem(pem)?)
+    }
 }

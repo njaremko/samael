@@ -26,4 +26,6 @@ pub trait CertificateLike<Key: rsa::PrivateKeyLike>
     fn from_der(der: &[u8]) -> Result<Self, Box<dyn std::error::Error>>;
 
     fn public_key(&self) -> &[u8];
+
+    fn from_pem(pem:  &[u8]) -> Result<Self, Box<dyn std::error::Error>>;
 }

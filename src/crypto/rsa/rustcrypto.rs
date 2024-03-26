@@ -27,7 +27,7 @@ impl PrivateKeyLike for PrivateKey {
     }
 
     fn to_der(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-        Ok(self.to_pkcs8_der()?.as_ref().to_vec())
+        Ok(self.to_pkcs8_der()?.to_bytes().to_vec())
     }
 
     fn sign_sha256(&self, content_to_sign: String) -> Result<Vec<u8>, Box<dyn std::error::Error>> {

@@ -1299,7 +1299,7 @@ checksum = "dff9641d1cd4be8d1a070daf9e3773c5f67e78b4d9d42263020c057706765c04"
 [[package]]
 name = "x509-cert"
 version = "0.3.0-pre"
-source = "git+https://github.com/baloo/formats.git?branch=baloo/prerelease-feb-2024#8c9345bac2c571673ab5d3bb212f47fa14b0ae6d"
+source = "git+https://github.com/RustCrypto/formats.git?rev=809df65b20d61e88afb7f514b5cfdd3d1958a40f#809df65b20d61e88afb7f514b5cfdd3d1958a40f"
 dependencies = [
  "async-signature",
  "const-oid",

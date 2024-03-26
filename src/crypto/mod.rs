@@ -1,10 +1,10 @@
 use base64::{engine::general_purpose, Engine as _};
+use ::rsa::pkcs8::DecodePublicKey;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::ffi::CString;
 use std::str::FromStr;
 use thiserror::Error;
-use x509_cert::der::DecodePem;
 
 #[cfg(not(any(feature = "rustcrypto", feature = "openssl")))]
 compile_error!("No crypto backend is enabled! Please enable either rustcrypto or openssl.");
@@ -19,6 +19,8 @@ pub mod x509;
 use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
 #[cfg(feature = "xmlsec")]
 use libxml::parser::Parser as XmlParser;
+
+use self::{rsa::{PublicKeyLike}, x509::CertificateLike};
 
 #[cfg(feature = "xmlsec")]
 const XMLNS_XML_DSIG: &str = "http://www.w3.org/2000/09/xmldsig#";
@@ -519,32 +521,30 @@ pub enum UrlVerifierError {
 }
 
 pub struct UrlVerifier {
-    keypair: openssl::pkey::PKey<openssl::pkey::Public>,
+    keypair: rsa::PublicKey,
 }
 
 impl UrlVerifier {
     pub fn from_rsa_pem(public_key_pem: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let public = openssl::rsa::Rsa::public_key_from_pem(public_key_pem)?;
-        let keypair = openssl::pkey::PKey::from_rsa(public)?;
+        let keypair =rsa::PublicKey::from_pem(public_key_pem)?;
         Ok(Self { keypair })
     }
 
     pub fn from_rsa_der(public_key_der: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let public = openssl::rsa::Rsa::public_key_from_der(public_key_der)?;
-        let keypair = openssl::pkey::PKey::from_rsa(public)?;
+        let keypair = rsa::PublicKey::from_der(public_key_der)?;
         Ok(Self { keypair })
     }
 
     pub fn from_x509_cert_pem(public_cert_pem: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let x509 = x509::Certificate::from_pem(public_cert_pem.as_bytes())?;
-        let keypair = x509.public_key()?;
+        let keypair = rsa::PublicKey::from_pem(x509.public_key())?;
         Ok(Self { keypair })
     }
 
     pub fn from_x509(
         public_cert: &x509::Certificate,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let keypair = public_cert.public_key()?;
+        let keypair = rsa::PublicKey::from_pem(public_cert.public_key())?;
         Ok(Self { keypair })
     }
 
@@ -667,17 +667,7 @@ impl UrlVerifier {
         sig_alg: SigAlg,
         signature: &[u8],
     ) -> Result<bool, Box<dyn std::error::Error>> {
-        let mut verifier = openssl::sign::Verifier::new(
-            match sig_alg {
-                SigAlg::RsaSha256 => openssl::hash::MessageDigest::sha256(),
-                _ => panic!("sig_alg is bad!"),
-            },
-            &self.keypair,
-        )?;
-
-        verifier.update(data)?;
-
-        Ok(verifier.verify(signature)?)
+        self.keypair.verify_sha256(signature, data)
     }
 }
 
