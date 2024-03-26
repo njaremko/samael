@@ -1,5 +1,4 @@
 use base64::{engine::general_purpose, Engine as _};
-use ::rsa::pkcs8::DecodePublicKey;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::ffi::CString;
@@ -20,7 +19,7 @@ use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
 #[cfg(feature = "xmlsec")]
 use libxml::parser::Parser as XmlParser;
 
-use self::{rsa::{PublicKeyLike}, x509::CertificateLike};
+use self::{rsa::PublicKeyLike, x509::CertificateLike};
 
 #[cfg(feature = "xmlsec")]
 const XMLNS_XML_DSIG: &str = "http://www.w3.org/2000/09/xmldsig#";
