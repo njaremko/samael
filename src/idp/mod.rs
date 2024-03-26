@@ -9,16 +9,17 @@ pub mod verified_request;
 mod tests;
 
 use crate::crypto::rsa::{PrivateKey, PrivateKeyLike};
+use crate::crypto;
 use crate::crypto::x509::CertificateLike;
-use crate::crypto::{self, x509};
+use crate::crypto::x509;
 
-use std::str::FromStr;
-
-use crate::idp::response_builder::{build_response_template, ResponseAttribute};
 
 #[cfg(feature = "xmlsec")]
 use crate::schema::Response;
 use crate::traits::ToXml;
+use crate::idp::response_builder::{build_response_template, ResponseAttribute};
+use std::str::FromStr;
+
 
 pub struct IdentityProvider<PrivateKey>
     where
