@@ -15,6 +15,8 @@ use crate::crypto::{self, x509};
 use std::str::FromStr;
 
 use crate::idp::response_builder::{build_response_template, ResponseAttribute};
+
+#[cfg(feature = "xmlsec")]
 use crate::schema::Response;
 use crate::traits::ToXml;
 
@@ -50,24 +52,24 @@ pub struct CertificateParams<'a> {
 
 impl IdentityProvider<PrivateKey> {
     pub fn generate_new(key_type: KeyType) -> Result<Self, Error> {
-        let private_key = PrivateKeyLike::new(usize::try_from(key_type.bit_length()).unwrap())?;
+        let private_key = PrivateKeyLike::new(usize::try_from(key_type.bit_length()).unwrap()).unwrap();
         Ok(IdentityProvider { private_key })
     }
 
     pub fn from_private_key_der(der_bytes: &[u8]) -> Result<Self, Error> {
-        let private_key = PrivateKey::from_der(der_bytes)?;
-
+        let private_key = PrivateKey::from_der(der_bytes).unwrap();
         Ok(IdentityProvider { private_key })
     }
 
     pub fn export_private_key_der(&self) -> Result<Vec<u8>, Error> {
-        Ok(self.private_key.to_der()?)
+        Ok(self.private_key.to_der().unwrap())
     }
 
     pub fn create_certificate(&self, params: &CertificateParams) -> Result<Vec<u8>, Error> {
-        Ok(x509::Certificate::new(&self.private_key, params)?.to_vec()?)
+        Ok(x509::Certificate::new(&self.private_key, params).unwrap().to_vec().unwrap())
     }
 
+    #[cfg(feature = "xmlsec")]
     pub fn sign_authn_response(
         &self,
         idp_x509_cert_der: &[u8],

@@ -49,6 +49,6 @@ pub enum Error {
         #[from]
         error: crate::crypto::Error,
     },
-
+    #[error("Unknown Error")]
     Unknown,
 }

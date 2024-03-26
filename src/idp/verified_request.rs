@@ -1,9 +1,11 @@
 use quick_xml::events::Event;
 
-use crate::crypto::{self, verify_signed_xml};
+use crate::crypto;
 use crate::schema::AuthnRequest;
-
 use super::error::Error;
+
+#[cfg(feature = "xmlsec")]
+use crate::crypto::verify_signed_xml;
 
 pub struct UnverifiedAuthnRequest<'a> {
     pub request: AuthnRequest,
@@ -43,6 +45,7 @@ impl<'a> UnverifiedAuthnRequest<'a> {
         Ok(x509_certs)
     }
 
+    #[cfg(feature = "xmlsec")]
     pub fn try_verify_self_signed(self) -> Result<VerifiedAuthnRequest, Error> {
         let xml = self.xml.as_bytes();
         self.get_certs_der()?
@@ -53,6 +56,7 @@ impl<'a> UnverifiedAuthnRequest<'a> {
             .map(|()| VerifiedAuthnRequest(self.request))
     }
 
+    #[cfg(feature = "xmlsec")]
     pub fn try_verify_with_cert(self, der_cert: &[u8]) -> Result<VerifiedAuthnRequest, Error> {
         verify_signed_xml(self.xml.as_bytes(), der_cert, Some("ID"))?;
         Ok(VerifiedAuthnRequest(self.request))
@@ -85,6 +89,7 @@ impl TryFrom<&VerifiedAuthnRequest> for Event<'_> {
 }
 
 #[cfg(test)]
+#[cfg(feature = "xmlsec")]
 mod test {
     use super::UnverifiedAuthnRequest;
     use crate::traits::ToXml;

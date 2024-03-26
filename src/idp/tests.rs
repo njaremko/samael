@@ -46,6 +46,7 @@ fn test_signed_response() {
         common_name: "https://idp.example.com",
         issuer_name: "https://idp.example.com",
         days_until_expiration: 3650,
+        issuer_country_code: "IN",
     };
 
     let idp_cert = idp.create_certificate(&params).expect("idp cert error");
@@ -144,6 +145,7 @@ fn test_signed_response_fingerprint() {
         common_name: "https://idp.example.com",
         issuer_name: "https://idp.example.com",
         days_until_expiration: 3650,
+        issuer_country_code: "IN",
     };
 
     let idp_cert = idp.create_certificate(&params).expect("idp cert error");
