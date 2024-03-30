@@ -1,7 +1,9 @@
 use base64::{engine::general_purpose, Engine as _};
 use std::collections::HashMap;
 use std::convert::TryInto;
+#[cfg(feature = "xmlsec")]
 use std::ffi::CString;
+
 use std::str::FromStr;
 use thiserror::Error;
 
@@ -663,6 +665,7 @@ impl UrlVerifier {
     fn verify_signature(
         &self,
         data: &[u8],
+        #[allow(unused_variables)]
         sig_alg: SigAlg,
         signature: &[u8],
     ) -> Result<bool, Box<dyn std::error::Error>> {

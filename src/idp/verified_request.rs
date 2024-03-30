@@ -9,6 +9,7 @@ use crate::crypto::verify_signed_xml;
 
 pub struct UnverifiedAuthnRequest<'a> {
     pub request: AuthnRequest,
+    #[allow(dead_code)]
     xml: &'a str,
 }
 

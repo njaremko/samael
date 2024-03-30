@@ -16,8 +16,11 @@ use crate::crypto::x509;
 
 #[cfg(feature = "xmlsec")]
 use crate::schema::Response;
+#[cfg(feature = "xmlsec")]
 use crate::traits::ToXml;
+#[cfg(feature = "xmlsec")]
 use crate::idp::response_builder::{build_response_template, ResponseAttribute};
+#[cfg(feature = "xmlsec")]
 use std::str::FromStr;
 
 
