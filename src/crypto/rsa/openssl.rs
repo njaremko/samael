@@ -23,16 +23,13 @@ impl PrivateKeyLike for PrivateKey {
     }
 
     fn to_der(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-        Ok(self.to_pkcs8_der()?.as_ref().to_vec())
+        Ok(self.private_key_to_der()?)
     }
 
     fn sign_sha256(&self, content_to_sign: String) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-        let pkey = PKey::from_rsa(self.0)?;
-
+        let pkey = PKey::from_rsa(self.clone())?;
         let mut signer = Signer::new(MessageDigest::sha256(), pkey.as_ref())?;
-
         signer.update(content_to_sign.as_bytes())?;
-
         Ok(signer.sign_to_vec()?)
     }
 }
@@ -47,7 +44,7 @@ impl PublicKeyLike for PublicKey {
     }
 
     fn to_der(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-        Ok(self.0.to_public_key_der()?.as_ref().to_vec())
+        Ok(self.public_key_to_der()?)
     }
 
     fn verify_sha256(
@@ -55,10 +52,9 @@ impl PublicKeyLike for PublicKey {
         signature: &[u8],
         data: &[u8],
     ) -> Result<bool, Box<dyn std::error::Error>> {
-        let mut verifier = Verifier::new(MessageDigest::sha256(), self.0)?;
-
+        let pkey = PKey::from_rsa(self.clone())?;
+        let mut verifier = Verifier::new(MessageDigest::sha256(), &pkey)?;
         verifier.update(data)?;
-
         Ok(verifier.verify(signature)?)
     }
 }

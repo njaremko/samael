@@ -9,8 +9,10 @@ pub mod verified_request;
 mod tests;
 
 use crate::crypto::rsa::{PrivateKey, PrivateKeyLike};
+#[cfg(feature = "xmlsec")]
 use crate::crypto;
-use crate::crypto::x509::CertificateLike;
+
+use crate::crypto::x509::{Certificate, CertificateLike};
 use crate::crypto::x509;
 
 
@@ -70,7 +72,8 @@ impl IdentityProvider<PrivateKey> {
     }
 
     pub fn create_certificate(&self, params: &CertificateParams) -> Result<Vec<u8>, Error> {
-        Ok(x509::Certificate::new(&self.private_key, params).unwrap().to_vec().unwrap())
+        let cert = x509::Certificate::new(&self.private_key, params).unwrap();
+        Ok(cert.to_vec().unwrap())
     }
 
     #[cfg(feature = "xmlsec")]

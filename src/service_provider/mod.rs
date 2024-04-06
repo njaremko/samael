@@ -16,13 +16,13 @@ use std::fmt::Debug;
 use std::io::Write;
 use thiserror::Error;
 use url::Url;
-use x509_cert::der::{Decode, Encode};
 
 #[cfg(test)]
 mod tests;
 
 #[cfg(feature = "xmlsec")]
 use crate::crypto::reduce_xml_to_signed;
+use crate::crypto::x509::{Certificate, CertificateLike};
 
 #[cfg(not(feature = "xmlsec"))]
 fn reduce_xml_to_signed<T>(xml_str: &str, _keys: &Vec<T>) -> Result<String, Error> {
@@ -162,6 +162,7 @@ impl ServiceProvider<x509::Certificate> {
 
         let mut key_descriptors = vec![];
         if let Some(cert) = &self.certificate {
+            let cert = cert as &Certificate;
             let mut cert_bytes: Vec<u8> = cert.to_der()?;
             if let Some(intermediates) = &self.intermediates {
                 for intermediate in intermediates {

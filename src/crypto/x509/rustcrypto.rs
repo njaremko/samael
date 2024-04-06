@@ -15,6 +15,7 @@ use super::CertificateLike;
 use crate::idp::CertificateParams;
 use crate::crypto::rsa::PublicKeyLike;
 pub use x509_cert::Certificate;
+use x509_cert::der::DecodePem;
 
 impl<'a> CertificateLike<crate::crypto::rsa::PrivateKey> for Certificate {
     fn new(
@@ -46,6 +47,10 @@ impl<'a> CertificateLike<crate::crypto::rsa::PrivateKey> for Certificate {
     }
 
     fn from_pem(pem: &[u8]) -> Result<Self, Box<(dyn std::error::Error)>> {
-        Ok(Self::from_pem(pem)?)
+        Ok(DecodePem::from_pem(pem)?)
+    }
+
+    fn to_der(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+        Ok(Encode::to_der(self)?)
     }
 }

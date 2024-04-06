@@ -1,6 +1,6 @@
 use base64::{engine::general_purpose, Engine as _};
 use std::collections::HashMap;
-use std::convert::TryInto;
+// use std::convert::TryInto;
 #[cfg(feature = "xmlsec")]
 use std::ffi::CString;
 
@@ -431,7 +431,7 @@ pub(crate) fn reduce_xml_to_signed(
             let mut verified = false;
             for openssl_key in certs {
                 let mut sig_ctx = XmlSecSignatureContext::new()?;
-                let key_data = openssl_key.to_der()?;
+                let key_data = openssl_key.public_key();
                 let key = XmlSecKey::from_memory(&key_data, XmlSecKeyFormat::CertDer)?;
                 sig_ctx.insert_key(key);
                 verified = sig_ctx.verify_node(&sig_node)?;
@@ -537,8 +537,8 @@ impl UrlVerifier {
     }
 
     pub fn from_x509_cert_pem(public_cert_pem: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let x509 = x509::Certificate::from_pem(public_cert_pem.as_bytes())?;
-        let keypair = rsa::PublicKey::from_pem(x509.public_key())?;
+        let pubkey = x509::Certificate::from_pem(public_cert_pem.as_bytes()).unwrap().public_key();
+        let keypair = rsa::PublicKey::from_der(pubkey)?;
         Ok(Self { keypair })
     }
 
