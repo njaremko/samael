@@ -1,9 +1,11 @@
-pub mod authn_request;
-mod conditions;
-mod issuer;
-mod name_id_policy;
-mod response;
-mod subject;
+use std::io::Cursor;
+use std::str::FromStr;
+
+use chrono::prelude::*;
+use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
+use quick_xml::Writer;
+use serde::Deserialize;
+use thiserror::Error;
 
 pub use authn_request::AuthnRequest;
 pub use conditions::*;
@@ -14,16 +16,13 @@ pub use subject::*;
 
 use crate::attribute::Attribute;
 use crate::signature::Signature;
-use chrono::prelude::*;
-use serde::Deserialize;
 
-use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
-use quick_xml::Writer;
-
-use std::io::Cursor;
-use std::str::FromStr;
-
-use thiserror::Error;
+pub mod authn_request;
+mod conditions;
+mod issuer;
+mod name_id_policy;
+mod response;
+mod subject;
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct NameID {
@@ -672,9 +671,7 @@ impl LogoutResponse {
 
 #[cfg(test)]
 mod test {
-    use super::issuer::Issuer;
-    use super::{LogoutRequest, LogoutResponse, NameID, Status, StatusCode};
-    use chrono::TimeZone;
+    use super::{LogoutRequest, LogoutResponse};
 
     #[test]
     fn test_deserialize_serialize_logout_request() {

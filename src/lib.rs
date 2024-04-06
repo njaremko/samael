@@ -2,7 +2,6 @@ pub mod attribute;
 #[cfg(feature = "xmlsec")]
 mod bindings;
 pub mod crypto;
-#[cfg(feature = "xmlsec")]
 pub mod idp;
 pub mod key_info;
 pub mod metadata;

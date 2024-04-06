@@ -9,8 +9,8 @@ use crate::bindings as backend;
 mod backend {
     pub use crate::bindings::{
         xmlSecOpenSSLAppInit as xmlSecCryptoAppInit,
-        xmlSecOpenSSLAppKeyCertLoad as xmlSecCryptoAppKeyCertLoad,
-        xmlSecOpenSSLAppKeyCertLoadMemory as xmlSecCryptoAppKeyCertLoadMemory,
+        // xmlSecOpenSSLAppKeyCertLoad as xmlSecCryptoAppKeyCertLoad,
+        // xmlSecOpenSSLAppKeyCertLoadMemory as xmlSecCryptoAppKeyCertLoadMemory,
         xmlSecOpenSSLAppKeyLoadMemory as xmlSecCryptoAppKeyLoadMemory,
         xmlSecOpenSSLAppShutdown as xmlSecCryptoAppShutdown, xmlSecOpenSSLInit as xmlSecCryptoInit,
         xmlSecOpenSSLShutdown as xmlSecCryptoShutdown,
