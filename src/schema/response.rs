@@ -1,4 +1,4 @@
-use crate::schema::{Assertion, Issuer, Status};
+use crate::schema::{Assertion, EncryptedAssertion, Issuer, Status};
 use crate::signature::Signature;
 use chrono::prelude::*;
 use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
@@ -32,7 +32,7 @@ pub struct Response {
     #[serde(rename = "Status")]
     pub status: Option<Status>,
     #[serde(rename = "EncryptedAssertion")]
-    pub encrypted_assertion: Option<String>,
+    pub encrypted_assertion: Option<EncryptedAssertion>,
     #[serde(rename = "Assertion")]
     pub assertion: Option<Assertion>,
 }
@@ -111,10 +111,10 @@ impl TryFrom<&Response> for Event<'_> {
             writer.write_event(event)?;
         }
 
-        // TODO: encrypted assertion
-        // if let Some(assertion) = &self.encrypted_assertion {
-        //     writer.write(assertion.to_xml()?.as_bytes())?;
-        // }
+        if let Some(encrypted_assertion) = &value.encrypted_assertion {
+            let event: Event<'_> = encrypted_assertion.try_into()?;
+            writer.write_event(event)?;
+        }
 
         writer.write_event(Event::End(BytesEnd::new(NAME)))?;
         Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
@@ -174,6 +174,25 @@ mod test {
         let expected_response: Response = response_xml
             .parse()
             .expect("failed to parse response_signed.xml");
+        let serialized_response = expected_response
+            .to_xml()
+            .expect("failed to convert response to xml");
+        let actual_response: Response = serialized_response
+            .parse()
+            .expect("failed to re-parse response");
+
+        assert_eq!(expected_response, actual_response);
+    }
+
+    #[test]
+    fn test_deserialize_serialize_response_encrypted_assertion() {
+        let response_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/response_encrypted.xml",
+        ));
+        let expected_response: Response = response_xml
+            .parse()
+            .expect("failed to parse response_encrypted.xml");
         let serialized_response = expected_response
             .to_xml()
             .expect("failed to convert response to xml");
