@@ -135,8 +135,8 @@ impl Default for ServiceProvider {
             force_authn: false,
             allow_idp_initiated: false,
             contact_person: None,
-            max_issue_delay: Duration::seconds(90),
-            max_clock_skew: Duration::seconds(180),
+            max_issue_delay: Duration::try_seconds(90).unwrap(),
+            max_clock_skew: Duration::try_seconds(180).unwrap(),
         }
     }
 }
@@ -146,7 +146,7 @@ impl ServiceProvider {
         let valid_duration = if let Some(duration) = self.metadata_valid_duration {
             Some(duration)
         } else {
-            Some(chrono::Duration::hours(48))
+            Some(chrono::Duration::try_hours(48).unwrap())
         };
 
         let valid_until = valid_duration.map(|d| Utc::now() + d);
