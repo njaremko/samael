@@ -220,8 +220,8 @@ fn test_do_not_accept_unsigned_response() {
 
     let err = resp.err().unwrap();
     assert_eq!(
-        err,
-        crate::service_provider::Error::FailedToParseSamlResponse
+        err.to_string(),
+        crate::service_provider::Error::FailedToParseSamlResponse.to_string()
     );
 }
 
@@ -248,8 +248,8 @@ fn test_do_not_accept_signed_with_wrong_key() {
     let err = resp.err().unwrap();
 
     assert_eq!(
-        err,
-        crate::service_provider::Error::FailedToValidateSignature
+        err.to_string(),
+        crate::service_provider::Error::FailedToValidateSignature.to_string()
     );
 }
 

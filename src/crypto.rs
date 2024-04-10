@@ -1,7 +1,5 @@
 use base64::{engine::general_purpose, Engine as _};
 use std::collections::HashMap;
-use std::convert::TryInto;
-use std::ffi::CString;
 use std::str::FromStr;
 use thiserror::Error;
 
@@ -9,6 +7,10 @@ use thiserror::Error;
 use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
 #[cfg(feature = "xmlsec")]
 use libxml::parser::Parser as XmlParser;
+#[cfg(feature = "xmlsec")]
+use std::ffi::CString;
+#[cfg(feature = "xmlsec")]
+use openssl::symm::{Cipher, Crypter, Mode};
 
 #[cfg(feature = "xmlsec")]
 const XMLNS_XML_DSIG: &str = "http://www.w3.org/2000/09/xmldsig#";
@@ -669,6 +671,64 @@ impl UrlVerifier {
 
         Ok(verifier.verify(signature)?)
     }
+}
+
+#[cfg(feature = "xmlsec")]
+pub(crate) fn decrypt(
+    t: Cipher,
+    key: &[u8],
+    iv: Option<&[u8]>,
+    data: &[u8],
+) -> Result<Vec<u8>, Error> {
+    let mut decrypter =
+        Crypter::new(t, Mode::Decrypt, key, iv).map_err(|error| Error::OpenSSLError { error })?;
+    decrypter.pad(false);
+    let mut out = vec![0; data.len() + t.block_size()];
+
+    let count = decrypter
+        .update(data, &mut out)
+        .map_err(|error| Error::OpenSSLError { error })?;
+
+    let rest = decrypter
+        .finalize(&mut out[count..])
+        .map_err(|error| Error::OpenSSLError { error })?;
+
+    out.truncate(count + rest);
+    Ok(out)
+}
+
+#[cfg(feature = "xmlsec")]
+pub(crate) fn decrypt_aead(
+    t: Cipher,
+    key: &[u8],
+    iv: Option<&[u8]>,
+    aad: &[u8],
+    data: &[u8],
+    tag: &[u8],
+) -> Result<Vec<u8>, Error> {
+    let mut decrypter =
+        Crypter::new(t, Mode::Decrypt, key, iv).map_err(|error| Error::OpenSSLError { error })?;
+    decrypter.pad(false);
+    let mut out = vec![0; data.len() + t.block_size()];
+
+    decrypter
+        .aad_update(aad)
+        .map_err(|error| Error::OpenSSLError { error })?;
+
+    let count = decrypter
+        .update(data, &mut out)
+        .map_err(|error| Error::OpenSSLError { error })?;
+
+    decrypter
+        .set_tag(tag)
+        .map_err(|error| Error::OpenSSLError { error })?;
+
+    let rest = decrypter
+        .finalize(&mut out[count..])
+        .map_err(|error| Error::OpenSSLError { error })?;
+
+    out.truncate(count + rest);
+    Ok(out)
 }
 
 #[cfg(test)]
