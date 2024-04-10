@@ -680,18 +680,12 @@ pub(crate) fn decrypt(
     iv: Option<&[u8]>,
     data: &[u8],
 ) -> Result<Vec<u8>, Error> {
-    let mut decrypter =
-        Crypter::new(t, Mode::Decrypt, key, iv).map_err(|error| Error::OpenSSLError { error })?;
+    let mut decrypter = Crypter::new(t, Mode::Decrypt, key, iv)?;
     decrypter.pad(false);
     let mut out = vec![0; data.len() + t.block_size()];
 
-    let count = decrypter
-        .update(data, &mut out)
-        .map_err(|error| Error::OpenSSLError { error })?;
-
-    let rest = decrypter
-        .finalize(&mut out[count..])
-        .map_err(|error| Error::OpenSSLError { error })?;
+    let count = decrypter.update(data, &mut out)?;
+    let rest = decrypter.finalize(&mut out[count..])?;
 
     out.truncate(count + rest);
     Ok(out)
@@ -706,26 +700,14 @@ pub(crate) fn decrypt_aead(
     data: &[u8],
     tag: &[u8],
 ) -> Result<Vec<u8>, Error> {
-    let mut decrypter =
-        Crypter::new(t, Mode::Decrypt, key, iv).map_err(|error| Error::OpenSSLError { error })?;
+    let mut decrypter = Crypter::new(t, Mode::Decrypt, key, iv)?;
     decrypter.pad(false);
     let mut out = vec![0; data.len() + t.block_size()];
 
-    decrypter
-        .aad_update(aad)
-        .map_err(|error| Error::OpenSSLError { error })?;
-
-    let count = decrypter
-        .update(data, &mut out)
-        .map_err(|error| Error::OpenSSLError { error })?;
-
-    decrypter
-        .set_tag(tag)
-        .map_err(|error| Error::OpenSSLError { error })?;
-
-    let rest = decrypter
-        .finalize(&mut out[count..])
-        .map_err(|error| Error::OpenSSLError { error })?;
+    decrypter.aad_update(aad)?;
+    let count = decrypter.update(data, &mut out)?;
+    decrypter.set_tag(tag)?;
+    let rest = decrypter.finalize(&mut out[count..])?;
 
     out.truncate(count + rest);
     Ok(out)
