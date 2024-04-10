@@ -1,5 +1,8 @@
 # Changelog
 
+### Unreleased
+- add `EncryptedAssertion` and ability to decrypt it
+
 ### 0.0.15
 
 - Updates dependencies

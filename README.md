@@ -18,7 +18,12 @@ Current Features:
 - IDP-initiated SSO
 - SP-initiated SSO Redirect-POST binding
 - Helpers for validating SAML assertions
-  - Encrypted assertions aren't supported yet
+  - Encrypted assertions only support:
+    - **key info:**
+      - `http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p`
+    - **value info:**
+      - `http://www.w3.org/2001/04/xmlenc#aes128-cbc`
+      - `http://www.w3.org/2009/xmlenc11#aes128-gcm`
 - Verify SAMLRequest (AuthnRequest) message signatures
 - Create signed SAMLResponse (Response) messages
 
