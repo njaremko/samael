@@ -1,4 +1,4 @@
-use crate::schema::{Conditions, Issuer, NameIdPolicy, Subject};
+use crate::schema::{Conditions, Extensions, Issuer, NameIdPolicy, Subject};
 use crate::signature::Signature;
 use chrono::prelude::*;
 use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
@@ -30,6 +30,8 @@ pub struct AuthnRequest {
     pub issuer: Option<Issuer>,
     #[serde(rename = "Signature")]
     pub signature: Option<Signature>,
+    #[serde(rename = "Extensions")]
+    pub extensions: Option<Extensions>,
     #[serde(rename = "Subject")]
     pub subject: Option<Subject>,
     #[serde(rename = "NameIDPolicy")]
@@ -62,6 +64,7 @@ impl Default for AuthnRequest {
             consent: None,
             issuer: None,
             signature: None,
+            extensions: None,
             subject: None,
             name_id_policy: None,
             conditions: None,
@@ -205,6 +208,10 @@ impl TryFrom<&AuthnRequest> for Event<'_> {
         }
         if let Some(signature) = &value.signature {
             let event: Event<'_> = signature.try_into()?;
+            writer.write_event(event)?;
+        }
+        if let Some(extensions) = &value.extensions {
+            let event: Event<'_> = extensions.try_into()?;
             writer.write_event(event)?;
         }
         if let Some(subject) = &value.subject {
