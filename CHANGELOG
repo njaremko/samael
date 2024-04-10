@@ -1,5 +1,8 @@
 # Changelog
 
+### Unreleased
+- Add support for basic `RequestedAuthnContext` de-/serialization in `AuthnRequest`
+
 ### 0.0.15
 
 - Updates dependencies
