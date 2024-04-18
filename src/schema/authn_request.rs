@@ -1,3 +1,4 @@
+use crate::crypto;
 use crate::schema::{Conditions, Issuer, NameIdPolicy, Subject};
 use crate::signature::Signature;
 use chrono::prelude::*;
@@ -7,9 +8,6 @@ use serde::Deserialize;
 use std::io::Cursor;
 use std::str::FromStr;
 use thiserror::Error;
-
-#[cfg(feature = "xmlsec")]
-use crate::crypto;
 
 const NAME: &str = "saml2p:AuthnRequest";
 const SCHEMA: (&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
@@ -121,7 +119,6 @@ impl AuthnRequest {
         self
     }
 
-    #[cfg(feature = "xmlsec")]
     pub fn to_signed_xml(
         &self,
         private_key_der: &[u8],
@@ -234,7 +231,6 @@ mod test {
     use crate::crypto::UrlVerifier;
 
     #[test]
-    #[cfg(feature = "xmlsec")]
     pub fn test_signed_authn() -> Result<(), Box<dyn std::error::Error>> {
         let private_key = include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),

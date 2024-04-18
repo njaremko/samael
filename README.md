@@ -64,9 +64,12 @@ but if you don't want to install `direnv`, then just run `nix develop`.
 From their you can build as normal:
 
 ```sh
-cargo build --features xmlsec
-cargo test --features xmlsec
+cargo build
+cargo test
 ```
+
+_NOTE_ The requirement to enable the feature `--feature xmlsec` has been removed
+because we always want it enabled.
 
 # How do I use this library?
 

@@ -5,18 +5,12 @@ use std::ffi::CString;
 use std::str::FromStr;
 use thiserror::Error;
 
-#[cfg(feature = "xmlsec")]
 use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
-#[cfg(feature = "xmlsec")]
 use libxml::parser::Parser as XmlParser;
 
-#[cfg(feature = "xmlsec")]
 const XMLNS_XML_DSIG: &str = "http://www.w3.org/2000/09/xmldsig#";
-#[cfg(feature = "xmlsec")]
 const XMLNS_SIGVER: &str = "urn:urn-5:08Z8lPlI4JVjifINTfCtfelirUo";
-#[cfg(feature = "xmlsec")]
 const ATTRIB_SIGVER: &str = "sv";
-#[cfg(feature = "xmlsec")]
 const VALUE_SIGVER: &str = "verified";
 
 #[derive(Debug, Error)]
@@ -33,35 +27,30 @@ pub enum Error {
     #[error("The given XML is missing a root element")]
     XmlMissingRootElement,
 
-    #[cfg(feature = "xmlsec")]
     #[error("xml sec Error: {}", error)]
     XmlParseError {
         #[from]
         error: libxml::parser::XmlParseError,
     },
 
-    #[cfg(feature = "xmlsec")]
     #[error("xml sec Error: {}", error)]
     XmlSecError {
         #[from]
         error: xmlsec::XmlSecError,
     },
 
-    #[cfg(feature = "xmlsec")]
     #[error("failed to remove attribute: {}", error)]
     XmlAttributeRemovalError {
         #[source]
         error: Box<dyn std::error::Error + Send + Sync>,
     },
 
-    #[cfg(feature = "xmlsec")]
     #[error("failed to define namespace: {}", error)]
     XmlNamespaceDefinitionError {
         #[source]
         error: Box<dyn std::error::Error + Send + Sync>,
     },
 
-    #[cfg(feature = "xmlsec")]
     #[error("OpenSSL error stack: {}", error)]
     OpenSSLError {
         #[from]
@@ -69,7 +58,6 @@ pub enum Error {
     },
 }
 
-#[cfg(feature = "xmlsec")]
 pub fn sign_xml<Bytes: AsRef<[u8]>>(xml: Bytes, private_key_der: &[u8]) -> Result<String, Error> {
     let parser = XmlParser::default();
     let document = parser.parse_string(xml)?;
@@ -83,7 +71,6 @@ pub fn sign_xml<Bytes: AsRef<[u8]>>(xml: Bytes, private_key_der: &[u8]) -> Resul
     Ok(document.to_string())
 }
 
-#[cfg(feature = "xmlsec")]
 pub fn verify_signed_xml<Bytes: AsRef<[u8]>>(
     xml: Bytes,
     x509_cert_der: &[u8],
@@ -110,7 +97,6 @@ pub fn verify_signed_xml<Bytes: AsRef<[u8]>>(
 ///
 /// This is necessary for signature verification to successfully follow the references from a
 /// `<dsig:Signature>` element to the element it has signed.
-#[cfg(feature = "xmlsec")]
 fn collect_id_attributes(doc: &mut libxml::tree::Document) -> Result<(), Error> {
     const ID_STR: &str = "ID";
     let id_attr_name = CString::new(ID_STR).unwrap();
@@ -145,7 +131,6 @@ fn collect_id_attributes(doc: &mut libxml::tree::Document) -> Result<(), Error> 
 }
 
 /// Finds and returns all `<dsig:Signature>` elements in the subtree rooted at the given node.
-#[cfg(feature = "xmlsec")]
 fn find_signature_nodes(node: &libxml::tree::Node) -> Vec<libxml::tree::Node> {
     let mut ret = Vec::new();
 
@@ -165,7 +150,6 @@ fn find_signature_nodes(node: &libxml::tree::Node) -> Vec<libxml::tree::Node> {
 
 /// Removes all signature-verified attributes ([`ATTRIB_SIGVER`] in the namespace [`XMLNS_SIGVER`])
 /// from all elements in the subtree rooted at the given node.
-#[cfg(feature = "xmlsec")]
 pub fn remove_signature_verified_attributes(node: &mut libxml::tree::Node) -> Result<(), Error> {
     node.remove_attribute_ns(ATTRIB_SIGVER, XMLNS_SIGVER)
         .map_err(|err| Error::XmlAttributeRemovalError { error: err })?;
@@ -176,7 +160,6 @@ pub fn remove_signature_verified_attributes(node: &mut libxml::tree::Node) -> Re
 }
 
 /// Obtains the first child element of the given node that has the given name and namespace.
-#[cfg(feature = "xmlsec")]
 fn get_first_child_name_ns(
     node: &libxml::tree::Node,
     name: &str,
@@ -202,7 +185,6 @@ fn get_first_child_name_ns(
 
 /// Searches the subtree rooted at the given node and returns the elements which match the given
 /// predicate.
-#[cfg(feature = "xmlsec")]
 fn get_elements_by_predicate<F: FnMut(&libxml::tree::Node) -> bool>(
     elem: &libxml::tree::Node,
     mut pred: F,
@@ -222,7 +204,6 @@ fn get_elements_by_predicate<F: FnMut(&libxml::tree::Node) -> bool>(
 
 /// Searches for and returns the element with the given value of the `ID` attribute from the subtree
 /// rooted at the given node.
-#[cfg(feature = "xmlsec")]
 fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree::Node> {
     let mut elems = get_elements_by_predicate(elem, |node| {
         node.get_attribute("ID")
@@ -235,7 +216,6 @@ fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree
 
 /// Searches for and returns the element with the given pointer value from the subtree rooted at the
 /// given node.
-#[cfg(feature = "xmlsec")]
 fn get_node_by_ptr(
     elem: &libxml::tree::Node,
     ptr: *const libxml::bindings::xmlNode,
@@ -248,22 +228,18 @@ fn get_node_by_ptr(
     elem
 }
 
-#[cfg(feature = "xmlsec")]
 struct XPathContext {
     pub pointer: libxml::bindings::xmlXPathContextPtr,
 }
-#[cfg(feature = "xmlsec")]
 impl Drop for XPathContext {
     fn drop(&mut self) {
         unsafe { libxml::bindings::xmlXPathFreeContext(self.pointer) }
     }
 }
 
-#[cfg(feature = "xmlsec")]
 struct XPathObject {
     pub pointer: libxml::bindings::xmlXPathObjectPtr,
 }
-#[cfg(feature = "xmlsec")]
 impl Drop for XPathObject {
     fn drop(&mut self) {
         unsafe { libxml::bindings::xmlXPathFreeObject(self.pointer) }
@@ -272,7 +248,6 @@ impl Drop for XPathObject {
 
 /// Searches for and returns the element at the root of the subtree signed by the given signature
 /// node.
-#[cfg(feature = "xmlsec")]
 fn get_signed_node(
     signature_node: &libxml::tree::Node,
     doc: &libxml::tree::Document,
@@ -344,7 +319,6 @@ fn get_signed_node(
 /// Place the signature-verified attributes ([`ATTRIB_SIGVER`] in the given namespace) on the given
 /// element, all its descendants and its whole chain of ancestors (but not necessarily all their
 /// descendants).
-#[cfg(feature = "xmlsec")]
 fn place_signature_verified_attributes(
     root_elem: libxml::tree::Node,
     doc: &libxml::tree::Document,
@@ -384,7 +358,6 @@ fn place_signature_verified_attributes(
 
 /// Remove all elements that do not contain a signature-verified attribute ([`ATTRIB_SIGVER`] in
 /// the namespace [`XMLNS_SIGVER`]).
-#[cfg(feature = "xmlsec")]
 fn remove_unverified_elements(node: &mut libxml::tree::Node) {
     // depth-first
     for mut child in node.get_child_elements() {
@@ -400,7 +373,6 @@ fn remove_unverified_elements(node: &mut libxml::tree::Node) {
 /// Takes an XML document, parses it, verifies all XML digital signatures against the given
 /// certificates, and returns a derived version of the document where all elements that are not
 /// covered by a digital signature have been removed.
-#[cfg(feature = "xmlsec")]
 pub(crate) fn reduce_xml_to_signed(
     xml_str: &str,
     certs: &[openssl::x509::X509],

@@ -1,4 +1,5 @@
 use crate::crypto;
+use crate::crypto::reduce_xml_to_signed;
 use crate::metadata::{Endpoint, IndexedEndpoint, KeyDescriptor, NameIdFormat, SpSsoDescriptor};
 use crate::schema::{Assertion, Response};
 use crate::traits::ToXml;
@@ -20,14 +21,6 @@ use url::Url;
 
 #[cfg(test)]
 mod tests;
-
-#[cfg(feature = "xmlsec")]
-use crate::crypto::reduce_xml_to_signed;
-
-#[cfg(not(feature = "xmlsec"))]
-fn reduce_xml_to_signed<T>(xml_str: &str, _keys: &Vec<T>) -> Result<String, Error> {
-    Ok(String::from(xml_str))
-}
 
 #[derive(Debug, Error, PartialEq)]
 pub enum Error {

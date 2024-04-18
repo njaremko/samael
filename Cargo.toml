@@ -1,43 +1,43 @@
 [package]
-name = "samael"
-version = "0.0.15"
 authors = ["Nathan Jaremko <nathan@jaremko.ca>"]
-edition = "2021"
-license = "MIT"
-readme = "README.md"
-repository = "https://github.com/njaremko/samael"
-description = "A SAML2 library for Rust"
-keywords = ["saml", "saml2", "xml", "sso"]
-categories = ["authentication"]
 build = "bindings.rs"
+categories = ["authentication"]
+description = "A SAML2 library for Rust"
+edition = "2021"
+keywords = ["saml", "saml2", "xml", "sso"]
+license = "MIT"
+name = "samael"
+readme = "README.md"
+repository = "https://github.com/BbartmanBI/samael_update"
+version = "0.0.15"
 
 [lib]
 # Disabling doctests because they cause nix build check phase to fail
-doctest = false
 crate-type = ["staticlib", "rlib"]
+doctest = false
 
-[features]
-xmlsec = ["libc", "lazy_static", "libxml"]
+# [features]
+# xmlsec = ["libc", "lazy_static", "libxml"]
 
 [build-dependencies]
-pkg-config = "^0.3.17"
 bindgen = "^0.69.1"
+pkg-config = "^0.3.17"
 
 [dependencies]
-openssl = "^0.10.0"
-openssl-sys = "^0.9.0"
-openssl-probe = "^0.1.2"
-url = "^2.1.1"
-quick-xml = { version = "^0.31.0", features = ["serialize"] }
-serde = { version = "^1.0.0", features = ["derive"] }
-chrono = { version = "^0.4.0", features = ["serde"] }
 base64 = "^0.22.0"
-flate2 = "^1.0.0"
-rand = "^0.8.4"
-derive_builder = "^0.20.0"
-libxml = { version = "^0.3.1", optional = true }
-uuid = { version = "^1.3.0", features = ["v4"] }
+chrono = {version = "^0.4.0", features = ["serde"]}
 data-encoding = "2.2.0"
-libc = { version = "^0.2.66", optional = true }
-lazy_static = { version = "^1.4.0", optional = true }
+derive_builder = "^0.20.0"
+flate2 = "^1.0.0"
+lazy_static = {version = "^1.4.0"}
+libc = {version = "^0.2.66"}
+libxml = {version = "^0.3.1"}
+openssl = "^0.10.0"
+openssl-probe = "^0.1.2"
+openssl-sys = "^0.9.0"
+quick-xml = {version = "^0.31.0", features = ["serialize"]}
+rand = "^0.8.4"
+serde = {version = "^1.0.0", features = ["derive"]}
 thiserror = "^1.0.40"
+url = "^2.1.1"
+uuid = {version = "^1.3.0", features = ["v4"]}
