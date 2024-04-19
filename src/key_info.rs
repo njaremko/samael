@@ -3,7 +3,10 @@ use quick_xml::Writer;
 use serde::Deserialize;
 use std::io::Cursor;
 
+use crate::schema::EncryptedKey;
+
 const NAME: &str = "ds:KeyInfo";
+const SCHEMA: &str = "xmlns:ds";
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct KeyInfo {
@@ -78,6 +81,49 @@ impl TryFrom<&X509Data> for Event<'_> {
         }
 
         writer.write_event(Event::End(BytesEnd::new(X509_DATA_NAME)))?;
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+pub struct EncryptedKeyInfo {
+    #[serde(rename = "@Id")]
+    pub id: Option<String>,
+    #[serde(rename = "@xmlns:ds")]
+    pub ds: String,
+    #[serde(rename = "EncryptedKey")]
+    pub encrypted_key: Option<EncryptedKey>,
+}
+
+impl TryFrom<EncryptedKeyInfo> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: EncryptedKeyInfo) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&EncryptedKeyInfo> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &EncryptedKeyInfo) -> Result<Self, Self::Error> {
+        let mut write_buf = Vec::new();
+        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+        let mut root = BytesStart::new(NAME);
+        if let Some(id) = &value.id {
+            root.push_attribute(("Id", id.as_ref()));
+        }
+        root.push_attribute((SCHEMA, value.ds.as_ref()));
+
+        writer.write_event(Event::Start(root))?;
+        if let Some(encrypted_key) = &value.encrypted_key {
+            let event: Event<'_> = encrypted_key.try_into()?;
+            writer.write_event(event)?;
+        }
+
+        writer.write_event(Event::End(BytesEnd::new(NAME)))?;
         Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
             write_buf,
         )?)))
