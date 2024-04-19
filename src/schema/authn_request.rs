@@ -31,6 +31,7 @@ pub struct AuthnRequest {
     #[serde(rename = "Signature")]
     pub signature: Option<Signature>,
     #[serde(rename = "Extensions")]
+    #[serde(skip_deserializing)]
     pub extensions: Option<Extensions>,
     #[serde(rename = "Subject")]
     pub subject: Option<Subject>,
