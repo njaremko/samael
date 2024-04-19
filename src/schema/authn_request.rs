@@ -121,6 +121,18 @@ impl AuthnRequest {
         self
     }
 
+    pub fn add_signature(&mut self, signature: Signature) -> &mut Self {
+        self.signature = Some(signature);
+        self
+    }
+
+    pub fn make_signature(&mut self, certificate_der: &[u8]) -> &mut Self {
+        self.add_signature(Signature::template(
+            &self.id,
+            certificate_der,
+        ))
+    }
+
     #[cfg(feature = "xmlsec")]
     pub fn to_signed_xml(
         &self,
