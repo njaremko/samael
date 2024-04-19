@@ -1,5 +1,9 @@
 # Changelog
 
+### Unreleased
+
+- Add `signed_post` function to `AuthnRequest`
+
 ### 0.0.15
 
 - Updates dependencies
