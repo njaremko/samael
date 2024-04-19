@@ -202,17 +202,17 @@ fn get_elements_by_predicate<F: FnMut(&libxml::tree::Node) -> bool>(
     nodes
 }
 
-/// Searches for and returns the element with the given value of the `ID` attribute from the subtree
-/// rooted at the given node.
-fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree::Node> {
-    let mut elems = get_elements_by_predicate(elem, |node| {
-        node.get_attribute("ID")
-            .map(|node_id| node_id == id)
-            .unwrap_or(false)
-    });
-    let elem = elems.drain(..).next();
-    elem
-}
+// /// Searches for and returns the element with the given value of the `ID` attribute from the subtree
+// /// rooted at the given node.
+// fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree::Node> {
+//     let mut elems = get_elements_by_predicate(elem, |node| {
+//         node.get_attribute("ID")
+//             .map(|node_id| node_id == id)
+//             .unwrap_or(false)
+//     });
+//     let elem = elems.drain(..).next();
+//     elem
+// }
 
 /// Searches for and returns the element with the given pointer value from the subtree rooted at the
 /// given node.
@@ -662,7 +662,8 @@ mod test {
         ));
 
         let response_instant = "2014-07-17T01:01:48Z".parse::<DateTime<Utc>>().unwrap();
-        let max_issue_delay = Utc::now() - response_instant + chrono::Duration::seconds(60);
+        let max_issue_delay =
+            Utc::now() - response_instant + chrono::Duration::try_seconds(60).unwrap();
 
         let sp = ServiceProvider {
             metadata_url: Some("http://test_accept_signed_with_correct_key.test".into()),
