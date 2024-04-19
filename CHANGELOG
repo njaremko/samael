@@ -1,5 +1,9 @@
 # Changelog
 
+### Unreleased
+
+- Add `trust_level` attribute to `Attribute`
+
 ### 0.0.15
 
 - Updates dependencies

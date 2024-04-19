@@ -71,6 +71,8 @@ pub struct Attribute {
     pub name_format: Option<String>,
     #[serde(rename = "AttributeValue", default)]
     pub values: Vec<AttributeValue>,
+    #[serde(rename = "@TrustLevel")]
+    pub trust_level: Option<String>,
 }
 
 impl Attribute {
