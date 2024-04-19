@@ -199,6 +199,14 @@ impl Assertion {
     }
 }
 
+impl FromStr for Assertion {
+    type Err = Box<dyn std::error::Error>;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(quick_xml::de::from_str(s)?)
+    }
+}
+
 impl TryFrom<Assertion> for Event<'_> {
     type Error = Box<dyn std::error::Error>;
 
