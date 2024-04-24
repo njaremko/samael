@@ -236,11 +236,8 @@ impl ServiceProvider {
         self.authn_name_id_format
             .clone()
             .and_then(|v| -> Option<String> {
-                let unspecified = NameIdFormat::UnspecifiedNameIDFormat.value();
                 if v.is_empty() {
                     Some(NameIdFormat::TransientNameIDFormat.value().to_string())
-                } else if v == unspecified {
-                    None
                 } else {
                     Some(v)
                 }
@@ -478,11 +475,13 @@ impl ServiceProvider {
                 value: entity_id,
                 ..Issuer::default()
             }),
-            name_id_policy: Some(NameIdPolicy {
-                allow_create: Some(true),
-                format: self.name_id_format(),
-                ..NameIdPolicy::default()
-            }),
+            name_id_policy: self.name_id_format().map(|format|
+                NameIdPolicy {
+                    allow_create: Some(true),
+                    format: Some(format),
+                    ..NameIdPolicy::default()
+                }
+            ),
             force_authn: Some(self.force_authn),
             ..AuthnRequest::default()
         })
