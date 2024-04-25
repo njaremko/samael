@@ -15,7 +15,7 @@ pub use attribute_consuming_service::AttributeConsumingService;
 pub use contact_person::*;
 pub use encryption_method::EncryptionMethod;
 pub use endpoint::*;
-pub use entity_descriptor::EntityDescriptor;
+pub use entity_descriptor::*;
 pub use key_descriptor::KeyDescriptor;
 pub use localized::*;
 pub use organization::Organization;
@@ -67,6 +67,12 @@ impl NameIdFormat {
     }
 }
 
+/// This should be the base class of role descriptions.
+///
+/// The <RoleDescriptor> element is an abstract extension point that contains
+/// common descriptive information intended to provide processing commonality
+/// across different roles. New roles can be defined by extending its abstract
+/// RoleDescriptorType complex type.
 #[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct RoleDescriptor {
     #[serde(rename = "@ID")]
