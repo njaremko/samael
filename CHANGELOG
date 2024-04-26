@@ -1,5 +1,9 @@
 # Changelog
 
+### Unreleased
+
+- Use enum for signature and digest algorithm
+
 ### 0.0.15
 
 - Updates dependencies
