@@ -20,6 +20,66 @@ pub enum Error {
     },
 }
 
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+pub enum EntityDescriptorType {
+    #[serde(rename = "EntitiesDescriptor")]
+    EntitiesDescriptor(EntitiesDescriptor),
+    #[serde(rename = "EntityDescriptor")]
+    EntityDescriptor(EntityDescriptor),
+}
+
+impl EntityDescriptorType {
+    pub fn take_first(self) -> Option<EntityDescriptor> {
+        match self {
+            EntityDescriptorType::EntitiesDescriptor(descriptor) => descriptor
+                .descriptors
+                .into_iter()
+                .next()
+                .and_then(|descriptor_type| match descriptor_type {
+                    EntityDescriptorType::EntitiesDescriptor(_) => None,
+                    EntityDescriptorType::EntityDescriptor(descriptor) => Some(descriptor),
+                }),
+            EntityDescriptorType::EntityDescriptor(descriptor) => Some(descriptor),
+        }
+    }
+}
+
+impl FromStr for EntityDescriptorType {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(quick_xml::de::from_str(s)?)
+    }
+}
+
+impl TryFrom<EntityDescriptorType> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: EntityDescriptorType) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&EntityDescriptorType> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &EntityDescriptorType) -> Result<Self, Self::Error> {
+        let mut write_buf = Vec::new();
+        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+        writer.write_event(Event::Decl(BytesDecl::new("1.0", Some("UTF-8"), None)))?;
+
+        let event: Event<'_> = match value {
+            EntityDescriptorType::EntitiesDescriptor(descriptor) => descriptor.try_into()?,
+            EntityDescriptorType::EntityDescriptor(descriptor) => descriptor.try_into()?,
+        };
+        writer.write_event(event)?;
+
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
+    }
+}
+
 const ENTITIES_DESCRIPTOR_NAME: &str = "md:EntitiesDescriptor";
 
 #[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
@@ -36,7 +96,7 @@ pub struct EntitiesDescriptor {
     #[serde(rename = "Signature")]
     pub signature: Option<Signature>,
     #[serde(default, rename = "$value")]
-    pub descriptors: Vec<EntityDescriptor>,
+    pub descriptors: Vec<EntityDescriptorType>,
 }
 
 impl FromStr for EntitiesDescriptor {
@@ -65,7 +125,10 @@ impl TryFrom<&EntitiesDescriptor> for Event<'_> {
 
         let mut root = BytesStart::new(ENTITIES_DESCRIPTOR_NAME);
         root.push_attribute(("xmlns:md", "urn:oasis:names:tc:SAML:2.0:metadata"));
-        root.push_attribute(("xmlns:alg", "urn:oasis:names:tc:SAML:2.0:metadata:algsupport"));
+        root.push_attribute((
+            "xmlns:alg",
+            "urn:oasis:names:tc:SAML:2.0:metadata:algsupport",
+        ));
         root.push_attribute(("xmlns:mdui", "urn:oasis:names:tc:SAML:metadata:ui"));
         root.push_attribute(("xmlns:ds", "http://www.w3.org/2000/09/xmldsig#"));
 
@@ -225,7 +288,7 @@ impl TryFrom<&EntityDescriptor> for Event<'_> {
 mod test {
     use crate::traits::ToXml;
 
-    use super::{EntitiesDescriptor, EntityDescriptor};
+    use super::{EntitiesDescriptor, EntityDescriptor, EntityDescriptorType};
 
     #[test]
     fn test_sp_entity_descriptor() {
@@ -283,5 +346,66 @@ mod test {
             .expect("Failed to parse EntitiesDescriptor");
 
         assert_eq!(reparsed_entities_descriptor, entities_descriptor);
+    }
+
+    #[test]
+    fn test_idp_entity_descriptor_type() {
+        let input_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/idp_metadata.xml"
+        ));
+        let entity_descriptor_type: EntityDescriptorType = input_xml
+            .parse()
+            .expect("Failed to parse idp_metadata.xml into an EntityDescriptorType");
+        let output_xml = entity_descriptor_type
+            .to_xml()
+            .expect("Failed to convert EntityDescriptorType to xml");
+        let reparsed_entity_descriptor_type: EntityDescriptorType = output_xml
+            .parse()
+            .expect("Failed to parse EntityDescriptorType");
+
+        assert_eq!(reparsed_entity_descriptor_type, entity_descriptor_type);
+
+        let expected_entity_descriptor: EntityDescriptor = input_xml
+            .parse()
+            .expect("Failed to parse idp_metadata.xml into an EntityDescriptor");
+        let entity_descriptor: EntityDescriptor = entity_descriptor_type
+            .take_first()
+            .expect("Failed to take first EntityDescriptor from EntityDescriptorType");
+
+        assert_eq!(expected_entity_descriptor, entity_descriptor);
+    }
+
+    #[test]
+    fn test_idp_entity_descriptor_type_nested() {
+        let input_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/idp_metadata_nested.xml"
+        ));
+        let entity_descriptor_type: EntityDescriptorType = input_xml
+            .parse()
+            .expect("Failed to parse idp_metadata_nested.xml into an EntityDescriptorType");
+        let output_xml = entity_descriptor_type
+            .to_xml()
+            .expect("Failed to convert EntityDescriptorType to xml");
+        let reparsed_entity_descriptor_type: EntityDescriptorType = output_xml
+            .parse()
+            .expect("Failed to parse EntityDescriptorType");
+
+        assert_eq!(reparsed_entity_descriptor_type, entity_descriptor_type);
+
+        let input_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/idp_metadata.xml"
+        ));
+        let expected_entity_descriptor: EntityDescriptor = input_xml
+            .parse()
+            .expect("Failed to parse idp_metadata.xml into an EntityDescriptor");
+        let entity_descriptor: EntityDescriptor = entity_descriptor_type
+            .take_first()
+            .expect("Failed to take first EntityDescriptor from EntityDescriptorType");
+        println!("{entity_descriptor:#?}");
+
+        assert_eq!(expected_entity_descriptor, entity_descriptor);
     }
 }
