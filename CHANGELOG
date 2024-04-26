@@ -1,5 +1,9 @@
 # Changelog
 
+### Unreleased
+
+- Add EntityDescriptorType enum to allow parsing of arbitrarily nested EntityDescriptors and EntitiesDescriptors
+
 ### 0.0.15
 
 - Updates dependencies
