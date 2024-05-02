@@ -21,7 +21,16 @@ pub struct Signature {
 }
 
 impl Signature {
-    pub fn template(ref_id: &str, x509_cert_der: &[u8]) -> Self {
+    pub fn default_template(ref_id: &str, x509_cert_der: &[u8]) -> Self {
+        Signature::template(
+            ref_id,
+            x509_cert_der,
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+            "http://www.w3.org/2000/09/xmldsig#sha1",
+        )
+    }
+
+    pub fn template(ref_id: &str, x509_cert_der: &[u8], sig_alg: &str, digest_alg: &str) -> Self {
         Signature {
             id: None,
             signed_info: SignedInfo {
@@ -30,7 +39,7 @@ impl Signature {
                     algorithm: "http://www.w3.org/2001/10/xml-exc-c14n#".to_string(),
                 },
                 signature_method: SignatureMethod {
-                    algorithm: "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256".to_string(),
+                    algorithm: sig_alg.to_string(),
                     hmac_output_length: None,
                 },
                 reference: vec![Reference {
@@ -48,7 +57,7 @@ impl Signature {
                         ],
                     }),
                     digest_method: DigestMethod {
-                        algorithm: "http://www.w3.org/2000/09/xmldsig#sha1".to_string(),
+                        algorithm: digest_alg.to_string(),
                     },
                     digest_value: Some(DigestValue {
                         base64_content: Some("".to_string()),

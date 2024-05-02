@@ -124,7 +124,7 @@ fn build_response(
         destination: Some(destination.to_string()),
         consent: None,
         issuer: Some(issuer.clone()),
-        signature: Some(Signature::template(&response_id, x509_cert)),
+        signature: Some(Signature::default_template(&response_id, x509_cert)),
         status: Some(Status {
             status_code: StatusCode {
                 value: Some("urn:oasis:names:tc:SAML:2.0:status:Success".to_string()),

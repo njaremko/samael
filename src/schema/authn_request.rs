@@ -126,10 +126,21 @@ impl AuthnRequest {
         self
     }
 
-    pub fn make_signature(&mut self, certificate_der: &[u8]) -> &mut Self {
+    pub fn default_signature(&mut self, certificate_der: &[u8]) -> &mut Self {
+        self.add_signature(Signature::default_template(&self.id, certificate_der))
+    }
+
+    pub fn make_signature(
+        &mut self,
+        certificate_der: &[u8],
+        sig_alg: &str,
+        digest_alg: &str,
+    ) -> &mut Self {
         self.add_signature(Signature::template(
             &self.id,
             certificate_der,
+            sig_alg,
+            digest_alg,
         ))
     }
 
