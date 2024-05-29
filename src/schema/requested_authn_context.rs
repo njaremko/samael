@@ -89,7 +89,10 @@ impl FromStr for AuthnContextComparison {
             "maximum" => AuthnContextComparison::Maximum,
             "better" => AuthnContextComparison::Better,
             _ => {
-                return Err(quick_xml::DeError::Custom("Illegal comparison! Must be one of `exact`, `minimum`, `maximum` or `better`".to_string()));
+                return Err(quick_xml::DeError::Custom(
+                    "Illegal comparison! Must be one of `exact`, `minimum`, `maximum` or `better`"
+                        .to_string(),
+                ));
             }
         })
     }
@@ -105,8 +108,8 @@ mod test {
     pub fn test_deserialize_serialize_requested_authn_context() {
         let xml_context = r#"<saml2p:RequestedAuthnContext xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" Comparison="exact"><saml2:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml2:AuthnContextClassRef></saml2p:RequestedAuthnContext>"#;
 
-        let expected_context: RequestedAuthnContext = quick_xml::de::from_str(xml_context)
-            .expect("failed to parse RequestedAuthnContext");
+        let expected_context: RequestedAuthnContext =
+            quick_xml::de::from_str(xml_context).expect("failed to parse RequestedAuthnContext");
         let serialized_context = expected_context
             .to_xml()
             .expect("failed to convert RequestedAuthnContext to xml");
