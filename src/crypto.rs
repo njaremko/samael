@@ -1,14 +1,16 @@
 use base64::{engine::general_purpose, Engine as _};
 use std::collections::HashMap;
 use std::convert::TryInto;
-use std::ffi::CString;
-use std::str::FromStr;
 use thiserror::Error;
 
 #[cfg(feature = "xmlsec")]
-use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
+use crate::xmlsec::{self, XmlNode, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
 #[cfg(feature = "xmlsec")]
 use libxml::parser::Parser as XmlParser;
+#[cfg(feature = "xmlsec")]
+use std::ffi::CString;
+#[cfg(feature = "xmlsec")]
+use std::str::FromStr;
 
 #[cfg(feature = "xmlsec")]
 const XMLNS_XML_DSIG: &str = "http://www.w3.org/2000/09/xmldsig#";
@@ -146,7 +148,7 @@ fn collect_id_attributes(doc: &mut libxml::tree::Document) -> Result<(), Error> 
 
 /// Finds and returns all `<dsig:Signature>` elements in the subtree rooted at the given node.
 #[cfg(feature = "xmlsec")]
-fn find_signature_nodes(node: &libxml::tree::Node) -> Vec<libxml::tree::Node> {
+fn find_signature_nodes(node: &XmlNode) -> Vec<XmlNode> {
     let mut ret = Vec::new();
 
     if let Some(ns) = &node.get_namespace() {
@@ -166,7 +168,7 @@ fn find_signature_nodes(node: &libxml::tree::Node) -> Vec<libxml::tree::Node> {
 /// Removes all signature-verified attributes ([`ATTRIB_SIGVER`] in the namespace [`XMLNS_SIGVER`])
 /// from all elements in the subtree rooted at the given node.
 #[cfg(feature = "xmlsec")]
-pub fn remove_signature_verified_attributes(node: &mut libxml::tree::Node) -> Result<(), Error> {
+pub fn remove_signature_verified_attributes(node: &mut XmlNode) -> Result<(), Error> {
     node.remove_attribute_ns(ATTRIB_SIGVER, XMLNS_SIGVER)
         .map_err(|err| Error::XmlAttributeRemovalError { error: err })?;
     for mut child_elem in node.get_child_elements() {
@@ -178,10 +180,10 @@ pub fn remove_signature_verified_attributes(node: &mut libxml::tree::Node) -> Re
 /// Obtains the first child element of the given node that has the given name and namespace.
 #[cfg(feature = "xmlsec")]
 fn get_first_child_name_ns(
-    node: &libxml::tree::Node,
+    node: &XmlNode,
     name: &str,
     ns: &str,
-) -> Option<libxml::tree::Node> {
+) -> Option<XmlNode> {
     let mut found_node = None;
     for child in node.get_child_elements() {
         if let Some(child_ns) = child.get_namespace() {
@@ -203,10 +205,10 @@ fn get_first_child_name_ns(
 /// Searches the subtree rooted at the given node and returns the elements which match the given
 /// predicate.
 #[cfg(feature = "xmlsec")]
-fn get_elements_by_predicate<F: FnMut(&libxml::tree::Node) -> bool>(
-    elem: &libxml::tree::Node,
+fn get_elements_by_predicate<F: FnMut(&XmlNode) -> bool>(
+    elem: &XmlNode,
     mut pred: F,
-) -> Vec<libxml::tree::Node> {
+) -> Vec<XmlNode> {
     let mut nodes_to_visit = Vec::new();
     let mut nodes = Vec::new();
     nodes_to_visit.push(elem.clone());
@@ -223,7 +225,8 @@ fn get_elements_by_predicate<F: FnMut(&libxml::tree::Node) -> bool>(
 /// Searches for and returns the element with the given value of the `ID` attribute from the subtree
 /// rooted at the given node.
 #[cfg(feature = "xmlsec")]
-fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree::Node> {
+#[allow(dead_code)]
+fn get_element_by_id(elem: &XmlNode, id: &str) -> Option<XmlNode> {
     let mut elems = get_elements_by_predicate(elem, |node| {
         node.get_attribute("ID")
             .map(|node_id| node_id == id)
@@ -237,9 +240,9 @@ fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree
 /// given node.
 #[cfg(feature = "xmlsec")]
 fn get_node_by_ptr(
-    elem: &libxml::tree::Node,
+    elem: &XmlNode,
     ptr: *const libxml::bindings::xmlNode,
-) -> Option<libxml::tree::Node> {
+) -> Option<XmlNode> {
     let mut elems = get_elements_by_predicate(elem, |node| {
         let node_ptr = node.node_ptr() as *const _;
         node_ptr == ptr
@@ -274,9 +277,9 @@ impl Drop for XPathObject {
 /// node.
 #[cfg(feature = "xmlsec")]
 fn get_signed_node(
-    signature_node: &libxml::tree::Node,
+    signature_node: &XmlNode,
     doc: &libxml::tree::Document,
-) -> Option<libxml::tree::Node> {
+) -> Option<XmlNode> {
     let object_elem_opt = get_first_child_name_ns(signature_node, "Object", XMLNS_XML_DSIG);
     if let Some(object_elem) = object_elem_opt {
         return Some(object_elem);
@@ -346,11 +349,11 @@ fn get_signed_node(
 /// descendants).
 #[cfg(feature = "xmlsec")]
 fn place_signature_verified_attributes(
-    root_elem: libxml::tree::Node,
+    root_elem: XmlNode,
     doc: &libxml::tree::Document,
     ns: &libxml::tree::Namespace,
 ) {
-    let mut ptr_to_required_node: HashMap<usize, libxml::tree::Node> = HashMap::new();
+    let mut ptr_to_required_node: HashMap<usize, XmlNode> = HashMap::new();
     let mut signature_nodes = find_signature_nodes(&root_elem);
     for sig_node in signature_nodes.drain(..) {
         if let Some(sig_root_node) = get_signed_node(&sig_node, doc) {
@@ -385,7 +388,7 @@ fn place_signature_verified_attributes(
 /// Remove all elements that do not contain a signature-verified attribute ([`ATTRIB_SIGVER`] in
 /// the namespace [`XMLNS_SIGVER`]).
 #[cfg(feature = "xmlsec")]
-fn remove_unverified_elements(node: &mut libxml::tree::Node) {
+fn remove_unverified_elements(node: &mut XmlNode) {
     // depth-first
     for mut child in node.get_child_elements() {
         remove_unverified_elements(&mut child);
@@ -690,7 +693,7 @@ mod test {
         ));
 
         let response_instant = "2014-07-17T01:01:48Z".parse::<DateTime<Utc>>().unwrap();
-        let max_issue_delay = Utc::now() - response_instant + chrono::Duration::seconds(60);
+        let max_issue_delay = Utc::now() - response_instant + chrono::Duration::try_seconds(60).unwrap();
 
         let sp = ServiceProvider {
             metadata_url: Some("http://test_accept_signed_with_correct_key.test".into()),

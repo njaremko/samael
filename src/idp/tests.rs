@@ -262,7 +262,7 @@ fn test_accept_signed_with_correct_key_idp() {
     ));
 
     let response_instant = "2014-07-17T01:01:48Z".parse::<DateTime<Utc>>().unwrap();
-    let max_issue_delay = Utc::now() - response_instant + chrono::Duration::seconds(60);
+    let max_issue_delay = Utc::now() - response_instant + chrono::Duration::try_seconds(60).unwrap();
 
     let sp = ServiceProvider {
         metadata_url: Some("http://test_accept_signed_with_correct_key.test".into()),
@@ -293,7 +293,7 @@ fn test_accept_signed_with_correct_key_idp_2() {
     ));
 
     let response_instant = "2014-07-17T01:01:48Z".parse::<DateTime<Utc>>().unwrap();
-    let max_issue_delay = Utc::now() - response_instant + chrono::Duration::seconds(60);
+    let max_issue_delay = Utc::now() - response_instant + chrono::Duration::try_seconds(60).unwrap();
 
     let sp = ServiceProvider {
         metadata_url: Some("http://test_accept_signed_with_correct_key.test".into()),

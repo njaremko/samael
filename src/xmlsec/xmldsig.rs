@@ -4,6 +4,7 @@
 use crate::bindings;
 
 use super::XmlDocument;
+use super::XmlNode;
 use super::XmlSecError;
 use super::XmlSecKey;
 use super::XmlSecResult;
@@ -150,7 +151,7 @@ impl XmlSecSignatureContext {
     ///
     /// [xmlnode]: http://kwarc.github.io/rust-libxml/libxml/tree/document/struct.Node.html
     /// [inskey]: struct.XmlSecSignatureContext.html#method.insert_key
-    pub fn verify_node(&self, sig_node: &libxml::tree::Node) -> XmlSecResult<bool> {
+    pub fn verify_node(&self, sig_node: &XmlNode) -> XmlSecResult<bool> {
         self.key_is_set()?;
         if let Some(ns) = sig_node.get_namespace() {
             if ns.get_href() != "http://www.w3.org/2000/09/xmldsig#"
