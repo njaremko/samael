@@ -2,6 +2,7 @@ pub mod authn_request;
 mod conditions;
 mod issuer;
 mod name_id_policy;
+mod requested_authn_context;
 mod response;
 mod subject;
 
@@ -9,6 +10,7 @@ pub use authn_request::AuthnRequest;
 pub use conditions::*;
 pub use issuer::Issuer;
 pub use name_id_policy::NameIdPolicy;
+pub use requested_authn_context::{AuthnContextComparison, RequestedAuthnContext};
 pub use response::Response;
 pub use subject::*;
 
@@ -194,6 +196,14 @@ impl Assertion {
             ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion"),
             ("xmlns:xsd", "http://www.w3.org/2001/XMLSchema"),
         ]
+    }
+}
+
+impl FromStr for Assertion {
+    type Err = Box<dyn std::error::Error>;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(quick_xml::de::from_str(s)?)
     }
 }
 
@@ -474,6 +484,47 @@ impl TryFrom<&AuthnContextClassRef> for Event<'_> {
             writer.write_event(Event::Start(root))?;
             writer.write_event(Event::Text(BytesText::from_escaped(value)))?;
             writer.write_event(Event::End(BytesEnd::new(AuthnContextClassRef::name())))?;
+            Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+                write_buf,
+            )?)))
+        } else {
+            Ok(Event::Text(BytesText::from_escaped(String::new())))
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+pub struct AuthnContextDeclRef {
+    #[serde(rename = "$value")]
+    pub value: Option<String>,
+}
+
+impl AuthnContextDeclRef {
+    fn name() -> &'static str {
+        "saml2:AuthnContextDeclRef"
+    }
+}
+
+impl TryFrom<AuthnContextDeclRef> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: AuthnContextDeclRef) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&AuthnContextDeclRef> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &AuthnContextDeclRef) -> Result<Self, Self::Error> {
+        if let Some(value) = &value.value {
+            let mut write_buf = Vec::new();
+            let mut writer = Writer::new(Cursor::new(&mut write_buf));
+            let root = BytesStart::new(AuthnContextDeclRef::name());
+
+            writer.write_event(Event::Start(root))?;
+            writer.write_event(Event::Text(BytesText::from_escaped(value)))?;
+            writer.write_event(Event::End(BytesEnd::new(AuthnContextDeclRef::name())))?;
             Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
                 write_buf,
             )?)))
