@@ -5,7 +5,8 @@ use std::io::Cursor;
 
 const NAME: &str = "saml2p:NameIDPolicy";
 
-#[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Default, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(default, setter(into, strip_option))]
 pub struct NameIdPolicy {
     #[serde(rename = "@Format")]
     pub format: Option<String>,

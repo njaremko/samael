@@ -8,7 +8,7 @@ mod subject;
 pub use authn_request::AuthnRequest;
 pub use conditions::*;
 pub use issuer::Issuer;
-pub use name_id_policy::NameIdPolicy;
+pub use name_id_policy::*;
 pub use response::Response;
 pub use subject::*;
 
@@ -25,9 +25,11 @@ use std::str::FromStr;
 
 use thiserror::Error;
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(setter(into))]
 pub struct NameID {
     #[serde(rename = "Format")]
+    #[builder(setter(strip_option))]
     pub format: Option<String>,
 
     #[serde(rename = "$value")]
@@ -69,23 +71,32 @@ impl TryFrom<&NameID> for Event<'_> {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(setter(into))]
 pub struct LogoutRequest {
     #[serde(rename = "@ID")]
+    #[builder(setter(strip_option))]
     pub id: Option<String>,
     #[serde(rename = "@Version")]
+    #[builder(setter(strip_option))]
     pub version: Option<String>,
     #[serde(rename = "@IssueInstant")]
+    #[builder(setter(strip_option))]
     pub issue_instant: Option<chrono::DateTime<Utc>>,
     #[serde(rename = "@Destination")]
+    #[builder(setter(strip_option))]
     pub destination: Option<String>,
     #[serde(rename = "Issuer")]
+    #[builder(setter(strip_option))]
     pub issuer: Option<Issuer>,
     #[serde(rename = "Signature")]
+    #[builder(setter(strip_option))]
     pub signature: Option<Signature>,
     #[serde(rename = "@SessionIndex")]
+    #[builder(setter(strip_option))]
     pub session_index: Option<String>,
     #[serde(rename = "NameID")]
+    #[builder(setter(strip_option))]
     pub name_id: Option<NameID>,
 }
 
@@ -162,7 +173,8 @@ impl LogoutRequest {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(setter(into))]
 pub struct Assertion {
     #[serde(rename = "@ID")]
     pub id: String,
@@ -173,14 +185,19 @@ pub struct Assertion {
     #[serde(rename = "Issuer")]
     pub issuer: Issuer,
     #[serde(rename = "Signature")]
+    #[builder(setter(strip_option))]
     pub signature: Option<Signature>,
     #[serde(rename = "Subject")]
+    #[builder(setter(strip_option))]
     pub subject: Option<Subject>,
     #[serde(rename = "Conditions")]
+    #[builder(setter(strip_option))]
     pub conditions: Option<Conditions>,
     #[serde(rename = "AuthnStatement")]
+    #[builder(setter(strip_option))]
     pub authn_statements: Option<Vec<AuthnStatement>>,
     #[serde(rename = "AttributeStatement")]
+    #[builder(setter(strip_option))]
     pub attribute_statements: Option<Vec<AttributeStatement>>,
 }
 
@@ -268,7 +285,8 @@ impl TryFrom<&Assertion> for Event<'_> {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(setter(into))]
 pub struct AttributeStatement {
     #[serde(rename = "Attribute", default)]
     pub attributes: Vec<Attribute>,
@@ -318,17 +336,23 @@ impl TryFrom<&AttributeStatement> for Event<'_> {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(setter(into))]
 pub struct AuthnStatement {
     #[serde(rename = "@AuthnInstant")]
+    #[builder(setter(strip_option))]
     pub authn_instant: Option<chrono::DateTime<Utc>>,
     #[serde(rename = "@SessionIndex")]
+    #[builder(setter(strip_option))]
     pub session_index: Option<String>,
     #[serde(rename = "@SessionNotOnOrAfter")]
+    #[builder(setter(strip_option))]
     pub session_not_on_or_after: Option<chrono::DateTime<Utc>>,
     #[serde(rename = "SubjectLocality")]
+    #[builder(setter(strip_option))]
     pub subject_locality: Option<SubjectLocality>,
     #[serde(rename = "AuthnContext")]
+    #[builder(setter(strip_option))]
     pub authn_context: Option<AuthnContext>,
 }
 
@@ -392,7 +416,8 @@ impl TryFrom<&AuthnStatement> for Event<'_> {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(setter(into, strip_option))]
 pub struct SubjectLocality {
     #[serde(rename = "@Address")]
     pub address: Option<String>,
@@ -400,7 +425,8 @@ pub struct SubjectLocality {
     pub dns_name: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(setter(into, strip_option))]
 pub struct AuthnContext {
     #[serde(rename = "AuthnContextClassRef")]
     pub value: Option<AuthnContextClassRef>,
@@ -442,7 +468,8 @@ impl TryFrom<&AuthnContext> for Event<'_> {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(setter(into, strip_option))]
 pub struct AuthnContextClassRef {
     #[serde(rename = "$value")]
     pub value: Option<String>,
@@ -483,13 +510,16 @@ impl TryFrom<&AuthnContextClassRef> for Event<'_> {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(setter(into))]
 pub struct Status {
     #[serde(rename = "StatusCode")]
     pub status_code: StatusCode,
     #[serde(rename = "StatusMessage")]
+    #[builder(setter(strip_option))]
     pub status_message: Option<StatusMessage>,
     #[serde(rename = "StatusDetail")]
+    #[builder(setter(strip_option))]
     pub status_detail: Option<StatusDetail>,
 }
 
@@ -525,7 +555,8 @@ impl TryFrom<&Status> for Event<'_> {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(setter(into, strip_option))]
 pub struct StatusCode {
     #[serde(rename = "@Value")]
     pub value: Option<String>,
@@ -564,19 +595,22 @@ impl TryFrom<&StatusCode> for Event<'_> {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(setter(into, strip_option))]
 pub struct StatusMessage {
     #[serde(rename = "@Value")]
     pub value: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(setter(into, strip_option))]
 pub struct StatusDetail {
     #[serde(rename = "@Children")]
     pub children: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(setter(into, strip_option))]
 pub struct LogoutResponse {
     #[serde(rename = "@ID")]
     pub id: Option<String>,

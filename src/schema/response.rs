@@ -11,29 +11,39 @@ use thiserror::Error;
 const NAME: &str = "saml2p:Response";
 const SCHEMA: (&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(setter(into))]
 pub struct Response {
     #[serde(rename = "@ID")]
     pub id: String,
     #[serde(rename = "@InResponseTo")]
+    #[builder(setter(strip_option))]
     pub in_response_to: Option<String>,
     #[serde(rename = "@Version")]
     pub version: String,
     #[serde(rename = "@IssueInstant")]
+    #[builder(setter(strip_option))]
     pub issue_instant: DateTime<Utc>,
     #[serde(rename = "@Destination")]
+    #[builder(setter(strip_option))]
     pub destination: Option<String>,
     #[serde(rename = "@Consent")]
+    #[builder(setter(strip_option))]
     pub consent: Option<String>,
     #[serde(rename = "Issuer")]
+    #[builder(setter(strip_option))]
     pub issuer: Option<Issuer>,
     #[serde(rename = "Signature")]
+    #[builder(setter(strip_option))]
     pub signature: Option<Signature>,
     #[serde(rename = "Status")]
+    #[builder(setter(strip_option))]
     pub status: Option<Status>,
     #[serde(rename = "EncryptedAssertion")]
+    #[builder(setter(strip_option))]
     pub encrypted_assertion: Option<String>,
     #[serde(rename = "Assertion")]
+    #[builder(setter(strip_option))]
     pub assertion: Option<Assertion>,
 }
 

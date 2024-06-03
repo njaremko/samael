@@ -6,7 +6,8 @@ use std::io::Cursor;
 
 const NAME: &str = "saml2:Conditions";
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
+#[builder(setter(into, strip_option))]
 pub struct Conditions {
     #[serde(rename = "@NotBefore")]
     pub not_before: Option<DateTime<Utc>>,
