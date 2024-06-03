@@ -130,7 +130,6 @@ fn build_response(
                 value: Some("urn:oasis:names:tc:SAML:2.0:status:Success".to_string()),
             },
             status_message: None,
-            status_detail: None,
         }),
         encrypted_assertion: None,
         assertion: Some(build_assertion(

@@ -517,10 +517,13 @@ pub struct Status {
     pub status_code: StatusCode,
     #[serde(rename = "StatusMessage")]
     #[builder(setter(strip_option))]
-    pub status_message: Option<StatusMessage>,
-    #[serde(rename = "StatusDetail")]
-    #[builder(setter(strip_option))]
-    pub status_detail: Option<StatusDetail>,
+    pub status_message: Option<Vec<StatusMessage>>,
+    // TODO: This currently isn't being used or supported but in the future
+    // support may be necessary. But it's invalidated XML so it really doesn't
+    // matter all that much.
+    // #[serde(rename = "StatusDetail")]
+    // #[builder(setter(strip_option))]
+    // pub status_detail: Option<Vec<StatusDetail>>,
 }
 
 impl Status {
@@ -547,7 +550,14 @@ impl TryFrom<&Status> for Event<'_> {
 
         writer.write_event(Event::Start(root))?;
         let event: Event<'_> = (&value.status_code).try_into()?;
+
         writer.write_event(event)?;
+        if let Some(messages) = value.status_message.as_ref() {
+            for msg in messages.iter() {
+                let msg_event: Event<'_> = msg.try_into()?;
+                writer.write_event(msg_event)?;
+            }
+        }
         writer.write_event(Event::End(BytesEnd::new(Status::name())))?;
         Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
             write_buf,
@@ -600,6 +610,31 @@ impl TryFrom<&StatusCode> for Event<'_> {
 pub struct StatusMessage {
     #[serde(rename = "@Value")]
     pub value: Option<String>,
+}
+
+impl StatusMessage {
+    fn name() -> &'static str {
+        "saml2p:StatusMessage"
+    }
+}
+
+impl TryFrom<&StatusMessage> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &StatusMessage) -> Result<Self, Self::Error> {
+        let mut write_buf = Vec::new();
+        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+        let mut root = BytesStart::new(StatusMessage::name());
+
+        if let Some(value) = &value.value {
+            root.push_attribute(("Value", value.as_ref()));
+        }
+
+        writer.write_event(Event::Empty(root))?;
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Builder)]
