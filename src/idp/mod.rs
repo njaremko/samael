@@ -61,6 +61,13 @@ impl IdentityProvider {
         Ok(IdentityProvider { private_key })
     }
 
+    pub fn from_private_key_pem(der_bytes: &[u8]) -> Result<Self, Error> {
+        let rsa = Rsa::private_key_from_pem(der_bytes)?;
+        let private_key = pkey::PKey::from_rsa(rsa)?;
+
+        Ok(IdentityProvider { private_key })
+    }
+
     pub fn export_private_key_der(&self) -> Result<Vec<u8>, Error> {
         let rsa: Rsa<Private> = self.private_key.rsa()?;
         Ok(rsa.private_key_to_der()?)

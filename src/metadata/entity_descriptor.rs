@@ -29,7 +29,7 @@ pub enum Entity {
 /// that only the root element of a metadata instance contain either attribute
 ///
 ///```XML
-/// 
+///
 ///     <element name="EntitiesDescriptor" type="md:EntitiesDescriptorType"/>
 ///     <complexType name="EntitiesDescriptorType">
 ///         <sequence>
