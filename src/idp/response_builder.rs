@@ -157,3 +157,6 @@ pub fn build_response_template(
         name_id, issuer, request_id, attributes, acs_url, audience, cert_der,
     )
 }
+
+
+// pub struct Response
