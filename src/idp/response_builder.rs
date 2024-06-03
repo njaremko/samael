@@ -132,14 +132,15 @@ fn build_response(
             status_message: None,
         }),
         encrypted_assertion: None,
-        assertion: Some(build_assertion(
+        assertions: Some(vec![build_assertion(
             name_id,
             request_id,
             issuer,
             destination,
             audience,
             attributes,
-        )),
+        )]),
+        encrypted_assertions: None,
     }
 }
 

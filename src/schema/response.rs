@@ -8,6 +8,8 @@ use std::io::Cursor;
 use std::str::FromStr;
 use thiserror::Error;
 
+use super::EncryptedAssertion;
+
 const NAME: &str = "saml2p:Response";
 const SCHEMA: (&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
 
@@ -41,10 +43,13 @@ pub struct Response {
     pub status: Option<Status>,
     #[serde(rename = "EncryptedAssertion")]
     #[builder(setter(strip_option))]
-    pub encrypted_assertion: Option<String>,
+    pub encrypted_assertion: Option<Vec<EncryptedAssertion>>,
     #[serde(rename = "Assertion")]
     #[builder(setter(strip_option))]
-    pub assertion: Option<Assertion>,
+    pub assertions: Option<Vec<Assertion>>,
+    #[serde(rename = "EncryptedAssertion")]
+    #[builder(setter(strip_option))]
+    pub encrypted_assertions: Option<Vec<EncryptedAssertion>>,
 }
 
 #[derive(Debug, Error)]
@@ -116,15 +121,20 @@ impl TryFrom<&Response> for Event<'_> {
             writer.write_event(event)?;
         }
 
-        if let Some(assertion) = &value.assertion {
-            let event: Event<'_> = assertion.try_into()?;
-            writer.write_event(event)?;
+        if let Some(assertions) = &value.assertions {
+            for assertion in assertions.iter() {
+                let event: Event<'_> = assertion.try_into()?;
+                writer.write_event(event)?;
+            }
         }
 
-        // TODO: encrypted assertion
-        // if let Some(assertion) = &self.encrypted_assertion {
-        //     writer.write(assertion.to_xml()?.as_bytes())?;
-        // }
+        // Handling encrypted assertions.
+        if let Some(assertions) = &value.encrypted_assertions {
+            for assertion in assertions.iter() {
+                let event: Event<'_> = assertion.try_into()?;
+                writer.write_event(event)?;
+            }
+        }
 
         writer.write_event(Event::End(BytesEnd::new(NAME)))?;
         Ok(Event::Text(BytesText::from_escaped(String::from_utf8(

@@ -308,7 +308,7 @@ impl ServiceProvider {
         &self,
         encoded_resp: &str,
         possible_request_ids: Option<&[&str]>,
-    ) -> Result<Assertion, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<Assertion>, Box<dyn std::error::Error>> {
         let bytes = general_purpose::STANDARD.decode(encoded_resp)?;
         let decoded = std::str::from_utf8(&bytes)?;
         let assertion = self.parse_xml_response(decoded, possible_request_ids)?;
@@ -319,7 +319,7 @@ impl ServiceProvider {
         &self,
         response_xml: &str,
         possible_request_ids: Option<&[&str]>,
-    ) -> Result<Assertion, Error> {
+    ) -> Result<Vec<Assertion>, Error> {
         let reduced_xml = if let Some(sign_certs) = self.idp_signing_certs()? {
             reduce_xml_to_signed(response_xml, &sign_certs)
                 .map_err(|_e| Error::FailedToValidateSignature)?
@@ -376,10 +376,13 @@ impl ServiceProvider {
         }
 
         if let Some(_encrypted_assertion) = &response.encrypted_assertion {
+            // TODO: figure out how to make sure that this works as expected.
             Err(Error::EncryptedAssertionsNotYetSupported)
-        } else if let Some(assertion) = &response.assertion {
-            self.validate_assertion(assertion, possible_request_ids)?;
-            Ok(assertion.clone())
+        } else if let Some(assertions) = &response.assertions {
+            for assertion in assertions.iter() {
+                self.validate_assertion(assertion, possible_request_ids)?;
+            }
+            Ok(assertions.clone())
         } else {
             Err(Error::UnexpectedError)
         }
