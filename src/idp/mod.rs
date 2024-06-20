@@ -1,9 +1,11 @@
 pub mod error;
 use self::error::Error;
 
+mod authentication_context_class;
 pub mod response_builder;
 pub mod sp_extractor;
 pub mod verified_request;
+pub use authentication_context_class::*;
 
 #[cfg(test)]
 mod tests;
@@ -19,6 +21,7 @@ use crate::crypto::{self};
 use crate::idp::response_builder::{build_response_template, ResponseAttribute};
 use crate::schema::Response;
 use crate::traits::ToXml;
+use chrono::{DateTime, Utc};
 
 pub struct IdentityProvider {
     private_key: pkey::PKey<Private>,
@@ -44,6 +47,19 @@ pub struct CertificateParams<'a> {
     pub common_name: &'a str,
     pub issuer_name: &'a str,
     pub days_until_expiration: u32,
+}
+
+pub struct ResponseParams<'a> {
+    pub idp_x509_cert_der: &'a [u8],
+    pub subject_name_id: &'a str,
+    pub audience: &'a str,
+    pub acs_url: &'a str,
+    pub issuer: &'a str,
+    pub in_response_to_id: &'a str,
+    pub attributes: &'a [ResponseAttribute],
+    pub authentication_context: AuthenticationContextClass,
+    pub not_before: Option<DateTime<Utc>>,
+    pub not_on_or_after: Option<DateTime<Utc>>,
 }
 
 impl IdentityProvider {
@@ -103,23 +119,9 @@ impl IdentityProvider {
 
     pub fn sign_authn_response(
         &self,
-        idp_x509_cert_der: &[u8],
-        subject_name_id: &str,
-        audience: &str,
-        acs_url: &str,
-        issuer: &str,
-        in_response_to_id: &str,
-        attributes: &[ResponseAttribute],
+        params: &ResponseParams,
     ) -> Result<Response, Box<dyn std::error::Error>> {
-        let response = build_response_template(
-            idp_x509_cert_der,
-            subject_name_id,
-            audience,
-            issuer,
-            acs_url,
-            in_response_to_id,
-            attributes,
-        );
+        let response = build_response_template(params);
 
         let response_xml_unsigned = response.to_xml()?;
         let signed_xml = crypto::sign_xml(
