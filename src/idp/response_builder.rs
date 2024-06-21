@@ -37,9 +37,9 @@ fn build_authn_statement(class: AuthenticationContextClass) -> AuthnStatement {
     }
 }
 
-pub struct ResponseAttribute<'a> {
+pub struct ResponseAttribute {
     pub required_attribute: RequiredAttribute,
-    pub value: &'a str,
+    pub values: Vec<String>,
 }
 
 fn build_attributes(formats_names_values: &[ResponseAttribute]) -> Vec<Attribute> {
@@ -49,10 +49,14 @@ fn build_attributes(formats_names_values: &[ResponseAttribute]) -> Vec<Attribute
             friendly_name: None,
             name: Some(attr.required_attribute.name.clone()),
             name_format: attr.required_attribute.format.clone(),
-            values: vec![AttributeValue {
-                attribute_type: Some("xs:string".to_string()),
-                value: Some(attr.value.to_string()),
-            }],
+            values: attr
+                .values
+                .iter()
+                .map(|value| AttributeValue {
+                    attribute_type: Some("xs:string".to_string()),
+                    value: Some(value.to_string()),
+                })
+                .collect(),
         })
         .collect()
 }
