@@ -1,6 +1,6 @@
 [package]
 name = "samael"
-version = "0.0.15"
+version = "0.0.16"
 authors = ["Nathan Jaremko <nathan@jaremko.ca>"]
 edition = "2021"
 license = "MIT"
@@ -28,7 +28,7 @@ openssl = "^0.10.0"
 openssl-sys = "^0.9.0"
 openssl-probe = "^0.1.2"
 url = "^2.1.1"
-quick-xml = { version = "^0.31.0", features = ["serialize"] }
+quick-xml = { version = "^0.33.0", features = ["serialize"] }
 serde = { version = "^1.0.0", features = ["derive"] }
 chrono = { version = "^0.4.0", features = ["serde"] }
 base64 = "^0.22.0"

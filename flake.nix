@@ -7,7 +7,6 @@
       url = "github:oxalica/rust-overlay";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "flake-utils";
       };
     };
     crane = {
@@ -62,8 +61,11 @@
             src = ./.;
             filter = sourceAndFixtures;
           };
+          cargoFile = builtins.fromTOML (builtins.readFile ./Cargo.toml);
           commonArgs = {
+            pname = "samael";
             inherit src;
+            version = cargoFile.package.version;
 
             # Need to tell bindgen where to find libclang
             LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
