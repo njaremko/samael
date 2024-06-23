@@ -723,9 +723,7 @@ impl LogoutResponse {
 
 #[cfg(test)]
 mod test {
-    use super::issuer::Issuer;
-    use super::{LogoutRequest, LogoutResponse, NameID, Status, StatusCode};
-    use chrono::TimeZone;
+    use super::{LogoutRequest, LogoutResponse};
 
     #[test]
     fn test_deserialize_serialize_logout_request() {
