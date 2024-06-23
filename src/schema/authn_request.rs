@@ -1,4 +1,4 @@
-use crate::schema::{Conditions, Issuer, NameIdPolicy, Subject};
+use crate::schema::{Conditions, Issuer, NameIdPolicy, RequestedAuthnContext, Subject};
 use crate::signature::Signature;
 use chrono::prelude::*;
 use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
@@ -36,6 +36,8 @@ pub struct AuthnRequest {
     pub name_id_policy: Option<NameIdPolicy>,
     #[serde(rename = "Conditions")]
     pub conditions: Option<Conditions>,
+    #[serde(rename = "RequestedAuthnContext")]
+    pub requested_authn_context: Option<RequestedAuthnContext>,
     #[serde(rename = "@ForceAuthn")]
     pub force_authn: Option<bool>,
     #[serde(rename = "@IsPassive")]
@@ -65,6 +67,7 @@ impl Default for AuthnRequest {
             subject: None,
             name_id_policy: None,
             conditions: None,
+            requested_authn_context: None,
             force_authn: None,
             is_passive: None,
             assertion_consumer_service_index: None,
@@ -219,6 +222,10 @@ impl TryFrom<&AuthnRequest> for Event<'_> {
             let event: Event<'_> = conditions.try_into()?;
             writer.write_event(event)?;
         }
+        if let Some(requested_authn_context) = &value.requested_authn_context {
+            let event: Event<'_> = requested_authn_context.try_into()?;
+            writer.write_event(event)?;
+        }
 
         writer.write_event(Event::End(BytesEnd::new(NAME)))?;
 
@@ -283,6 +290,9 @@ mod test {
             "/test_vectors/authn_request_sign_template.xml"
         ));
 
+        let private_key = openssl::rsa::Rsa::private_key_from_der(private_key).unwrap();
+        let private_key = openssl::pkey::PKey::from_rsa(private_key).unwrap();
+
         let signed_authn_redirect_url = authn_request_sign_template
             .parse::<AuthnRequest>()?
             .signed_redirect("", private_key)?
@@ -310,6 +320,9 @@ mod test {
             env!("CARGO_MANIFEST_DIR"),
             "/test_vectors/authn_request_sign_template.xml"
         ));
+
+        let private_key = openssl::rsa::Rsa::private_key_from_der(private_key).unwrap();
+        let private_key = openssl::pkey::PKey::from_rsa(private_key).unwrap();
 
         let signed_authn_redirect_url = authn_request_sign_template
             .parse::<AuthnRequest>()?
@@ -339,6 +352,9 @@ mod test {
             env!("CARGO_MANIFEST_DIR"),
             "/test_vectors/authn_request_sign_template.xml"
         ));
+
+        let private_key = openssl::rsa::Rsa::private_key_from_der(private_key).unwrap();
+        let private_key = openssl::pkey::PKey::from_rsa(private_key).unwrap();
 
         let signed_authn_redirect_url = authn_request_sign_template
             .parse::<AuthnRequest>()?

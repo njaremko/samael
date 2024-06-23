@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"
+  entityID="https://fujifish.github.io/samling/samling.html">
+  <md:IDPSSODescriptor WantAuthnRequestsSigned="false"
+    protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <md:KeyDescriptor use="signing">
+      <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <ds:X509Data>
+          <ds:X509Certificate>
+            MIIBhzCCAS0CFGE3kR43hTxJz3hg+bsefDiZjTSiMAoGCCqGSM49BAMCMEUxCzAJ
+            BgNVBAYTAkNBMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5l
+            dCBXaWRnaXRzIFB0eSBMdGQwIBcNMjQwNjIzMTc0NTQ5WhgPMzAyMzEwMjUxNzQ1
+            NDlaMEUxCzAJBgNVBAYTAkNBMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQK
+            DBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwWTATBgcqhkjOPQIBBggqhkjOPQMB
+            BwNCAATKNT2CQbh99zdbDIsXZDiWZGUyafCXMl3fWAe/moGDviPWQpJpBYNkSRMc
+            W3iDsCoiVFGoO3+7167FU1rlEurGMAoGCCqGSM49BAMCA0gAMEUCIQCdW4SacWlI
+            qj04IXo5QNWgbIrG6MKcXbvWEXDmMkiIewIgHkDlDn8Aq4reI+4BvUN+ZDmvOs1I
+            UevJyxGd/2RkolE=
+          </ds:X509Certificate>
+        </ds:X509Data>
+      </ds:KeyInfo>
+    </md:KeyDescriptor>
+    <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+      Location="https://fujifish.github.io/samling/samling.html" />
+    <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
+    <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+      Location="https://fujifish.github.io/samling/samling.html" />
+  </md:IDPSSODescriptor>
+</md:EntityDescriptor>
