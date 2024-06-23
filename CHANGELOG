@@ -2,6 +2,11 @@
 
 ### Unreleased
 
+### 0.0.16
+
+- Add support for basic `RequestedAuthnContext` de-/serialization in `AuthnRequest`
+- Add support for Elliptic-curve cryptography
+- Use enum for signature and digest algorithm
 - Add EntityDescriptorType enum to allow parsing of arbitrarily nested EntityDescriptors and EntitiesDescriptors
 
 ### 0.0.15

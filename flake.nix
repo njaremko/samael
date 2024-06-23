@@ -1,13 +1,12 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
     flake-utils.url = "github:numtide/flake-utils";
     nix-filter.url = "github:numtide/nix-filter";
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "flake-utils";
       };
     };
     crane = {
@@ -62,8 +61,11 @@
             src = ./.;
             filter = sourceAndFixtures;
           };
+          cargoFile = builtins.fromTOML (builtins.readFile ./Cargo.toml);
           commonArgs = {
+            pname = "samael";
             inherit src;
+            version = cargoFile.package.version;
 
             # Need to tell bindgen where to find libclang
             LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
@@ -118,9 +120,6 @@
 
             buildInputs = with pkgs; [ rust-dev-toolchain nixpkgs-fmt ];
             nativeBuildInputs = commonNativeBuildInputs;
-            shellHook = ''
-              export DIRENV_LOG_FORMAT=""
-            '';
           };
 
           checks = {
@@ -157,6 +156,8 @@
             # the tests to run twice
             samael-nextest = craneLib.cargoNextest (commonArgs // {
               inherit cargoArtifacts;
+              cargoExtraArgs = "";
+              cargoNextestExtraArgs = "--features xmlsec";
               partitions = 1;
               partitionType = "count";
             });
