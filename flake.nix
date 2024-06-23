@@ -156,6 +156,8 @@
             # the tests to run twice
             samael-nextest = craneLib.cargoNextest (commonArgs // {
               inherit cargoArtifacts;
+              cargoExtraArgs = "";
+              cargoNextestExtraArgs = "--features xmlsec";
               partitions = 1;
               partitionType = "count";
             });

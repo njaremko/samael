@@ -20,3 +20,29 @@ xmlsec1 --verify --trusted-der public.der --id-attr:ID Response response_signed_
 ```
 
 Both `response_signed_by_idp_2.xml` and `authn_request_sign_template.xml` are used in unit tests, where `authn_request_sign_template.xml` is signed in the test.
+
+To generate `response_signed_by_idp_ecdsa.xml`:
+
+```bash
+xmlsec1 --sign --privkey-der ec_private.der,ec_cert.der --output response_signed_by_idp_ecdsa.xml --id-attr:ID Response response_signed__ecdsa-template.xml
+```
+
+How the EC stuff was generated:
+
+```bash
+# Step 1: Generate ECDSA Private Key
+openssl ecparam -genkey -name prime256v1 -out ec_private.pem
+
+# Step 2: Create a Certificate Signing Request (CSR)
+openssl req -new -key ec_private.pem -out ec_csr.pem
+
+# Step 3: Self-Sign the CSR to Create an X.509 Certificate
+openssl x509 -req -in ec_csr.pem -signkey ec_private.pem -out ec_cert.pem -days 365000
+
+# Step 4: Convert the Private Key and Certificate to DER Format
+openssl pkcs8 -topk8 -inform PEM -outform DER -in ec_private.pem -out ec_private.der -nocrypt
+openssl x509 -in ec_cert.pem -outform DER -out ec_cert.der
+
+# Step 5: Use the Private Key and Certificate with xmlsec1
+xmlsec1 --sign --privkey-der ec_private.der,ec_cert.der --output response_signed_by_idp_ecdsa.xml --id-attr:ID Response response_signed_template.xml
+```

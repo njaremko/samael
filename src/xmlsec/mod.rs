@@ -12,6 +12,7 @@
 #[doc(hidden)]
 pub use libxml::tree::document::Document as XmlDocument;
 #[doc(hidden)]
+#[allow(unused)]
 pub use libxml::tree::node::Node as XmlNode;
 
 mod backend;
