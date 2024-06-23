@@ -37,7 +37,7 @@ fn test_extract_sp() {
 #[test]
 fn test_signed_response() {
     // init our IdP
-    let idp = IdentityProvider::from_private_key_der(include_bytes!(
+    let idp = IdentityProvider::from_rsa_private_key_der(include_bytes!(
         "../../test_vectors/idp_private_key.der"
     ))
     .expect("failed to create idp");
@@ -135,7 +135,7 @@ fn test_signed_response_threads() {
 
 #[test]
 fn test_signed_response_fingerprint() {
-    let idp = IdentityProvider::from_private_key_der(include_bytes!(
+    let idp = IdentityProvider::from_rsa_private_key_der(include_bytes!(
         "../../test_vectors/idp_private_key.der"
     ))
     .expect("failed to create idp");

@@ -5,6 +5,7 @@ use std::ffi::CString;
 use std::str::FromStr;
 use thiserror::Error;
 
+use crate::signature::SignatureAlgorithm;
 #[cfg(feature = "xmlsec")]
 use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
 #[cfg(feature = "xmlsec")]
@@ -223,6 +224,7 @@ fn get_elements_by_predicate<F: FnMut(&libxml::tree::Node) -> bool>(
 /// Searches for and returns the element with the given value of the `ID` attribute from the subtree
 /// rooted at the given node.
 #[cfg(feature = "xmlsec")]
+#[allow(unused)]
 fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree::Node> {
     let mut elems = get_elements_by_predicate(elem, |node| {
         node.get_attribute("ID")
@@ -486,24 +488,6 @@ pub fn gen_saml_assertion_id() -> String {
     format!("_{}", uuid::Uuid::new_v4())
 }
 
-#[derive(Debug, PartialEq)]
-enum SigAlg {
-    Unimplemented,
-    RsaSha256,
-    EcdsaSha256,
-}
-
-impl FromStr for SigAlg {
-    type Err = Box<dyn std::error::Error>;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" => Ok(SigAlg::RsaSha256),
-            "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256" => Ok(SigAlg::EcdsaSha256),
-            _ => Ok(SigAlg::Unimplemented),
-        }
-    }
-}
-
 #[derive(Debug, Error, Clone)]
 pub enum UrlVerifierError {
     #[error("Unimplemented SigAlg: {:?}", sigalg)]
@@ -621,11 +605,9 @@ impl UrlVerifier {
             .collect::<HashMap<String, String>>();
 
         // Match against implemented SigAlg
-        let sig_alg: SigAlg = SigAlg::from_str(&query_params["SigAlg"])?;
-        if sig_alg == SigAlg::Unimplemented {
-            return Err(Box::new(UrlVerifierError::SigAlgUnimplemented {
-                sigalg: query_params["SigAlg"].clone(),
-            }));
+        let sig_alg = SignatureAlgorithm::from_str(&query_params["SigAlg"])?;
+        if let SignatureAlgorithm::Unsupported(sigalg) = sig_alg {
+            return Err(Box::new(UrlVerifierError::SigAlgUnimplemented { sigalg }));
         }
 
         // Construct a Url so that percent encoded query can be easily
@@ -668,13 +650,13 @@ impl UrlVerifier {
     fn verify_signature(
         &self,
         data: &[u8],
-        sig_alg: SigAlg,
+        sig_alg: SignatureAlgorithm,
         signature: &[u8],
     ) -> Result<bool, Box<dyn std::error::Error>> {
         let mut verifier = openssl::sign::Verifier::new(
             match sig_alg {
-                SigAlg::RsaSha256 => openssl::hash::MessageDigest::sha256(),
-                SigAlg::EcdsaSha256 => openssl::hash::MessageDigest::sha256(),
+                SignatureAlgorithm::RsaSha256 => openssl::hash::MessageDigest::sha256(),
+                SignatureAlgorithm::EcdsaSha256 => openssl::hash::MessageDigest::sha256(),
                 _ => panic!("sig_alg is bad!"),
             },
             &self.public_key,
