@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
     flake-utils.url = "github:numtide/flake-utils";
     nix-filter.url = "github:numtide/nix-filter";
     rust-overlay = {
@@ -118,9 +118,6 @@
 
             buildInputs = with pkgs; [ rust-dev-toolchain nixpkgs-fmt ];
             nativeBuildInputs = commonNativeBuildInputs;
-            shellHook = ''
-              export DIRENV_LOG_FORMAT=""
-            '';
           };
 
           checks = {
