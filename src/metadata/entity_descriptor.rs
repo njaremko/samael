@@ -7,6 +7,7 @@ use chrono::prelude::*;
 use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
+use std::collections::VecDeque;
 use std::io::Cursor;
 use std::str::FromStr;
 use thiserror::Error;
@@ -29,18 +30,8 @@ pub enum EntityDescriptorType {
 }
 
 impl EntityDescriptorType {
-    pub fn take_first(self) -> Option<EntityDescriptor> {
-        match self {
-            EntityDescriptorType::EntitiesDescriptor(descriptor) => descriptor
-                .descriptors
-                .into_iter()
-                .next()
-                .and_then(|descriptor_type| match descriptor_type {
-                    EntityDescriptorType::EntitiesDescriptor(_) => None,
-                    EntityDescriptorType::EntityDescriptor(descriptor) => Some(descriptor),
-                }),
-            EntityDescriptorType::EntityDescriptor(descriptor) => Some(descriptor),
-        }
+    pub fn iter(&self) -> EntityDescriptorIterator {
+        EntityDescriptorIterator::new(self)
     }
 }
 
@@ -284,6 +275,39 @@ impl TryFrom<&EntityDescriptor> for Event<'_> {
     }
 }
 
+#[derive(Clone)]
+pub struct EntityDescriptorIterator<'a> {
+    queue: VecDeque<&'a EntityDescriptorType>,
+}
+
+impl<'a> EntityDescriptorIterator<'a> {
+    pub fn new(root: &'a EntityDescriptorType) -> Self {
+        let mut queue = VecDeque::new();
+        queue.push_back(root);
+        EntityDescriptorIterator { queue }
+    }
+}
+
+impl<'a> Iterator for EntityDescriptorIterator<'a> {
+    type Item = &'a EntityDescriptor;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(current) = self.queue.pop_front() {
+            match current {
+                EntityDescriptorType::EntitiesDescriptor(entities_descriptor) => {
+                    for descriptor in &entities_descriptor.descriptors {
+                        self.queue.push_back(descriptor);
+                    }
+                }
+                EntityDescriptorType::EntityDescriptor(entity_descriptor) => {
+                    return Some(entity_descriptor);
+                }
+            }
+        }
+        None
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::traits::ToXml;
@@ -345,6 +369,7 @@ mod test {
             .parse()
             .expect("Failed to parse EntitiesDescriptor");
 
+        assert_eq!(2, reparsed_entities_descriptor.descriptors.len());
         assert_eq!(reparsed_entities_descriptor, entities_descriptor);
     }
 
@@ -369,11 +394,12 @@ mod test {
         let expected_entity_descriptor: EntityDescriptor = input_xml
             .parse()
             .expect("Failed to parse idp_metadata.xml into an EntityDescriptor");
-        let entity_descriptor: EntityDescriptor = entity_descriptor_type
-            .take_first()
+        let entity_descriptor = entity_descriptor_type
+            .iter()
+            .next()
             .expect("Failed to take first EntityDescriptor from EntityDescriptorType");
 
-        assert_eq!(expected_entity_descriptor, entity_descriptor);
+        assert_eq!(&expected_entity_descriptor, entity_descriptor);
     }
 
     #[test]
@@ -401,11 +427,12 @@ mod test {
         let expected_entity_descriptor: EntityDescriptor = input_xml
             .parse()
             .expect("Failed to parse idp_metadata.xml into an EntityDescriptor");
-        let entity_descriptor: EntityDescriptor = entity_descriptor_type
-            .take_first()
+        let entity_descriptor = entity_descriptor_type
+            .iter()
+            .next()
             .expect("Failed to take first EntityDescriptor from EntityDescriptorType");
         println!("{entity_descriptor:#?}");
 
-        assert_eq!(expected_entity_descriptor, entity_descriptor);
+        assert_eq!(&expected_entity_descriptor, entity_descriptor);
     }
 }
