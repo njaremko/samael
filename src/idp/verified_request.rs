@@ -18,7 +18,7 @@ impl<'a> UnverifiedAuthnRequest<'a> {
         })
     }
 
-    pub fn get_certs_der(&self) -> Result<Vec<Vec<u8>>, Error> {
+    fn get_certs_der(&self) -> Result<Vec<Vec<u8>>, Error> {
         let x509_certs = self
             .request
             .signature
@@ -26,13 +26,11 @@ impl<'a> UnverifiedAuthnRequest<'a> {
             .ok_or(Error::NoSignature)?
             .key_info
             .as_ref()
-            .map(|ki| ki.iter().next()) // TODO: why only the first key?
-            .unwrap_or(None)
+            .map(|ki| ki.iter())
             .ok_or(Error::NoKeyInfo)?
-            .x509_data
-            .iter()
+            .flat_map(|d| d.x509_data.as_ref())
             .flat_map(|d| d.certificates.iter())
-            .map(|cert| crypto::decode_x509_cert(cert.as_str()))
+            .map(|cert| crypto::decode_x509_cert(cert))
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_| Error::InvalidCertificateEncoding)?;
 
@@ -49,7 +47,7 @@ impl<'a> UnverifiedAuthnRequest<'a> {
             .into_iter()
             .map(|der_cert| Ok(verify_signed_xml(xml, &der_cert, Some("ID"))?))
             .reduce(|a, b| a.or(b))
-            .unwrap()
+            .ok_or(Error::UnexpectedError)?
             .map(|()| VerifiedAuthnRequest(self.request))
     }
 
