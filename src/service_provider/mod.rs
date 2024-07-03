@@ -511,7 +511,7 @@ fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<x509::X509>,
 
 impl AuthnRequest {
     pub fn post(&self, relay_state: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let encoded = general_purpose::STANDARD.encode(self.to_xml()?.as_bytes());
+        let encoded = general_purpose::STANDARD.encode(self.to_string()?.as_bytes());
         if let Some(dest) = &self.destination {
             Ok(Some(format!(
                 r#"
@@ -536,7 +536,7 @@ impl AuthnRequest {
         let mut compressed_buf = vec![];
         {
             let mut encoder = DeflateEncoder::new(&mut compressed_buf, Compression::default());
-            encoder.write_all(self.to_xml()?.as_bytes())?;
+            encoder.write_all(self.to_string()?.as_bytes())?;
         }
         let encoded = general_purpose::STANDARD.encode(&compressed_buf);
 

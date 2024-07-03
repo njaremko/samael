@@ -131,7 +131,7 @@ impl AuthnRequest {
     ) -> Result<String, Box<dyn std::error::Error>> {
         use crate::traits::ToXml;
 
-        crypto::sign_xml(self.to_xml()?, private_key_der)
+        crypto::sign_xml(self.to_string()?, private_key_der)
             .map_err(|crypto_error| Box::new(crypto_error) as Box<dyn std::error::Error>)
     }
 }

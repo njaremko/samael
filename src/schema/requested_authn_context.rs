@@ -111,7 +111,7 @@ mod test {
         let expected_context: RequestedAuthnContext =
             quick_xml::de::from_str(xml_context).expect("failed to parse RequestedAuthnContext");
         let serialized_context = expected_context
-            .to_xml()
+            .to_string()
             .expect("failed to convert RequestedAuthnContext to xml");
         let actual_context: RequestedAuthnContext = quick_xml::de::from_str(&serialized_context)
             .expect("failed to re-parse RequestedAuthnContext");

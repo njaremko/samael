@@ -96,7 +96,7 @@ mod test {
             .try_verify_self_signed()
             .expect("failed to verify self signed signature");
         let verified_request_xml = expected_verified
-            .to_xml()
+            .to_string()
             .expect("Failed to serialize verified authn request");
         let reparsed_unverified =
             UnverifiedAuthnRequest::from_xml(&verified_request_xml).expect("failed to parse");

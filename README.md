@@ -119,7 +119,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .slo_url("http://localhost:8080/saml/slo".to_string())
         .build()?;
 
-    let metadata = sp.metadata()?.to_xml()?;
+    let metadata = sp.metadata()?.to_string()?;
 
     let metadata_route = warp::get()
         .and(warp::path("metadata"))

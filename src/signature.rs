@@ -584,7 +584,7 @@ mod test {
 </ds:Signature>
 "##;
         let deserialized: Signature = quick_xml::de::from_str(signature)?;
-        let serialized = deserialized.to_xml()?;
+        let serialized = deserialized.to_string()?;
         let re_deserialized: Signature = quick_xml::de::from_str(&serialized)?;
         assert_eq!(deserialized, re_deserialized);
 
@@ -599,7 +599,7 @@ mod test {
 <ds:Reference URI="#pfxe33e94d1-ae1f-a607-5c5d-f0fd9d1bd963"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue/></ds:Reference></ds:SignedInfo>
 "##;
         let deserialized: SignedInfo = quick_xml::de::from_str(signed_info)?;
-        let serialized = deserialized.to_xml()?;
+        let serialized = deserialized.to_string()?;
         let re_deserialized: SignedInfo = quick_xml::de::from_str(&serialized)?;
         assert_eq!(deserialized, re_deserialized);
 
@@ -612,7 +612,7 @@ mod test {
             r#"<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>"#;
         let deserialized: CanonicalizationMethod =
             quick_xml::de::from_str(canonicalization_method)?;
-        let serialized = deserialized.to_xml()?;
+        let serialized = deserialized.to_string()?;
         let re_deserialized: CanonicalizationMethod = quick_xml::de::from_str(&serialized)?;
         assert_eq!(deserialized, re_deserialized);
 
@@ -623,13 +623,13 @@ mod test {
     pub fn test_signaturemethod_deserialization() -> Result<(), Box<dyn std::error::Error>> {
         let signature_method = r#"<ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>"#;
         let deserialized: SignatureMethod = quick_xml::de::from_str(signature_method)?;
-        let serialized = deserialized.to_xml()?;
+        let serialized = deserialized.to_string()?;
         let re_deserialized: SignatureMethod = quick_xml::de::from_str(&serialized)?;
         assert_eq!(deserialized, re_deserialized);
 
         let algo = r#"<ds:SignatureMethod Algorithm="UNSUPPORTED" />"#;
         let deserialized: SignatureMethod = quick_xml::de::from_str(algo)?;
-        let serialized = deserialized.to_xml()?;
+        let serialized = deserialized.to_string()?;
         let re_deserialized: SignatureMethod = quick_xml::de::from_str(&serialized)?;
         assert_eq!(deserialized, re_deserialized);
 
@@ -640,7 +640,7 @@ mod test {
     pub fn test_transform_deserialization() -> Result<(), Box<dyn std::error::Error>> {
         let transforms = r#"<ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms>"#;
         let deserialized: Transforms = quick_xml::de::from_str(transforms)?;
-        let serialized = deserialized.to_xml()?;
+        let serialized = deserialized.to_string()?;
         let re_deserialized: Transforms = quick_xml::de::from_str(&serialized)?;
         assert_eq!(deserialized, re_deserialized);
 
@@ -652,13 +652,13 @@ mod test {
         let digest_method =
             r#"<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />"#;
         let deserialized: DigestMethod = quick_xml::de::from_str(digest_method)?;
-        let serialized = deserialized.to_xml()?;
+        let serialized = deserialized.to_string()?;
         let re_deserialized: DigestMethod = quick_xml::de::from_str(&serialized)?;
         assert_eq!(deserialized, re_deserialized);
 
         let digest_method = r#"<ds:DigestMethod Algorithm="UNSUPPORTED" />"#;
         let deserialized: DigestMethod = quick_xml::de::from_str(digest_method)?;
-        let serialized = deserialized.to_xml()?;
+        let serialized = deserialized.to_string()?;
         let re_deserialized: DigestMethod = quick_xml::de::from_str(&serialized)?;
         assert_eq!(deserialized, re_deserialized);
 

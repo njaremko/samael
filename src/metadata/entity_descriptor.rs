@@ -325,7 +325,7 @@ mod test {
             .parse()
             .expect("Failed to parse sp_metadata.xml into an EntityDescriptor");
         let output_xml = entity_descriptor
-            .to_xml()
+            .to_string()
             .expect("Failed to convert EntityDescriptor to xml");
         let reparsed_entity_descriptor: EntityDescriptor = output_xml
             .parse()
@@ -344,7 +344,7 @@ mod test {
             .parse()
             .expect("Failed to parse idp_metadata.xml into an EntityDescriptor");
         let output_xml = entity_descriptor
-            .to_xml()
+            .to_string()
             .expect("Failed to convert EntityDescriptor to xml");
         let reparsed_entity_descriptor: EntityDescriptor = output_xml
             .parse()
@@ -363,7 +363,7 @@ mod test {
             .parse()
             .expect("Failed to parse idp_metadata_nested.xml into an EntitiesDescriptor");
         let output_xml = entities_descriptor
-            .to_xml()
+            .to_string()
             .expect("Failed to convert EntitiesDescriptor to xml");
         let reparsed_entities_descriptor: EntitiesDescriptor = output_xml
             .parse()
@@ -383,7 +383,7 @@ mod test {
             .parse()
             .expect("Failed to parse idp_metadata.xml into an EntityDescriptorType");
         let output_xml = entity_descriptor_type
-            .to_xml()
+            .to_string()
             .expect("Failed to convert EntityDescriptorType to xml");
         let reparsed_entity_descriptor_type: EntityDescriptorType = output_xml
             .parse()
@@ -412,7 +412,7 @@ mod test {
             .parse()
             .expect("Failed to parse idp_metadata_nested.xml into an EntityDescriptorType");
         let output_xml = entity_descriptor_type
-            .to_xml()
+            .to_string()
             .expect("Failed to convert EntityDescriptorType to xml");
         let reparsed_entity_descriptor_type: EntityDescriptorType = output_xml
             .parse()

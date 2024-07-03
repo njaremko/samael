@@ -149,7 +149,7 @@ impl IdentityProvider {
             attributes,
         );
 
-        let response_xml_unsigned = response.to_xml()?;
+        let response_xml_unsigned = response.to_string()?;
         let signed_xml = crypto::sign_xml(
             response_xml_unsigned.as_str(),
             self.export_private_key_der()?.as_slice(),

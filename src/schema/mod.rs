@@ -112,21 +112,31 @@ const LOGOUT_REQUEST_NAME: &str = "saml2p:LogoutRequest";
 const SESSION_INDEX_NAME: &str = "saml2p:SessionIndex";
 const PROTOCOL_SCHEMA: (&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
 
-impl LogoutRequest {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+impl TryFrom<LogoutRequest> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: LogoutRequest) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&LogoutRequest> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &LogoutRequest) -> Result<Self, Self::Error> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
         writer.write_event(Event::Decl(BytesDecl::new("1.0", Some("UTF-8"), None)))?;
 
         let mut root = BytesStart::new(LOGOUT_REQUEST_NAME);
         root.push_attribute(PROTOCOL_SCHEMA);
-        if let Some(id) = &self.id {
+        if let Some(id) = &value.id {
             root.push_attribute(("ID", id.as_ref()));
         }
-        if let Some(version) = &self.version {
+        if let Some(version) = &value.version {
             root.push_attribute(("Version", version.as_ref()));
         }
-        if let Some(issue_instant) = &self.issue_instant {
+        if let Some(issue_instant) = &value.issue_instant {
             root.push_attribute((
                 "IssueInstant",
                 issue_instant
@@ -134,33 +144,35 @@ impl LogoutRequest {
                     .as_ref(),
             ));
         }
-        if let Some(destination) = &self.destination {
+        if let Some(destination) = &value.destination {
             root.push_attribute(("Destination", destination.as_ref()));
         }
 
         writer.write_event(Event::Start(root))?;
 
-        if let Some(issuer) = &self.issuer {
+        if let Some(issuer) = &value.issuer {
             let event: Event<'_> = issuer.try_into()?;
             writer.write_event(event)?;
         }
-        if let Some(signature) = &self.signature {
+        if let Some(signature) = &value.signature {
             let event: Event<'_> = signature.try_into()?;
             writer.write_event(event)?;
         }
 
-        if let Some(session) = &self.session_index {
+        if let Some(session) = &value.session_index {
             writer.write_event(Event::Start(BytesStart::new(SESSION_INDEX_NAME)))?;
             writer.write_event(Event::Text(BytesText::new(session)))?;
             writer.write_event(Event::End(BytesEnd::new(SESSION_INDEX_NAME)))?;
         }
-        if let Some(name_id) = &self.name_id {
+        if let Some(name_id) = &value.name_id {
             let event: Event<'_> = name_id.try_into()?;
             writer.write_event(event)?;
         }
 
         writer.write_event(Event::End(BytesEnd::new(LOGOUT_REQUEST_NAME)))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
     }
 }
 
@@ -668,24 +680,34 @@ impl FromStr for LogoutResponse {
 
 const LOGOUT_RESPONSE_NAME: &str = "saml2p:LogoutResponse";
 
-impl LogoutResponse {
-    pub fn to_xml(&self) -> Result<String, Box<dyn std::error::Error>> {
+impl TryFrom<LogoutResponse> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: LogoutResponse) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&LogoutResponse> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &LogoutResponse) -> Result<Self, Self::Error> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
         writer.write_event(Event::Decl(BytesDecl::new("1.0", Some("UTF-8"), None)))?;
 
         let mut root = BytesStart::new(LOGOUT_RESPONSE_NAME);
         root.push_attribute(PROTOCOL_SCHEMA);
-        if let Some(id) = &self.id {
+        if let Some(id) = &value.id {
             root.push_attribute(("ID", id.as_ref()));
         }
-        if let Some(resp_to) = &self.in_response_to {
+        if let Some(resp_to) = &value.in_response_to {
             root.push_attribute(("InResponseTo", resp_to.as_ref()));
         }
-        if let Some(version) = &self.version {
+        if let Some(version) = &value.version {
             root.push_attribute(("Version", version.as_ref()));
         }
-        if let Some(issue_instant) = &self.issue_instant {
+        if let Some(issue_instant) = &value.issue_instant {
             root.push_attribute((
                 "IssueInstant",
                 issue_instant
@@ -693,37 +715,40 @@ impl LogoutResponse {
                     .as_ref(),
             ));
         }
-        if let Some(destination) = &self.destination {
+        if let Some(destination) = &value.destination {
             root.push_attribute(("Destination", destination.as_ref()));
         }
-        if let Some(consent) = &self.consent {
+        if let Some(consent) = &value.consent {
             root.push_attribute(("Consent", consent.as_ref()));
         }
 
         writer.write_event(Event::Start(root))?;
 
-        if let Some(issuer) = &self.issuer {
+        if let Some(issuer) = &value.issuer {
             let event: Event<'_> = issuer.try_into()?;
             writer.write_event(event)?;
         }
-        if let Some(signature) = &self.signature {
+        if let Some(signature) = &value.signature {
             let event: Event<'_> = signature.try_into()?;
             writer.write_event(event)?;
         }
 
-        if let Some(status) = &self.status {
+        if let Some(status) = &value.status {
             let event: Event<'_> = status.try_into()?;
             writer.write_event(event)?;
         }
 
         writer.write_event(Event::End(BytesEnd::new(LOGOUT_RESPONSE_NAME)))?;
-        Ok(String::from_utf8(write_buf)?)
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::{LogoutRequest, LogoutResponse};
+    use crate::traits::ToXml;
 
     #[test]
     fn test_deserialize_serialize_logout_request() {
@@ -735,7 +760,7 @@ mod test {
             .parse()
             .expect("failed to parse logout_request.xml");
         let serialized_request = expected_request
-            .to_xml()
+            .to_string()
             .expect("failed to convert request to xml");
         let actual_request: LogoutRequest = serialized_request
             .parse()
@@ -754,7 +779,7 @@ mod test {
             .parse()
             .expect("failed to parse logout_response.xml");
         let serialized_response = expected_response
-            .to_xml()
+            .to_string()
             .expect("failed to convert Response to xml");
         let actual_response: LogoutResponse = serialized_response
             .parse()
