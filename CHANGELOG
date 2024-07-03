@@ -2,6 +2,10 @@
 
 ### Unreleased
 
+### 0.0.17
+
+- Expose the `ToXml` trait
+
 ### 0.0.16
 
 - Add support for basic `RequestedAuthnContext` de-/serialization in `AuthnRequest`
