@@ -4,8 +4,13 @@ use std::{fmt::Debug, io::Cursor, str::Utf8Error};
 pub trait ToXml<'a> {
     type Error;
 
+    /// Serialize the data structure as a String of XML.
     fn to_string(&'a self) -> Result<String, Self::Error>;
+
+    /// Serialize the data structure as an XML byte vector.
     fn to_vec(&'a self) -> Result<Vec<u8>, Self::Error>;
+
+    /// Serialize the data structure as XML into the I/O stream.
     fn to_writer(&'a self, writer: impl std::io::Write) -> Result<(), Self::Error>;
 }
 
