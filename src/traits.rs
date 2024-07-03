@@ -17,26 +17,21 @@ where
     type Error = <&'a FromType as TryInto<Event<'a>>>::Error;
 
     fn to_string(&'a self) -> Result<String, Self::Error> {
-        let mut v = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut v));
-        let e: Event<'a> = self.try_into()?;
-        writer.write_event(e)?;
+        let v = self.to_vec()?;
         let output = std::str::from_utf8(v.as_slice())?.to_string();
         Ok(output)
     }
 
     fn to_vec(&'a self) -> Result<Vec<u8>, Self::Error> {
         let mut v = Vec::new();
-        let mut writer = Writer::new(Cursor::new(&mut v));
-        let e: Event<'a> = self.try_into()?;
-        writer.write_event(e)?;
+        self.to_writer(Cursor::new(&mut v))?;
         Ok(v)
     }
 
     fn to_writer(&'a self, writer: impl std::io::Write) -> Result<(), Self::Error> {
-        let mut writer = Writer::new(writer);
+        let mut xml_writer = Writer::new(writer);
         let e: Event<'a> = self.try_into()?;
-        writer.write_event(e)?;
+        xml_writer.write_event(e)?;
         Ok(())
     }
 }
