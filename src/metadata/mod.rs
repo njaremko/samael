@@ -162,6 +162,26 @@ pub struct IdpSsoDescriptor {
     pub attributes: Vec<Attribute>,
 }
 
+impl IdpSsoDescriptor {
+    pub fn sso_binding_location(&self, binding: &str) -> Option<String> {
+        for sso_service in &self.single_sign_on_services {
+            if sso_service.binding == binding {
+                return Some(sso_service.location.clone());
+            }
+        }
+        None
+    }
+
+    pub fn slo_binding_location(&self, binding: &str) -> Option<String> {
+        for single_logout_services in &self.single_logout_services {
+            if single_logout_services.binding == binding {
+                return Some(single_logout_services.location.clone());
+            }
+        }
+        None
+    }
+}
+
 const NAME: &str = "md:IDPSSODescriptor";
 
 impl TryFrom<IdpSsoDescriptor> for Event<'_> {
