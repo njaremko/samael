@@ -193,7 +193,7 @@ impl TryFrom<&AuthnRequest> for Event<'_> {
         }
         if let Some(attribute_consuming_service_index) = &value.attribute_consuming_service_index {
             root.push_attribute((
-                "AttributeConsumingServiceIndex	",
+                "AttributeConsumingServiceIndex",
                 attribute_consuming_service_index.to_string().as_ref(),
             ));
         }
