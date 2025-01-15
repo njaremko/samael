@@ -17,7 +17,8 @@ pub trait ToXml<'a> {
 impl<'a, FromType> ToXml<'a> for FromType
 where
     &'a FromType: TryInto<Event<'a>> + 'a,
-    <&'a FromType as TryInto<Event<'a>>>::Error: Debug + From<quick_xml::Error> + From<Utf8Error>,
+    <&'a FromType as TryInto<Event<'a>>>::Error:
+        Debug + From<quick_xml::Error> + From<std::io::Error> + From<Utf8Error>,
 {
     type Error = <&'a FromType as TryInto<Event<'a>>>::Error;
 
