@@ -29,7 +29,7 @@ fn reduce_xml_to_signed<T>(xml_str: &str, _keys: &Vec<T>) -> Result<String, Erro
     Ok(String::from(xml_str))
 }
 
-#[derive(Debug, Error, PartialEq)]
+#[derive(Clone, Debug, Error, PartialEq)]
 pub enum Error {
     #[error(
         "SAML response destination does not match SP ACS URL. {:?} != {:?}",
