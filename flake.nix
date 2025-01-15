@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     flake-utils.url = "github:numtide/flake-utils";
     nix-filter.url = "github:numtide/nix-filter";
     rust-overlay = {
@@ -11,9 +11,6 @@
     };
     crane = {
       url = "github:ipetkov/crane";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-      };
     };
     advisory-db = {
       url = "github:rustsec/advisory-db";
