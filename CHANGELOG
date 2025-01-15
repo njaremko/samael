@@ -2,6 +2,12 @@
 
 ### Unreleased
 
+## 0.0.18
+
+- Fix typo in `AttributeConsumingServiceIndex` attribute name in AuthnRequest
+- Re-export `RequestedAttribute` from metadata module
+- Make `service_provider::Error` implement `Clone`
+
 ### 0.0.17
 
 - Expose the `ToXml` trait, and make it consistent with libraries like `serde_json`
