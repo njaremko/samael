@@ -249,11 +249,7 @@ impl ServiceProvider {
     pub fn sso_binding_location(&self, binding: &str) -> Option<String> {
         if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
             for idp_sso_descriptor in idp_sso_descriptors {
-                for sso_service in &idp_sso_descriptor.single_sign_on_services {
-                    if sso_service.binding == binding {
-                        return Some(sso_service.location.clone());
-                    }
-                }
+                return idp_sso_descriptor.sso_binding_location(binding);
             }
         }
         None
@@ -262,11 +258,7 @@ impl ServiceProvider {
     pub fn slo_binding_location(&self, binding: &str) -> Option<String> {
         if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
             for idp_sso_descriptor in idp_sso_descriptors {
-                for single_logout_services in &idp_sso_descriptor.single_logout_services {
-                    if single_logout_services.binding == binding {
-                        return Some(single_logout_services.location.clone());
-                    }
-                }
+                return idp_sso_descriptor.slo_binding_location(binding);
             }
         }
         None
