@@ -581,6 +581,10 @@ impl TryFrom<&Status> for Event<'_> {
         writer.write_event(Event::Start(root))?;
         let event: Event<'_> = (&value.status_code).try_into()?;
         writer.write_event(event)?;
+        if let Some(status_message) = value.status_message.as_ref() {
+            let event: Event<'_> = status_message.try_into()?;
+            writer.write_event(event)?;
+        }
         writer.write_event(Event::End(BytesEnd::new(Status::name())))?;
         Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
             write_buf,
@@ -631,6 +635,31 @@ impl TryFrom<&StatusCode> for Event<'_> {
 pub struct StatusMessage {
     #[serde(rename = "@Value")]
     pub value: Option<String>,
+}
+
+impl StatusMessage {
+    fn name() -> &'static str {
+        "saml2p:StatusMessage"
+    }
+}
+
+impl TryFrom<&StatusMessage> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &StatusMessage) -> Result<Self, Self::Error> {
+        let mut write_buf = Vec::new();
+        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+
+        writer.write_event(Event::Start(BytesStart::new(StatusMessage::name())))?;
+        if let Some(value) = &value.value {
+            writer.write_event(Event::Text(BytesText::from_escaped(value)))?;
+        }
+        writer.write_event(Event::End(BytesEnd::new(StatusMessage::name())))?;
+
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
