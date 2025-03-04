@@ -9,9 +9,10 @@ pub mod verified_request;
 mod tests;
 
 use openssl::bn::{BigNum, MsbOption};
+use openssl::ec::{EcGroup, EcKey};
 use openssl::nid::Nid;
 use openssl::pkey::Private;
-use openssl::{asn1::Asn1Time, pkey, rsa::Rsa, x509};
+use openssl::{asn1::Asn1Time, pkey, x509};
 use std::str::FromStr;
 
 use crate::crypto::{self};
@@ -24,20 +25,29 @@ pub struct IdentityProvider {
     private_key: pkey::PKey<Private>,
 }
 
-pub enum KeyType {
+pub enum Rsa {
     Rsa2048,
     Rsa3072,
     Rsa4096,
 }
 
-impl KeyType {
+impl Rsa {
     fn bit_length(&self) -> u32 {
         match &self {
-            KeyType::Rsa2048 => 2048,
-            KeyType::Rsa3072 => 3072,
-            KeyType::Rsa4096 => 4096,
+            Rsa::Rsa2048 => 2048,
+            Rsa::Rsa3072 => 3072,
+            Rsa::Rsa4096 => 4096,
         }
     }
+}
+
+pub enum Elliptic {
+    NISTP256,
+}
+
+pub enum KeyType {
+    Rsa(Rsa),
+    Elliptic(Elliptic),
 }
 
 pub struct CertificateParams<'a> {
@@ -48,22 +58,40 @@ pub struct CertificateParams<'a> {
 
 impl IdentityProvider {
     pub fn generate_new(key_type: KeyType) -> Result<Self, Error> {
-        let rsa = Rsa::generate(key_type.bit_length())?;
-        let private_key = pkey::PKey::from_rsa(rsa)?;
+        let private_key = match key_type {
+            KeyType::Rsa(rsa) => {
+                let bit_length = rsa.bit_length();
+                let rsa = openssl::rsa::Rsa::generate(bit_length)?;
+                pkey::PKey::from_rsa(rsa)?
+            }
+            KeyType::Elliptic(ecc) => {
+                let nid = match ecc {
+                    Elliptic::NISTP256 => Nid::X9_62_PRIME256V1,
+                };
+                let group = EcGroup::from_curve_name(nid)?;
+                let private_key: EcKey<Private> = EcKey::generate(&group)?;
+                pkey::PKey::from_ec_key(private_key)?
+            }
+        };
 
         Ok(IdentityProvider { private_key })
     }
 
-    pub fn from_private_key_der(der_bytes: &[u8]) -> Result<Self, Error> {
-        let rsa = Rsa::private_key_from_der(der_bytes)?;
+    pub fn from_rsa_private_key_der(der_bytes: &[u8]) -> Result<Self, Error> {
+        let rsa = openssl::rsa::Rsa::private_key_from_der(der_bytes)?;
         let private_key = pkey::PKey::from_rsa(rsa)?;
 
         Ok(IdentityProvider { private_key })
     }
 
     pub fn export_private_key_der(&self) -> Result<Vec<u8>, Error> {
-        let rsa: Rsa<Private> = self.private_key.rsa()?;
-        Ok(rsa.private_key_to_der()?)
+        if let Ok(ec_key) = self.private_key.ec_key() {
+            Ok(ec_key.private_key_to_der()?)
+        } else if let Ok(rsa) = self.private_key.rsa() {
+            Ok(rsa.private_key_to_der()?)
+        } else {
+            Err(Error::UnexpectedError)?
+        }
     }
 
     pub fn create_certificate(&self, params: &CertificateParams) -> Result<Vec<u8>, Error> {
@@ -121,7 +149,7 @@ impl IdentityProvider {
             attributes,
         );
 
-        let response_xml_unsigned = response.to_xml()?;
+        let response_xml_unsigned = response.to_string()?;
         let signed_xml = crypto::sign_xml(
             response_xml_unsigned.as_str(),
             self.export_private_key_der()?.as_slice(),

@@ -4,6 +4,7 @@ use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 use serde::Deserialize;
 use std::io::Cursor;
+use std::str::FromStr;
 
 const NAME: &str = "ds:Signature";
 const SCHEMA: (&str, &str) = ("xmlns:ds", "http://www.w3.org/2000/09/xmldsig#");
@@ -30,7 +31,7 @@ impl Signature {
                     algorithm: "http://www.w3.org/2001/10/xml-exc-c14n#".to_string(),
                 },
                 signature_method: SignatureMethod {
-                    algorithm: "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256".to_string(),
+                    algorithm: SignatureAlgorithm::RsaSha256,
                     hmac_output_length: None,
                 },
                 reference: vec![Reference {
@@ -48,7 +49,7 @@ impl Signature {
                         ],
                     }),
                     digest_method: DigestMethod {
-                        algorithm: "http://www.w3.org/2000/09/xmldsig#sha1".to_string(),
+                        algorithm: DigestAlgorithm::Sha1,
                     },
                     digest_value: Some(DigestValue {
                         base64_content: Some("".to_string()),
@@ -243,7 +244,7 @@ const HMAC_OUTPUT_LENGTH_NAME: &str = "ds:HMACOutputLength";
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct SignatureMethod {
     #[serde(rename = "@Algorithm")]
-    pub algorithm: String,
+    pub algorithm: SignatureAlgorithm,
     #[serde(rename = "@ds:HMACOutputLength")]
     #[serde(alias = "@HMACOutputLength")]
     pub hmac_output_length: Option<usize>,
@@ -265,7 +266,7 @@ impl TryFrom<&SignatureMethod> for Event<'_> {
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
 
         let mut root = BytesStart::new(SIGNATURE_METHOD_NAME);
-        root.push_attribute(("Algorithm", value.algorithm.as_ref()));
+        root.push_attribute(("Algorithm", value.algorithm.value()));
 
         if let Some(hmac_output_length) = &value.hmac_output_length {
             writer.write_event(Event::Start(root))?;
@@ -287,6 +288,50 @@ impl TryFrom<&SignatureMethod> for Event<'_> {
         Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
             write_buf,
         )?)))
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+pub enum SignatureAlgorithm {
+    #[serde(rename = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256")]
+    RsaSha256,
+    #[serde(rename = "http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1")]
+    Sha256RsaMGF1,
+    #[serde(rename = "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256")]
+    EcdsaSha256,
+    #[serde(untagged)]
+    Unsupported(String),
+}
+
+impl FromStr for SignatureAlgorithm {
+    type Err = Box<dyn std::error::Error>;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" => SignatureAlgorithm::RsaSha256,
+            "http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1" => {
+                SignatureAlgorithm::Sha256RsaMGF1
+            }
+            "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256" => {
+                SignatureAlgorithm::EcdsaSha256
+            }
+            i => SignatureAlgorithm::Unsupported(i.to_string()),
+        })
+    }
+}
+
+impl SignatureAlgorithm {
+    const RSA_SHA256: &'static str = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
+    const SHA256_RSA_MGF1: &'static str = "http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1";
+    const SHA256_ECDSA: &'static str = "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256";
+
+    pub fn value(&self) -> &str {
+        match self {
+            SignatureAlgorithm::RsaSha256 => Self::RSA_SHA256,
+            SignatureAlgorithm::Sha256RsaMGF1 => Self::SHA256_RSA_MGF1,
+            SignatureAlgorithm::EcdsaSha256 => Self::SHA256_ECDSA,
+            SignatureAlgorithm::Unsupported(algo) => algo,
+        }
     }
 }
 
@@ -377,7 +422,7 @@ const DIGEST_METHOD: &str = "ds:DigestMethod";
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct DigestMethod {
     #[serde(rename = "@Algorithm")]
-    pub algorithm: String,
+    pub algorithm: DigestAlgorithm,
 }
 
 impl TryFrom<DigestMethod> for Event<'_> {
@@ -395,11 +440,34 @@ impl TryFrom<&DigestMethod> for Event<'_> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
         let mut root = BytesStart::new(DIGEST_METHOD);
-        root.push_attribute(("Algorithm", value.algorithm.as_ref()));
+        root.push_attribute(("Algorithm", value.algorithm.value()));
         writer.write_event(Event::Empty(root))?;
         Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
             write_buf,
         )?)))
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+pub enum DigestAlgorithm {
+    #[serde(rename = "http://www.w3.org/2000/09/xmldsig#sha1")]
+    Sha1,
+    #[serde(rename = "http://www.w3.org/2001/04/xmlenc#sha256")]
+    Sha256,
+    #[serde(untagged)]
+    Unsupported(String),
+}
+
+impl DigestAlgorithm {
+    const SHA1: &'static str = "http://www.w3.org/2000/09/xmldsig#sha1";
+    const SHA256: &'static str = "http://www.w3.org/2001/04/xmlenc#sha256";
+
+    pub fn value(&self) -> &str {
+        match self {
+            DigestAlgorithm::Sha1 => Self::SHA1,
+            DigestAlgorithm::Sha256 => Self::SHA256,
+            DigestAlgorithm::Unsupported(algo) => algo,
+        }
     }
 }
 
@@ -497,5 +565,103 @@ impl TryFrom<&Reference> for Event<'_> {
         Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
             write_buf,
         )?)))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::traits::ToXml;
+
+    use super::*;
+
+    #[test]
+    pub fn test_signature_deserialization() -> Result<(), Box<dyn std::error::Error>> {
+        let signature = r##"
+<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+  <ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+    <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+  <ds:Reference URI="#pfxe33e94d1-ae1f-a607-5c5d-f0fd9d1bd963"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue/></ds:Reference></ds:SignedInfo><ds:SignatureValue/>
+</ds:Signature>
+"##;
+        let deserialized: Signature = quick_xml::de::from_str(signature)?;
+        let serialized = deserialized.to_string()?;
+        let re_deserialized: Signature = quick_xml::de::from_str(&serialized)?;
+        assert_eq!(deserialized, re_deserialized);
+
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_signedinfo_deserialization() -> Result<(), Box<dyn std::error::Error>> {
+        let signed_info = r##"
+<ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+  <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+<ds:Reference URI="#pfxe33e94d1-ae1f-a607-5c5d-f0fd9d1bd963"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue/></ds:Reference></ds:SignedInfo>
+"##;
+        let deserialized: SignedInfo = quick_xml::de::from_str(signed_info)?;
+        let serialized = deserialized.to_string()?;
+        let re_deserialized: SignedInfo = quick_xml::de::from_str(&serialized)?;
+        assert_eq!(deserialized, re_deserialized);
+
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_canonicalizationmethod_deserialization() -> Result<(), Box<dyn std::error::Error>> {
+        let canonicalization_method =
+            r#"<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>"#;
+        let deserialized: CanonicalizationMethod =
+            quick_xml::de::from_str(canonicalization_method)?;
+        let serialized = deserialized.to_string()?;
+        let re_deserialized: CanonicalizationMethod = quick_xml::de::from_str(&serialized)?;
+        assert_eq!(deserialized, re_deserialized);
+
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_signaturemethod_deserialization() -> Result<(), Box<dyn std::error::Error>> {
+        let signature_method = r#"<ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>"#;
+        let deserialized: SignatureMethod = quick_xml::de::from_str(signature_method)?;
+        let serialized = deserialized.to_string()?;
+        let re_deserialized: SignatureMethod = quick_xml::de::from_str(&serialized)?;
+        assert_eq!(deserialized, re_deserialized);
+
+        let algo = r#"<ds:SignatureMethod Algorithm="UNSUPPORTED" />"#;
+        let deserialized: SignatureMethod = quick_xml::de::from_str(algo)?;
+        let serialized = deserialized.to_string()?;
+        let re_deserialized: SignatureMethod = quick_xml::de::from_str(&serialized)?;
+        assert_eq!(deserialized, re_deserialized);
+
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_transform_deserialization() -> Result<(), Box<dyn std::error::Error>> {
+        let transforms = r#"<ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms>"#;
+        let deserialized: Transforms = quick_xml::de::from_str(transforms)?;
+        let serialized = deserialized.to_string()?;
+        let re_deserialized: Transforms = quick_xml::de::from_str(&serialized)?;
+        assert_eq!(deserialized, re_deserialized);
+
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_digestmethod_deserialization() -> Result<(), Box<dyn std::error::Error>> {
+        let digest_method =
+            r#"<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />"#;
+        let deserialized: DigestMethod = quick_xml::de::from_str(digest_method)?;
+        let serialized = deserialized.to_string()?;
+        let re_deserialized: DigestMethod = quick_xml::de::from_str(&serialized)?;
+        assert_eq!(deserialized, re_deserialized);
+
+        let digest_method = r#"<ds:DigestMethod Algorithm="UNSUPPORTED" />"#;
+        let deserialized: DigestMethod = quick_xml::de::from_str(digest_method)?;
+        let serialized = deserialized.to_string()?;
+        let re_deserialized: DigestMethod = quick_xml::de::from_str(&serialized)?;
+        assert_eq!(deserialized, re_deserialized);
+
+        Ok(())
     }
 }

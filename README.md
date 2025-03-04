@@ -50,11 +50,11 @@ If you want to take advantage of this, you'll need to put in a little bit of wor
 1. Install [direnv](https://direnv.net/) and [cachix](https://docs.cachix.org)
    ```
    # Add ~/.nix-profile/bin to your path first
-   nix profile install nixpkgs/release-23.11#direnv
-   nix profile install nixpkgs/release-23.11#cachix
+   nix profile install nixpkgs#direnv
+   nix profile install nixpkgs#cachix
    ```
 1. Run `cachix use nix-community` to enable a binary cache for the rust toolchain (otherwise you'll build the rust toolchain from scratch)
-1. `cd` into this repo and run `direnv allow`
+1. `cd` into this repo and run `direnv allow` and `nix-direnv-reload`
 1. Install the [direnv VS Code extension](https://marketplace.visualstudio.com/items?itemName=mkhl.direnv)
 
 ## Building the library
@@ -124,7 +124,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .slo_url("http://localhost:8080/saml/slo".to_string())
         .build()?;
 
-    let metadata = sp.metadata()?.to_xml()?;
+    let metadata = sp.metadata()?.to_string()?;
 
     let metadata_route = warp::get()
         .and(warp::path("metadata"))

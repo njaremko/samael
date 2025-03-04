@@ -37,7 +37,7 @@ fn test_extract_sp() {
 #[test]
 fn test_signed_response() {
     // init our IdP
-    let idp = IdentityProvider::from_private_key_der(include_bytes!(
+    let idp = IdentityProvider::from_rsa_private_key_der(include_bytes!(
         "../../test_vectors/idp_private_key.der"
     ))
     .expect("failed to create idp");
@@ -101,7 +101,7 @@ fn test_signed_response() {
         .expect("failed to created and sign response");
 
     let out_xml = out_response
-        .to_xml()
+        .to_string()
         .expect("failed to serialize response xml");
 
     verify_signed_xml(out_xml.as_bytes(), idp_cert.as_slice(), Some("ID"))
@@ -135,7 +135,7 @@ fn test_signed_response_threads() {
 
 #[test]
 fn test_signed_response_fingerprint() {
-    let idp = IdentityProvider::from_private_key_der(include_bytes!(
+    let idp = IdentityProvider::from_rsa_private_key_der(include_bytes!(
         "../../test_vectors/idp_private_key.der"
     ))
     .expect("failed to create idp");
@@ -272,13 +272,13 @@ fn test_accept_signed_with_correct_key_idp() {
         ..Default::default()
     };
 
-    let wrong_cert_signed_response_xml = include_str!(concat!(
+    let correct_cert_signed_response_xml = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/test_vectors/response_signed.xml",
     ));
 
     let resp = sp.parse_xml_response(
-        wrong_cert_signed_response_xml,
+        correct_cert_signed_response_xml,
         Some(&["ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"]),
     );
 
@@ -303,13 +303,44 @@ fn test_accept_signed_with_correct_key_idp_2() {
         ..Default::default()
     };
 
-    let wrong_cert_signed_response_xml = include_str!(concat!(
+    let correct_cert_signed_response_xml = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/test_vectors/response_signed_by_idp_2.xml",
     ));
 
     let resp = sp.parse_xml_response(
-        wrong_cert_signed_response_xml,
+        correct_cert_signed_response_xml,
+        Some(&["ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"]),
+    );
+
+    assert!(resp.is_ok());
+}
+
+#[test]
+fn test_accept_signed_with_correct_key_idp_3() {
+    let idp_metadata_xml = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/test_vectors/idp_ecdsa_metadata.xml"
+    ));
+
+    let response_instant = "2014-07-17T01:01:48Z".parse::<DateTime<Utc>>().unwrap();
+    let max_issue_delay = Utc::now() - response_instant + chrono::Duration::seconds(60);
+
+    let sp = ServiceProvider {
+        metadata_url: Some("http://test_accept_signed_with_correct_key.test".into()),
+        acs_url: Some("http://sp.example.com/demo1/index.php?acs".into()),
+        idp_metadata: idp_metadata_xml.parse().unwrap(),
+        max_issue_delay,
+        ..Default::default()
+    };
+
+    let correct_cert_signed_response_xml = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/test_vectors/response_signed_by_idp_ecdsa.xml",
+    ));
+
+    let resp = sp.parse_xml_response(
+        correct_cert_signed_response_xml,
         Some(&["ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"]),
     );
 

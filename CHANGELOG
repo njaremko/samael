@@ -1,7 +1,25 @@
 # Changelog
 
 ### Unreleased
+
 - add `EncryptedAssertion` and ability to decrypt it
+
+## 0.0.18
+
+- Fix typo in `AttributeConsumingServiceIndex` attribute name in AuthnRequest
+- Re-export `RequestedAttribute` from metadata module
+- Make `service_provider::Error` implement `Clone`
+
+### 0.0.17
+
+- Expose the `ToXml` trait, and make it consistent with libraries like `serde_json`
+
+### 0.0.16
+
+- Add support for basic `RequestedAuthnContext` de-/serialization in `AuthnRequest`
+- Add support for Elliptic-curve cryptography
+- Use enum for signature and digest algorithm
+- Add EntityDescriptorType enum to allow parsing of arbitrarily nested EntityDescriptors and EntitiesDescriptors
 
 ### 0.0.15
 

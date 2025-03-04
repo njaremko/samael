@@ -12,7 +12,7 @@ use chrono::prelude::*;
 use chrono::Duration;
 use flate2::{write::DeflateEncoder, Compression};
 use openssl::pkey::Private;
-use openssl::{rsa, x509};
+use openssl::x509;
 use std::fmt::Debug;
 use std::io::Write;
 use thiserror::Error;
@@ -31,7 +31,7 @@ fn reduce_xml_to_signed<T>(xml_str: &str, _keys: &Vec<T>) -> Result<String, Erro
     Ok(String::from(xml_str))
 }
 
-#[derive(Debug, Error)]
+#[derive(Clone, Debug, Error)]
 pub enum Error {
     #[error(
         "SAML response destination does not match SP ACS URL. {:?} != {:?}",
@@ -117,6 +117,8 @@ pub enum Error {
     #[cfg(feature = "xmlsec")]
     #[error("Failed to decrypt assertion")]
     FailedToDecryptAssertion,
+    #[error("Tried to use an unsupported key format")]
+    UnsupportedKey,
 
     #[error("Failed to parse SAMLResponse")]
     FailedToParseSamlResponse,
@@ -147,7 +149,7 @@ impl From<crypto::Error> for Error {
 #[builder(default, setter(into))]
 pub struct ServiceProvider {
     pub entity_id: Option<String>,
-    pub key: Option<rsa::Rsa<Private>>,
+    pub key: Option<openssl::pkey::PKey<Private>>,
     pub certificate: Option<x509::X509>,
     pub intermediates: Option<Vec<x509::X509>>,
     pub metadata_url: Option<String>,
@@ -280,11 +282,8 @@ impl ServiceProvider {
         self.authn_name_id_format
             .clone()
             .and_then(|v| -> Option<String> {
-                let unspecified = NameIdFormat::UnspecifiedNameIDFormat.value();
                 if v.is_empty() {
                     Some(NameIdFormat::TransientNameIDFormat.value().to_string())
-                } else if v == unspecified {
-                    None
                 } else {
                     Some(v)
                 }
@@ -541,9 +540,9 @@ impl ServiceProvider {
                 value: entity_id,
                 ..Issuer::default()
             }),
-            name_id_policy: Some(NameIdPolicy {
+            name_id_policy: self.name_id_format().map(|format| NameIdPolicy {
                 allow_create: Some(true),
-                format: self.name_id_format(),
+                format: Some(format),
                 ..NameIdPolicy::default()
             }),
             force_authn: Some(self.force_authn),
@@ -575,7 +574,7 @@ fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<x509::X509>,
 
 impl AuthnRequest {
     pub fn post(&self, relay_state: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let encoded = general_purpose::STANDARD.encode(self.to_xml()?.as_bytes());
+        let encoded = general_purpose::STANDARD.encode(self.to_string()?.as_bytes());
         if let Some(dest) = &self.destination {
             Ok(Some(format!(
                 r#"
@@ -600,7 +599,7 @@ impl AuthnRequest {
         let mut compressed_buf = vec![];
         {
             let mut encoder = DeflateEncoder::new(&mut compressed_buf, Compression::default());
-            encoder.write_all(self.to_xml()?.as_bytes())?;
+            encoder.write_all(self.to_string()?.as_bytes())?;
         }
         let encoded = general_purpose::STANDARD.encode(&compressed_buf);
 
@@ -619,7 +618,7 @@ impl AuthnRequest {
     pub fn signed_redirect(
         &self,
         relay_state: &str,
-        private_key_der: &[u8],
+        private_key: openssl::pkey::PKey<Private>,
     ) -> Result<Option<Url>, Box<dyn std::error::Error>> {
         let unsigned_url = self.redirect(relay_state)?;
 
@@ -636,11 +635,20 @@ impl AuthnRequest {
         // Note: the spec says to remove the Signature related XML elements
         // from the document but leaving them in usually works too.
 
-        // Use rsa-sha256 when signing (see RFC 4051 for choices)
-        unsigned_url.query_pairs_mut().append_pair(
-            "SigAlg",
-            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
-        );
+        // see RFC 4051 for choices
+        if private_key.ec_key().is_ok() {
+            unsigned_url.query_pairs_mut().append_pair(
+                "SigAlg",
+                "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256",
+            );
+        } else if private_key.rsa().is_ok() {
+            unsigned_url.query_pairs_mut().append_pair(
+                "SigAlg",
+                "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+            );
+        } else {
+            return Err(Error::UnsupportedKey)?;
+        }
 
         // Sign *only* the existing url's encoded query parameters:
         //
@@ -653,9 +661,7 @@ impl AuthnRequest {
             .ok_or(Error::UnexpectedError)?
             .to_string();
 
-        // Use openssl's bindings to sign
-        let pkey = openssl::rsa::Rsa::private_key_from_der(private_key_der)?;
-        let pkey = openssl::pkey::PKey::from_rsa(pkey)?;
+        let pkey = private_key;
 
         let mut signer =
             openssl::sign::Signer::new(openssl::hash::MessageDigest::sha256(), pkey.as_ref())?;

@@ -137,7 +137,7 @@ mod test {
         let expected_response: Response =
             response_xml.parse().expect("failed to parse response.xml");
         let serialized_response = expected_response
-            .to_xml()
+            .to_string()
             .expect("failed to convert response to xml");
         let actual_response: Response = serialized_response
             .parse()
@@ -156,7 +156,7 @@ mod test {
             .parse()
             .expect("failed to parse response_signed_assertion.xml");
         let serialized_response = expected_response
-            .to_xml()
+            .to_string()
             .expect("failed to convert response to xml");
         let actual_response: Response = serialized_response
             .parse()
@@ -175,7 +175,7 @@ mod test {
             .parse()
             .expect("failed to parse response_signed.xml");
         let serialized_response = expected_response
-            .to_xml()
+            .to_string()
             .expect("failed to convert response to xml");
         let actual_response: Response = serialized_response
             .parse()

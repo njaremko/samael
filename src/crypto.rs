@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use thiserror::Error;
 
+use crate::signature::SignatureAlgorithm;
 #[cfg(feature = "xmlsec")]
 use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
 #[cfg(feature = "xmlsec")]
@@ -225,6 +226,7 @@ fn get_elements_by_predicate<F: FnMut(&libxml::tree::Node) -> bool>(
 /// Searches for and returns the element with the given value of the `ID` attribute from the subtree
 /// rooted at the given node.
 #[cfg(feature = "xmlsec")]
+#[allow(unused)]
 fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree::Node> {
     let mut elems = get_elements_by_predicate(elem, |node| {
         node.get_attribute("ID")
@@ -488,22 +490,6 @@ pub fn gen_saml_assertion_id() -> String {
     format!("_{}", uuid::Uuid::new_v4())
 }
 
-#[derive(Debug, PartialEq)]
-enum SigAlg {
-    Unimplemented,
-    RsaSha256,
-}
-
-impl FromStr for SigAlg {
-    type Err = Box<dyn std::error::Error>;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" => Ok(SigAlg::RsaSha256),
-            _ => Ok(SigAlg::Unimplemented),
-        }
-    }
-}
-
 #[derive(Debug, Error, Clone)]
 pub enum UrlVerifierError {
     #[error("Unimplemented SigAlg: {:?}", sigalg)]
@@ -511,33 +497,45 @@ pub enum UrlVerifierError {
 }
 
 pub struct UrlVerifier {
-    keypair: openssl::pkey::PKey<openssl::pkey::Public>,
+    public_key: openssl::pkey::PKey<openssl::pkey::Public>,
 }
 
 impl UrlVerifier {
     pub fn from_rsa_pem(public_key_pem: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
         let public = openssl::rsa::Rsa::public_key_from_pem(public_key_pem)?;
-        let keypair = openssl::pkey::PKey::from_rsa(public)?;
-        Ok(Self { keypair })
+        let public_key = openssl::pkey::PKey::from_rsa(public)?;
+        Ok(Self { public_key })
     }
 
     pub fn from_rsa_der(public_key_der: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
         let public = openssl::rsa::Rsa::public_key_from_der(public_key_der)?;
-        let keypair = openssl::pkey::PKey::from_rsa(public)?;
-        Ok(Self { keypair })
+        let public_key = openssl::pkey::PKey::from_rsa(public)?;
+        Ok(Self { public_key })
+    }
+
+    pub fn from_ec_pem(public_key_pem: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
+        let public = openssl::ec::EcKey::public_key_from_pem(public_key_pem)?;
+        let public_key = openssl::pkey::PKey::from_ec_key(public)?;
+        Ok(Self { public_key })
+    }
+
+    pub fn from_ec_der(public_key_der: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
+        let public = openssl::ec::EcKey::public_key_from_der(public_key_der)?;
+        let public_key = openssl::pkey::PKey::from_ec_key(public)?;
+        Ok(Self { public_key })
     }
 
     pub fn from_x509_cert_pem(public_cert_pem: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let x509 = openssl::x509::X509::from_pem(public_cert_pem.as_bytes())?;
-        let keypair = x509.public_key()?;
-        Ok(Self { keypair })
+        let public_key = x509.public_key()?;
+        Ok(Self { public_key })
     }
 
     pub fn from_x509(
         public_cert: &openssl::x509::X509,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let keypair = public_cert.public_key()?;
-        Ok(Self { keypair })
+        let public_key = public_cert.public_key()?;
+        Ok(Self { public_key })
     }
 
     // Signed url should look like:
@@ -609,11 +607,9 @@ impl UrlVerifier {
             .collect::<HashMap<String, String>>();
 
         // Match against implemented SigAlg
-        let sig_alg: SigAlg = SigAlg::from_str(&query_params["SigAlg"])?;
-        if sig_alg == SigAlg::Unimplemented {
-            return Err(Box::new(UrlVerifierError::SigAlgUnimplemented {
-                sigalg: query_params["SigAlg"].clone(),
-            }));
+        let sig_alg = SignatureAlgorithm::from_str(&query_params["SigAlg"])?;
+        if let SignatureAlgorithm::Unsupported(sigalg) = sig_alg {
+            return Err(Box::new(UrlVerifierError::SigAlgUnimplemented { sigalg }));
         }
 
         // Construct a Url so that percent encoded query can be easily
@@ -656,15 +652,16 @@ impl UrlVerifier {
     fn verify_signature(
         &self,
         data: &[u8],
-        sig_alg: SigAlg,
+        sig_alg: SignatureAlgorithm,
         signature: &[u8],
     ) -> Result<bool, Box<dyn std::error::Error>> {
         let mut verifier = openssl::sign::Verifier::new(
             match sig_alg {
-                SigAlg::RsaSha256 => openssl::hash::MessageDigest::sha256(),
+                SignatureAlgorithm::RsaSha256 => openssl::hash::MessageDigest::sha256(),
+                SignatureAlgorithm::EcdsaSha256 => openssl::hash::MessageDigest::sha256(),
                 _ => panic!("sig_alg is bad!"),
             },
-            &self.keypair,
+            &self.public_key,
         )?;
 
         verifier.update(data)?;
@@ -745,6 +742,61 @@ mod test {
         let authn_request = sp
             .make_authentication_request("http://dummy.fake/saml")
             .unwrap();
+
+        let private_key = openssl::rsa::Rsa::private_key_from_der(private_key).unwrap();
+        let private_key = openssl::pkey::PKey::from_rsa(private_key).unwrap();
+
+        let signed_request_url = authn_request
+            .signed_redirect("", private_key)
+            .unwrap()
+            .unwrap();
+
+        // percent encoeded URL:
+        //   http://dummy.fake/saml?SAMLRequest=..&SigAlg=..&Signature=..
+        //
+        // percent encoded URI:
+        //   /saml?SAMLRequest=..&SigAlg=..&Signature=..
+        //
+        let uri_string: &String = &signed_request_url[url::Position::BeforePath..].to_string();
+        assert!(uri_string.starts_with("/saml?SAMLRequest="));
+
+        let url_verifier =
+            UrlVerifier::from_x509(&sp.idp_signing_certs().unwrap().unwrap()[0]).unwrap();
+
+        assert!(url_verifier
+            .verify_percent_encoded_request_uri_string(uri_string)
+            .unwrap(),);
+    }
+
+    #[test]
+    fn test_verify_uri_ec() {
+        let private_key = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/ec_private.pem"
+        ));
+
+        let idp_metadata_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/idp_ecdsa_metadata.xml"
+        ));
+
+        let response_instant = "2014-07-17T01:01:48Z".parse::<DateTime<Utc>>().unwrap();
+        let max_issue_delay = Utc::now() - response_instant + chrono::Duration::seconds(60);
+
+        let sp = ServiceProvider {
+            metadata_url: Some("http://test_accept_signed_with_correct_key.test".into()),
+            acs_url: Some("http://sp.example.com/demo1/index.php?acs".into()),
+            idp_metadata: idp_metadata_xml.parse().unwrap(),
+            max_issue_delay,
+            ..Default::default()
+        };
+
+        let authn_request = sp
+            .make_authentication_request("http://dummy.fake/saml")
+            .unwrap();
+
+        let private_key = openssl::ec::EcKey::private_key_from_pem(private_key).unwrap();
+        let private_key = openssl::pkey::PKey::from_ec_key(private_key).unwrap();
 
         let signed_request_url = authn_request
             .signed_redirect("", private_key)

@@ -11,11 +11,11 @@ mod organization;
 mod sp_sso_descriptor;
 
 pub use affiliation_descriptor::*;
-pub use attribute_consuming_service::AttributeConsumingService;
+pub use attribute_consuming_service::{AttributeConsumingService, RequestedAttribute};
 pub use contact_person::*;
 pub use encryption_method::EncryptionMethod;
 pub use endpoint::*;
-pub use entity_descriptor::EntityDescriptor;
+pub use entity_descriptor::{EntitiesDescriptor, EntityDescriptor, EntityDescriptorType};
 pub use key_descriptor::KeyDescriptor;
 pub use localized::*;
 pub use organization::Organization;
