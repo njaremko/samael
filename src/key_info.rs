@@ -91,7 +91,7 @@ impl TryFrom<&X509Data> for Event<'_> {
 pub struct EncryptedKeyInfo {
     #[serde(rename = "@Id")]
     pub id: Option<String>,
-    #[serde(rename = "@xmlns:ds")]
+    #[serde(alias = "@xmlns:dsig", alias = "@xmlns:ds")]
     pub ds: String,
     #[serde(rename = "EncryptedKey")]
     pub encrypted_key: Option<EncryptedKey>,

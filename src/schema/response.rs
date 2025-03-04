@@ -194,7 +194,7 @@ mod test {
             .parse()
             .expect("failed to parse response_encrypted.xml");
         let serialized_response = expected_response
-            .to_xml()
+            .to_string()
             .expect("failed to convert response to xml");
         let actual_response: Response = serialized_response
             .parse()

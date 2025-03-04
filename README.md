@@ -21,6 +21,7 @@ Current Features:
   - Encrypted assertions only support:
     - **key info:**
       - `http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p`
+      - `http://www.w3.org/2001/04/xmlenc#rsa-1_5`
     - **value info:**
       - `http://www.w3.org/2001/04/xmlenc#aes128-cbc`
       - `http://www.w3.org/2009/xmlenc11#aes128-gcm`
