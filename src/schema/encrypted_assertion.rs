@@ -22,11 +22,18 @@ const SCHEMA: (&str, &str) = ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assert
 pub struct EncryptedAssertion {
     #[serde(rename = "EncryptedData")]
     pub data: Option<EncryptedData>,
+    #[serde(rename = "EncryptedKey")]
+    pub encrypted_key: Option<EncryptedKey>,
 }
 
 impl EncryptedAssertion {
     pub fn encrypted_key_info(&self) -> Option<(&CipherValue, &String)> {
-        self.data.as_ref().and_then(|ed| ed.key_info())
+        self.data.as_ref().and_then(|ed| ed.key_info()).or_else(|| {
+            self.encrypted_key
+                .as_ref()
+                .and_then(|e| e.cipher_data.as_ref().zip(e.encryption_method.as_ref()))
+                .and_then(|(cd, em)| cd.cipher_value.as_ref().zip(em.algorithm.as_ref()))
+        })
     }
 
     pub fn encrypted_value_info(&self) -> Option<(&CipherValue, &String)> {
@@ -175,7 +182,7 @@ pub struct EncryptedData {
     pub ty: Option<String>,
     #[serde(rename = "EncryptionMethod")]
     pub encryption_method: Option<EncryptionMethod>,
-    #[serde(rename = "KeyInfo")]
+    #[serde(alias = "KeyInfo", alias = "ds:KeyInfo")]
     pub key_info: Option<EncryptedKeyInfo>,
     #[serde(rename = "CipherData")]
     pub cipher_data: Option<CipherData>,
@@ -441,11 +448,12 @@ mod test {
             .parse()
             .expect("failed to parse response_encrypted.xml");
 
-        let key_info_exists = response
+        let encrypted_assertion = response
             .encrypted_assertion
-            .expect("EncryptedAssertion missing")
-            .encrypted_key_info()
-            .is_some();
+            .expect("EncryptedAssertion missing");
+        let key_info = encrypted_assertion.encrypted_key_info();
+
+        let key_info_exists = key_info.is_some();
 
         assert!(key_info_exists, "KeyInfo missing on EncryptedAssertion");
     }

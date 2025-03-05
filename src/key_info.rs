@@ -95,6 +95,40 @@ pub struct EncryptedKeyInfo {
     pub ds: String,
     #[serde(rename = "EncryptedKey")]
     pub encrypted_key: Option<EncryptedKey>,
+    #[serde(rename = "RetrievalMethod")]
+    pub retrieval_method: Option<RetrievalMethod>,
+}
+
+const RETRIEVAL_METHOD_NAME: &str = "ds:RetrievalMethod";
+
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+pub struct RetrievalMethod {
+    #[serde(rename = "@URI")]
+    pub uri: String,
+}
+
+impl TryFrom<RetrievalMethod> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: RetrievalMethod) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&RetrievalMethod> for Event<'_> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &RetrievalMethod) -> Result<Self, Self::Error> {
+        let mut write_buf = Vec::new();
+        let mut writer = Writer::new(Cursor::new(&mut write_buf));
+        let mut root = BytesStart::new(RETRIEVAL_METHOD_NAME);
+        root.push_attribute(("URI", value.uri.as_ref()));
+        writer.write_event(Event::Start(root))?;
+        writer.write_event(Event::End(BytesEnd::new(RETRIEVAL_METHOD_NAME)))?;
+        Ok(Event::Text(BytesText::from_escaped(String::from_utf8(
+            write_buf,
+        )?)))
+    }
 }
 
 impl TryFrom<EncryptedKeyInfo> for Event<'_> {
@@ -120,6 +154,10 @@ impl TryFrom<&EncryptedKeyInfo> for Event<'_> {
         writer.write_event(Event::Start(root))?;
         if let Some(encrypted_key) = &value.encrypted_key {
             let event: Event<'_> = encrypted_key.try_into()?;
+            writer.write_event(event)?;
+        }
+        if let Some(retrieval_method) = &value.retrieval_method {
+            let event: Event<'_> = retrieval_method.try_into()?;
             writer.write_event(event)?;
         }
 

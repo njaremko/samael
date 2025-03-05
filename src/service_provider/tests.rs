@@ -10,6 +10,7 @@ mod encrypted_assertion_tests {
         // Create a service provider with the private key
         ServiceProviderBuilder::default()
             .idp_metadata(create_mock_idp())
+            .allow_idp_initiated(true)
             .key(key)
             .entity_id(Some("example".to_string())) // Set entity_id to match the audience requirement
             .max_clock_skew(Duration::days(365))
