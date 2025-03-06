@@ -632,7 +632,10 @@ impl TryFrom<&StatusCode> for Event<'_> {
 }
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub struct StatusMessage(pub Option<String>);
+pub struct StatusMessage {
+    #[serde(rename = "$text")]
+    pub value: Option<String>
+}
 
 impl StatusMessage {
     fn name() -> &'static str {
@@ -648,7 +651,7 @@ impl TryFrom<&StatusMessage> for Event<'_> {
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
 
         writer.write_event(Event::Start(BytesStart::new(StatusMessage::name())))?;
-        if let Some(content) = &value.0 {
+        if let Some(content) = &value.value {
             writer.write_event(Event::Text(BytesText::from_escaped(content)))?;
         }
         writer.write_event(Event::End(BytesEnd::new(StatusMessage::name())))?;
