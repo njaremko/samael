@@ -634,7 +634,7 @@ impl TryFrom<&StatusCode> for Event<'_> {
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct StatusMessage {
     #[serde(rename = "$text")]
-    pub value: Option<String>
+    pub value: Option<String>,
 }
 
 impl StatusMessage {
