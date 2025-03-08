@@ -5,6 +5,8 @@
 
 TODO it is unknown what has signed `response_signed.xml`, it's not the certificate in `idp_metadata.xml`, see `idp::tests::test_accept_signed_with_correct_key_idp`
 
+`response_encrypted.xml` is an encrypted response, it is encrypted with the private key in `sp_private.pem`. `sp_private.pem` is the private key of `sp_cert.pem`.
+
 # Generating signed responses for tests
 
 `public.der` and `private.der` correspond to `idp_2_metadata.xml`, and are used to sign `response_signed_by_idp_2.xml`. Update `response_signed_template.xml` and then generate `response_signed_by_idp_2.xml` using:

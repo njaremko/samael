@@ -23,13 +23,15 @@ mod tests;
 
 #[cfg(feature = "xmlsec")]
 use crate::crypto::reduce_xml_to_signed;
+#[cfg(feature = "xmlsec")]
+use crate::schema::EncryptedAssertion;
 
 #[cfg(not(feature = "xmlsec"))]
 fn reduce_xml_to_signed<T>(xml_str: &str, _keys: &Vec<T>) -> Result<String, Error> {
     Ok(String::from(xml_str))
 }
 
-#[derive(Clone, Debug, Error, PartialEq)]
+#[derive(Clone, Debug, Error)]
 pub enum Error {
     #[error(
         "SAML response destination does not match SP ACS URL. {:?} != {:?}",
@@ -88,6 +90,33 @@ pub enum Error {
     FailedToParseCert { cert: String },
     #[error("Unexpected Error Occurred!")]
     UnexpectedError,
+    #[cfg(feature = "xmlsec")]
+    #[error("Missing private key on service provider")]
+    MissingPrivateKeySP,
+    #[cfg(feature = "xmlsec")]
+    #[error("Missing encrypted key info")]
+    MissingEncryptedKeyInfo,
+    #[cfg(feature = "xmlsec")]
+    #[error("Missing encrypted value info")]
+    MissingEncryptedValueInfo,
+    #[cfg(feature = "xmlsec")]
+    #[error("Unsupported key encryption method for encrypted assertion: {method}")]
+    EncryptedAssertionKeyMethodUnsupported { method: String },
+    #[cfg(feature = "xmlsec")]
+    #[error("Unsupported value encryption method for encrypted assertion: {method}")]
+    EncryptedAssertionValueMethodUnsupported { method: String },
+    #[cfg(feature = "xmlsec")]
+    #[error("Encrypted assertion invalid")]
+    EncryptedAssertionInvalid,
+    #[cfg(feature = "xmlsec")]
+    #[error("OpenSSL error stack: {}", error)]
+    OpenSSLError {
+        #[from]
+        error: openssl::error::ErrorStack,
+    },
+    #[cfg(feature = "xmlsec")]
+    #[error("Failed to decrypt assertion")]
+    FailedToDecryptAssertion,
     #[error("Tried to use an unsupported key format")]
     UnsupportedKey,
 
@@ -99,6 +128,21 @@ pub enum Error {
 
     #[error("SLO url is missing")]
     MissingSloUrl,
+}
+
+impl From<crypto::Error> for Error {
+    fn from(value: crypto::Error) -> Self {
+        match value {
+            crypto::Error::InvalidSignature
+            | crypto::Error::Base64Error { .. }
+            | crypto::Error::XmlMissingRootElement
+            | crypto::Error::XmlParseError { .. }
+            | crypto::Error::XmlSecError { .. }
+            | crypto::Error::XmlAttributeRemovalError { .. }
+            | crypto::Error::XmlNamespaceDefinitionError { .. } => Error::FailedToParseSamlResponse,
+            crypto::Error::OpenSSLError { error } => Error::OpenSSLError { error },
+        }
+    }
 }
 
 #[derive(Builder, Clone)]
@@ -378,7 +422,16 @@ impl ServiceProvider {
             }
         }
 
-        if let Some(_encrypted_assertion) = &response.encrypted_assertion {
+        if let Some(encrypted_assertion) = &response.encrypted_assertion {
+            #[cfg(feature = "xmlsec")]
+            return self
+                .decrypt_assertion(encrypted_assertion)
+                .and_then(|assertion| {
+                    self.validate_assertion(&assertion, possible_request_ids)
+                        .and(Ok(assertion))
+                });
+
+            #[cfg(not(feature = "xmlsec"))]
             Err(Error::EncryptedAssertionsNotYetSupported)
         } else if let Some(assertion) = &response.assertion {
             self.validate_assertion(assertion, possible_request_ids)?;
@@ -386,6 +439,16 @@ impl ServiceProvider {
         } else {
             Err(Error::UnexpectedError)
         }
+    }
+
+    #[cfg(feature = "xmlsec")]
+    fn decrypt_assertion(
+        &self,
+        encrypted_assertion: &EncryptedAssertion,
+    ) -> Result<Assertion, Error> {
+        let key = self.key.as_ref().ok_or(Error::MissingPrivateKeySP)?;
+
+        encrypted_assertion.decrypt(key)
     }
 
     fn validate_assertion(
