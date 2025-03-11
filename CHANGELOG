@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- add `EncryptedAssertion` and ability to decrypt it
+
 ## 0.0.18
 
 - Fix typo in `AttributeConsumingServiceIndex` attribute name in AuthnRequest
