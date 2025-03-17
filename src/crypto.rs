@@ -9,9 +9,9 @@ use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
 #[cfg(feature = "xmlsec")]
 use libxml::parser::Parser as XmlParser;
 #[cfg(feature = "xmlsec")]
-use std::ffi::CString;
-#[cfg(feature = "xmlsec")]
 use openssl::symm::{Cipher, Crypter, Mode};
+#[cfg(feature = "xmlsec")]
+use std::ffi::CString;
 
 #[cfg(feature = "xmlsec")]
 const XMLNS_XML_DSIG: &str = "http://www.w3.org/2000/09/xmldsig#";
