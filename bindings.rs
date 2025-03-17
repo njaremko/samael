@@ -12,6 +12,10 @@ use std::process::Command;
 const BINDINGS: &str = "bindings.rs";
 
 fn main() {
+    // Tell the compiler about our custom cfg flags
+    println!("cargo:rustc-check-cfg=cfg(xmlsec_dynamic)");
+    println!("cargo:rustc-check-cfg=cfg(xmlsec_static)");
+
     if env::var_os("CARGO_FEATURE_XMLSEC").is_some() {
         let path_out = PathBuf::from(env::var("OUT_DIR").unwrap());
         let path_bindings = path_out.join(BINDINGS);

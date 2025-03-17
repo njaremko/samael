@@ -1,6 +1,6 @@
 [package]
 name = "samael"
-version = "0.0.18"
+version = "0.0.19"
 authors = ["Nathan Jaremko <nathan@jaremko.ca>"]
 edition = "2021"
 license = "MIT"
@@ -17,6 +17,7 @@ doctest = false
 crate-type = ["staticlib", "rlib"]
 
 [features]
+default = ["xmlsec"]
 xmlsec = ["libc", "lazy_static", "libxml"]
 
 [build-dependencies]
@@ -33,7 +34,7 @@ serde = { version = "^1.0.0", features = ["derive"] }
 chrono = { version = "^0.4.0", features = ["serde"] }
 base64 = "^0.22.0"
 flate2 = "^1.0.0"
-rand = "^0.8.4"
+rand = "^0.9.0"
 derive_builder = "^0.20.0"
 libxml = { version = "^0.3.1", optional = true }
 uuid = { version = "^1.3.0", features = ["v4"] }
