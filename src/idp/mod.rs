@@ -18,11 +18,13 @@ use std::str::FromStr;
 use crate::crypto::{self};
 
 use crate::idp::response_builder::{build_response_template, ResponseAttribute};
+use crate::metadata::NameIdFormat;
 use crate::schema::Response;
 use crate::traits::ToXml;
 
 pub struct IdentityProvider {
     private_key: pkey::PKey<Private>,
+    name_id_format: NameIdFormat,
 }
 
 pub enum Rsa {
@@ -74,14 +76,20 @@ impl IdentityProvider {
             }
         };
 
-        Ok(IdentityProvider { private_key })
+        Ok(IdentityProvider {
+            private_key,
+            name_id_format: NameIdFormat::default(),
+        })
     }
 
     pub fn from_rsa_private_key_der(der_bytes: &[u8]) -> Result<Self, Error> {
         let rsa = openssl::rsa::Rsa::private_key_from_der(der_bytes)?;
         let private_key = pkey::PKey::from_rsa(rsa)?;
 
-        Ok(IdentityProvider { private_key })
+        Ok(IdentityProvider {
+            private_key,
+            name_id_format: NameIdFormat::default(),
+        })
     }
 
     pub fn export_private_key_der(&self) -> Result<Vec<u8>, Error> {
@@ -147,6 +155,7 @@ impl IdentityProvider {
             acs_url,
             in_response_to_id,
             attributes,
+            &self.name_id_format,
         );
 
         let response_xml_unsigned = response.to_string()?;
@@ -156,5 +165,19 @@ impl IdentityProvider {
         )?;
         let signed_response = Response::from_str(signed_xml.as_str())?;
         Ok(signed_response)
+    }
+
+    /// Change the `NameId` format of the [`IdentityProvider`].
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let idp = IdentityProvider::from_rsa_private_key_der(&der_bytes)?
+    ///     .with_name_id_format(NameIdFormat::EmailAddressNameIDFormat);
+    /// ```
+    pub fn with_name_id_format(mut self, name_id_format: NameIdFormat) -> Self {
+        self.name_id_format = name_id_format;
+
+        self
     }
 }

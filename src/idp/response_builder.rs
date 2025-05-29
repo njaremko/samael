@@ -1,4 +1,5 @@
 use crate::attribute::{Attribute, AttributeValue};
+use crate::metadata::NameIdFormat;
 use crate::schema::{
     Assertion, AttributeStatement, AudienceRestriction, AuthnContext, AuthnContextClassRef,
     AuthnStatement, Conditions, Issuer, Response, Status, StatusCode, Subject, SubjectConfirmation,
@@ -63,6 +64,7 @@ fn build_assertion(
     recipient: &str,
     audience: &str,
     attributes: &[ResponseAttribute],
+    name_id_format: &NameIdFormat,
 ) -> Assertion {
     let assertion_id = crypto::gen_saml_assertion_id();
 
@@ -74,7 +76,7 @@ fn build_assertion(
         signature: None,
         subject: Some(Subject {
             name_id: Some(SubjectNameID {
-                format: Some("urn:oasis:names:tc:SAML:2.0:nameid-format:unspecified".to_string()),
+                format: Some(name_id_format.value().to_owned()),
                 value: name_id.to_owned(),
             }),
             subject_confirmations: Some(vec![SubjectConfirmation {
@@ -108,6 +110,7 @@ fn build_response(
     destination: &str,
     audience: &str,
     x509_cert: &[u8],
+    name_id_format: &NameIdFormat,
 ) -> Response {
     let issuer = Issuer {
         value: Some(issuer.to_string()),
@@ -140,6 +143,7 @@ fn build_response(
             destination,
             audience,
             attributes,
+            name_id_format,
         )),
     }
 }
@@ -152,8 +156,16 @@ pub fn build_response_template(
     acs_url: &str,
     request_id: &str,
     attributes: &[ResponseAttribute],
+    name_id_format: &NameIdFormat,
 ) -> Response {
     build_response(
-        name_id, issuer, request_id, attributes, acs_url, audience, cert_der,
+        name_id,
+        issuer,
+        request_id,
+        attributes,
+        acs_url,
+        audience,
+        cert_der,
+        name_id_format,
     )
 }
