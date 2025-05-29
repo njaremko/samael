@@ -1,5 +1,5 @@
 use super::*;
-use chrono::prelude::*;
+use chrono::{prelude::*, Duration};
 
 use crate::crypto::verify_signed_xml;
 use crate::idp::sp_extractor::{RequiredAttribute, SPMetadataExtractor};
@@ -97,6 +97,7 @@ fn test_signed_response() {
             "https://idp.example.com",
             verified.id.as_str(),
             &attrs,
+            &Default::default(),
         )
         .expect("failed to created and sign response");
 
@@ -156,6 +157,7 @@ fn test_signed_response_fingerprint() {
             "https://idp.example.com",
             "",
             &[],
+            &Default::default(),
         )
         .expect("failed to created and sign response");
     let base64_cert = response
@@ -345,4 +347,306 @@ fn test_accept_signed_with_correct_key_idp_3() {
     );
 
     assert!(resp.is_ok());
+}
+
+#[test]
+fn test_email_name_id_format() {
+    // Arrange
+    let idp = IdentityProvider::from_rsa_private_key_der(include_bytes!(
+        "../../test_vectors/idp_private_key.der"
+    ))
+    .expect("failed to create idp");
+
+    let params = CertificateParams {
+        common_name: "https://idp.example.com",
+        issuer_name: "https://idp.example.com",
+        days_until_expiration: 3650,
+    };
+
+    let idp_cert = idp.create_certificate(&params).expect("idp cert error");
+
+    let authn_request_xml = include_str!("../../test_vectors/authn_request.xml");
+    let unverified = UnverifiedAuthnRequest::from_xml(authn_request_xml).expect("failed to parse");
+    let verified = unverified
+        .try_verify_self_signed()
+        .expect("failed to verify self signed signature");
+
+    let optional_arguments =
+        OptionalSigningArgs::default().with_name_id_format(NameIdFormat::EmailAddressNameIDFormat);
+
+    // Act
+    let out_response = idp
+        .sign_authn_response(
+            idp_cert.as_slice(),
+            "testuser@example.com",
+            "https://sp.example.com/audience",
+            "https://sp.example.com/acs",
+            "https://idp.example.com",
+            verified.id.as_str(),
+            &[],
+            &optional_arguments,
+        )
+        .expect("failed to created and sign response");
+
+    // Assert
+    let out_xml = out_response
+        .to_string()
+        .expect("failed to serialize response xml");
+
+    assert!(
+        out_xml.contains(NameIdFormat::EmailAddressNameIDFormat.value()),
+        "the email address NameId format URN should be present in the XML response"
+    );
+    assert!(
+        !out_xml.contains(NameIdFormat::UnspecifiedNameIDFormat.value()),
+        "the default NameId format URN should not be present in the XML response"
+    );
+}
+
+#[test]
+fn test_not_before_and_after_conditions() {
+    // Arrange
+    let idp = IdentityProvider::from_rsa_private_key_der(include_bytes!(
+        "../../test_vectors/idp_private_key.der"
+    ))
+    .expect("failed to create idp");
+
+    let params = CertificateParams {
+        common_name: "https://idp.example.com",
+        issuer_name: "https://idp.example.com",
+        days_until_expiration: 3650,
+    };
+
+    let idp_cert = idp.create_certificate(&params).expect("idp cert error");
+
+    let authn_request_xml = include_str!("../../test_vectors/authn_request.xml");
+    let unverified = UnverifiedAuthnRequest::from_xml(authn_request_xml).expect("failed to parse");
+    let verified = unverified
+        .try_verify_self_signed()
+        .expect("failed to verify self signed signature");
+
+    let not_before = Utc::now();
+    let not_on_or_after = Utc::now() + Duration::hours(1);
+
+    let optional_arguments = OptionalSigningArgs::default()
+        .with_not_before(not_before)
+        .with_not_on_or_after(not_on_or_after);
+
+    // Act
+    let out_response = idp
+        .sign_authn_response(
+            idp_cert.as_slice(),
+            "testuser@example.com",
+            "https://sp.example.com/audience",
+            "https://sp.example.com/acs",
+            "https://idp.example.com",
+            verified.id.as_str(),
+            &[],
+            &optional_arguments,
+        )
+        .expect("failed to created and sign response");
+
+    // Assert
+    let out_xml = out_response
+        .to_string()
+        .expect("failed to serialize response xml");
+
+    assert!(out_xml.contains(&format!(
+        "NotBefore=\"{}\"",
+        not_before.to_rfc3339_opts(SecondsFormat::Secs, true)
+    )));
+    assert!(out_xml.contains(&format!(
+        "NotOnOrAfter=\"{}\"",
+        not_on_or_after.to_rfc3339_opts(SecondsFormat::Secs, true)
+    )));
+}
+
+#[test]
+fn test_altering_assertion_digest_to_sha256() {
+    // Arrange
+    let idp = IdentityProvider::from_rsa_private_key_der(include_bytes!(
+        "../../test_vectors/idp_private_key.der"
+    ))
+    .expect("failed to create idp");
+
+    let params = CertificateParams {
+        common_name: "https://idp.example.com",
+        issuer_name: "https://idp.example.com",
+        days_until_expiration: 3650,
+    };
+
+    let idp_cert = idp.create_certificate(&params).expect("idp cert error");
+
+    let authn_request_xml = include_str!("../../test_vectors/authn_request.xml");
+    let unverified = UnverifiedAuthnRequest::from_xml(authn_request_xml).expect("failed to parse");
+    let verified = unverified
+        .try_verify_self_signed()
+        .expect("failed to verify self signed signature");
+
+    let optional_arguments =
+        OptionalSigningArgs::default().with_digest_algorithm(DigestAlgorithm::Sha256);
+
+    // Act
+    let out_response = idp
+        .sign_authn_response(
+            idp_cert.as_slice(),
+            "testuser@example.com",
+            "https://sp.example.com/audience",
+            "https://sp.example.com/acs",
+            "https://idp.example.com",
+            verified.id.as_str(),
+            &[],
+            &optional_arguments,
+        )
+        .expect("failed to created and sign response");
+
+    // Assert
+    let out_xml = out_response
+        .to_string()
+        .expect("failed to serialize response xml");
+
+    assert!(
+        out_xml
+            .contains("<ds:DigestMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#sha256\"/>"),
+        "should contain a sha256 digest instead of the default sha1"
+    );
+    verify_signed_xml(out_xml.as_bytes(), idp_cert.as_slice(), Some("ID"))
+        .expect("verification failed");
+}
+
+#[test]
+fn test_that_providing_destination_will_use_that_instead_of_acs() {
+    // Arrange
+    let idp = IdentityProvider::from_rsa_private_key_der(include_bytes!(
+        "../../test_vectors/idp_private_key.der"
+    ))
+    .expect("failed to create idp");
+
+    let params = CertificateParams {
+        common_name: "https://idp.example.com",
+        issuer_name: "https://idp.example.com",
+        days_until_expiration: 3650,
+    };
+
+    let idp_cert = idp.create_certificate(&params).expect("idp cert error");
+
+    let authn_request_xml = include_str!("../../test_vectors/authn_request.xml");
+    let unverified = UnverifiedAuthnRequest::from_xml(authn_request_xml).expect("failed to parse");
+    let verified = unverified
+        .try_verify_self_signed()
+        .expect("failed to verify self signed signature");
+
+    let acs = "https://sp.example.com/acs";
+    let destination = "custom-destination";
+
+    // Act
+    let out_response_no_destination = idp
+        .sign_authn_response(
+            idp_cert.as_slice(),
+            "testuser@example.com",
+            "https://sp.example.com/audience",
+            acs,
+            "https://idp.example.com",
+            verified.id.as_str(),
+            &[],
+            &OptionalSigningArgs::default(),
+        )
+        .expect("failed to created and sign response");
+
+    let out_response_with_destination = idp
+        .sign_authn_response(
+            idp_cert.as_slice(),
+            "testuser@example.com",
+            "https://sp.example.com/audience",
+            acs,
+            "https://idp.example.com",
+            verified.id.as_str(),
+            &[],
+            &OptionalSigningArgs::default().with_destination(destination.to_owned()),
+        )
+        .expect("failed to created and sign response");
+
+    // Assert
+    let out_xml_no_destination = out_response_no_destination
+        .to_string()
+        .expect("failed to serialize response xml");
+    let out_xml_with_destination = out_response_with_destination
+        .to_string()
+        .expect("failed to serialize response xml");
+
+    assert!(out_xml_no_destination.contains(&format!("Destination=\"{acs}\"")));
+    assert!(!out_xml_no_destination.contains(&format!("Destination=\"{destination}\"")));
+
+    assert!(out_xml_with_destination.contains(&format!("Destination=\"{destination}\"")));
+    assert!(!out_xml_with_destination.contains(&format!("Destination=\"{acs}\"")));
+}
+
+#[test]
+fn test_that_providing_recipient_will_use_that_instead_of_destination() {
+    // Arrange
+    let idp = IdentityProvider::from_rsa_private_key_der(include_bytes!(
+        "../../test_vectors/idp_private_key.der"
+    ))
+    .expect("failed to create idp");
+
+    let params = CertificateParams {
+        common_name: "https://idp.example.com",
+        issuer_name: "https://idp.example.com",
+        days_until_expiration: 3650,
+    };
+
+    let idp_cert = idp.create_certificate(&params).expect("idp cert error");
+
+    let authn_request_xml = include_str!("../../test_vectors/authn_request.xml");
+    let unverified = UnverifiedAuthnRequest::from_xml(authn_request_xml).expect("failed to parse");
+    let verified = unverified
+        .try_verify_self_signed()
+        .expect("failed to verify self signed signature");
+
+    let acs = "https://sp.example.com/acs";
+    let destination = "custom-destination";
+    let recipient = "custom-recipient";
+
+    // Act
+    let out_response_no_recipient = idp
+        .sign_authn_response(
+            idp_cert.as_slice(),
+            "testuser@example.com",
+            "https://sp.example.com/audience",
+            acs,
+            "https://idp.example.com",
+            verified.id.as_str(),
+            &[],
+            &OptionalSigningArgs::default().with_destination(destination.to_owned()),
+        )
+        .expect("failed to created and sign response");
+
+    let out_response_with_recipient = idp
+        .sign_authn_response(
+            idp_cert.as_slice(),
+            "testuser@example.com",
+            "https://sp.example.com/audience",
+            acs,
+            "https://idp.example.com",
+            verified.id.as_str(),
+            &[],
+            &OptionalSigningArgs::default()
+                .with_destination(destination.to_owned())
+                .with_recipient(recipient.to_owned()),
+        )
+        .expect("failed to created and sign response");
+
+    // Assert
+    let out_xml_no_recipient = out_response_no_recipient
+        .to_string()
+        .expect("failed to serialize response xml");
+    let out_xml_with_recipient = out_response_with_recipient
+        .to_string()
+        .expect("failed to serialize response xml");
+
+    assert!(out_xml_no_recipient.contains(&format!("Recipient=\"{destination}\"")));
+    assert!(!out_xml_no_recipient.contains(&format!("Recipient=\"{recipient}\"")));
+
+    assert!(out_xml_with_recipient.contains(&format!("Recipient=\"{recipient}\"")));
+    assert!(!out_xml_with_recipient.contains(&format!("Recipient=\"{destination}\"")));
 }

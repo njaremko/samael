@@ -8,6 +8,7 @@ pub mod verified_request;
 #[cfg(test)]
 mod tests;
 
+use chrono::{DateTime, Utc};
 use openssl::bn::{BigNum, MsbOption};
 use openssl::ec::{EcGroup, EcKey};
 use openssl::nid::Nid;
@@ -20,11 +21,11 @@ use crate::crypto::{self};
 use crate::idp::response_builder::{build_response_template, ResponseAttribute};
 use crate::metadata::NameIdFormat;
 use crate::schema::Response;
+use crate::signature::DigestAlgorithm;
 use crate::traits::ToXml;
 
 pub struct IdentityProvider {
     private_key: pkey::PKey<Private>,
-    name_id_format: NameIdFormat,
 }
 
 pub enum Rsa {
@@ -76,20 +77,14 @@ impl IdentityProvider {
             }
         };
 
-        Ok(IdentityProvider {
-            private_key,
-            name_id_format: NameIdFormat::default(),
-        })
+        Ok(IdentityProvider { private_key })
     }
 
     pub fn from_rsa_private_key_der(der_bytes: &[u8]) -> Result<Self, Error> {
         let rsa = openssl::rsa::Rsa::private_key_from_der(der_bytes)?;
         let private_key = pkey::PKey::from_rsa(rsa)?;
 
-        Ok(IdentityProvider {
-            private_key,
-            name_id_format: NameIdFormat::default(),
-        })
+        Ok(IdentityProvider { private_key })
     }
 
     pub fn export_private_key_der(&self) -> Result<Vec<u8>, Error> {
@@ -146,6 +141,7 @@ impl IdentityProvider {
         issuer: &str,
         in_response_to_id: &str,
         attributes: &[ResponseAttribute],
+        optional_arguments: &OptionalSigningArgs,
     ) -> Result<Response, Box<dyn std::error::Error>> {
         let response = build_response_template(
             idp_x509_cert_der,
@@ -155,7 +151,12 @@ impl IdentityProvider {
             acs_url,
             in_response_to_id,
             attributes,
-            &self.name_id_format,
+            &optional_arguments.name_id_format,
+            &optional_arguments.not_before,
+            &optional_arguments.not_on_or_after,
+            &optional_arguments.digest_algorithm,
+            &optional_arguments.destination.as_deref(),
+            &optional_arguments.recipient.as_deref(),
         );
 
         let response_xml_unsigned = response.to_string()?;
@@ -166,18 +167,86 @@ impl IdentityProvider {
         let signed_response = Response::from_str(signed_xml.as_str())?;
         Ok(signed_response)
     }
+}
 
-    /// Change the `NameId` format of the [`IdentityProvider`].
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// let idp = IdentityProvider::from_rsa_private_key_der(&der_bytes)?
-    ///     .with_name_id_format(NameIdFormat::EmailAddressNameIDFormat);
-    /// ```
-    pub fn with_name_id_format(mut self, name_id_format: NameIdFormat) -> Self {
-        self.name_id_format = name_id_format;
+/// A set of optional arguments that are not broken out by the default `samael`
+/// crate.
+pub struct OptionalSigningArgs {
+    /// The `NotBefore` field in the `Conditions`. I.e. the response is not
+    /// valid before this time.
+    not_before: Option<DateTime<Utc>>,
 
-        self
+    /// The `NotOnOrAfter` field in the `Conditions`. I.e. the response is not
+    /// valid on or after this time.
+    not_on_or_after: Option<DateTime<Utc>>,
+
+    /// The top-level `Destination` tag. Will use the ACS url if not specified.
+    destination: Option<String>,
+
+    /// The `Recipient` field in the `SubjectConfirmationData`. Will use the ACS
+    /// if not specified.
+    recipient: Option<String>,
+
+    /// Indicates the format used by the `NameId` field.
+    name_id_format: NameIdFormat,
+
+    /// Defines which algorithm should be used to generate the assertion digest.
+    digest_algorithm: DigestAlgorithm,
+}
+
+impl Default for OptionalSigningArgs {
+    fn default() -> Self {
+        Self {
+            not_before: None,
+            not_on_or_after: None,
+            destination: None,
+            recipient: None,
+            name_id_format: NameIdFormat::default(),
+            digest_algorithm: DigestAlgorithm::default(),
+        }
+    }
+}
+
+impl OptionalSigningArgs {
+    pub fn with_not_before(self, not_before: DateTime<Utc>) -> Self {
+        Self {
+            not_before: Some(not_before),
+            ..self
+        }
+    }
+
+    pub fn with_not_on_or_after(self, not_on_or_after: DateTime<Utc>) -> Self {
+        Self {
+            not_on_or_after: Some(not_on_or_after),
+            ..self
+        }
+    }
+
+    pub fn with_destination(self, destination: String) -> Self {
+        Self {
+            destination: Some(destination),
+            ..self
+        }
+    }
+
+    pub fn with_recipient(self, recipient: String) -> Self {
+        Self {
+            recipient: Some(recipient),
+            ..self
+        }
+    }
+
+    pub fn with_name_id_format(self, name_id_format: NameIdFormat) -> Self {
+        Self {
+            name_id_format,
+            ..self
+        }
+    }
+
+    pub fn with_digest_algorithm(self, digest_algorithm: DigestAlgorithm) -> Self {
+        Self {
+            digest_algorithm,
+            ..self
+        }
     }
 }

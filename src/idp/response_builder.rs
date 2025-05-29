@@ -5,16 +5,20 @@ use crate::schema::{
     AuthnStatement, Conditions, Issuer, Response, Status, StatusCode, Subject, SubjectConfirmation,
     SubjectConfirmationData, SubjectNameID,
 };
-use crate::signature::Signature;
-use chrono::Utc;
+use crate::signature::{DigestAlgorithm, Signature};
+use chrono::{DateTime, Utc};
 
 use super::sp_extractor::RequiredAttribute;
 use crate::crypto;
 
-fn build_conditions(audience: &str) -> Conditions {
+fn build_conditions(
+    audience: &str,
+    not_before: &Option<DateTime<Utc>>,
+    not_on_or_after: &Option<DateTime<Utc>>,
+) -> Conditions {
     Conditions {
-        not_before: None,
-        not_on_or_after: None,
+        not_before: *not_before,
+        not_on_or_after: *not_on_or_after,
         audience_restrictions: Some(vec![AudienceRestriction {
             audience: vec![audience.to_string()],
         }]),
@@ -65,6 +69,8 @@ fn build_assertion(
     audience: &str,
     attributes: &[ResponseAttribute],
     name_id_format: &NameIdFormat,
+    not_before: &Option<DateTime<Utc>>,
+    not_on_or_after: &Option<DateTime<Utc>>,
 ) -> Assertion {
     let assertion_id = crypto::gen_saml_assertion_id();
 
@@ -92,7 +98,7 @@ fn build_assertion(
                 }),
             }]),
         }),
-        conditions: Some(build_conditions(audience)),
+        conditions: Some(build_conditions(audience, not_before, not_on_or_after)),
         authn_statements: Some(vec![build_authn_statement(
             "urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified",
         )]),
@@ -111,6 +117,10 @@ fn build_response(
     audience: &str,
     x509_cert: &[u8],
     name_id_format: &NameIdFormat,
+    not_before: &Option<DateTime<Utc>>,
+    not_on_or_after: &Option<DateTime<Utc>>,
+    digest_algorithm: &DigestAlgorithm,
+    recipient: &Option<&str>,
 ) -> Response {
     let issuer = Issuer {
         value: Some(issuer.to_string()),
@@ -118,6 +128,10 @@ fn build_response(
     };
 
     let response_id = crypto::gen_saml_response_id();
+
+    // If an optional recipient has been provided, use that. Else use the
+    // destination which is the standard.
+    let recipient = recipient.unwrap_or(destination);
 
     Response {
         id: response_id.clone(),
@@ -127,7 +141,11 @@ fn build_response(
         destination: Some(destination.to_string()),
         consent: None,
         issuer: Some(issuer.clone()),
-        signature: Some(Signature::template(&response_id, x509_cert)),
+        signature: Some(Signature::template(
+            &response_id,
+            x509_cert,
+            digest_algorithm,
+        )),
         status: Some(Status {
             status_code: StatusCode {
                 value: Some("urn:oasis:names:tc:SAML:2.0:status:Success".to_string()),
@@ -140,10 +158,12 @@ fn build_response(
             name_id,
             request_id,
             issuer,
-            destination,
+            recipient,
             audience,
             attributes,
             name_id_format,
+            not_before,
+            not_on_or_after,
         )),
     }
 }
@@ -157,15 +177,28 @@ pub fn build_response_template(
     request_id: &str,
     attributes: &[ResponseAttribute],
     name_id_format: &NameIdFormat,
+    not_before: &Option<DateTime<Utc>>,
+    not_on_or_after: &Option<DateTime<Utc>>,
+    digest_algorithm: &DigestAlgorithm,
+    destination: &Option<&str>,
+    recipient: &Option<&str>,
 ) -> Response {
+    // If an optional destination has been provided, use that. Else use the ACS
+    // URL which is the standard.
+    let destination = destination.unwrap_or(acs_url);
+
     build_response(
         name_id,
         issuer,
         request_id,
         attributes,
-        acs_url,
+        destination,
         audience,
         cert_der,
         name_id_format,
+        not_before,
+        not_on_or_after,
+        digest_algorithm,
+        recipient,
     )
 }

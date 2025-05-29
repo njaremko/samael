@@ -22,7 +22,11 @@ pub struct Signature {
 }
 
 impl Signature {
-    pub fn template(ref_id: &str, x509_cert_der: &[u8]) -> Self {
+    pub fn template(
+        ref_id: &str,
+        x509_cert_der: &[u8],
+        digest_algorithm: &DigestAlgorithm,
+    ) -> Self {
         Signature {
             id: None,
             signed_info: SignedInfo {
@@ -49,7 +53,7 @@ impl Signature {
                         ],
                     }),
                     digest_method: DigestMethod {
-                        algorithm: DigestAlgorithm::Sha1,
+                        algorithm: digest_algorithm.clone(),
                     },
                     digest_value: Some(DigestValue {
                         base64_content: Some("".to_string()),
@@ -448,8 +452,9 @@ impl TryFrom<&DigestMethod> for Event<'_> {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Default)]
 pub enum DigestAlgorithm {
+    #[default]
     #[serde(rename = "http://www.w3.org/2000/09/xmldsig#sha1")]
     Sha1,
     #[serde(rename = "http://www.w3.org/2001/04/xmlenc#sha256")]
