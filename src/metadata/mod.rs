@@ -40,8 +40,9 @@ pub const HTTP_POST_BINDING: &str = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-P
 // HTTP_REDIRECT_BINDING is the official URN for the HTTP-Redirect binding (transport)
 pub const HTTP_REDIRECT_BINDING: &str = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect";
 
-#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd, Default)]
 pub enum NameIdFormat {
+    #[default]
     UnspecifiedNameIDFormat,
     TransientNameIDFormat,
     EmailAddressNameIDFormat,
