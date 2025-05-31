@@ -4,6 +4,7 @@ use crate::metadata::EntityDescriptor;
 
 pub struct SPMetadataExtractor(EntityDescriptor);
 
+#[derive(Debug, Clone)]
 pub struct RequiredAttribute {
     pub name: String,
     pub format: Option<String>,

@@ -41,6 +41,7 @@ fn build_authn_statement(class: &str) -> AuthnStatement {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ResponseAttribute {
     pub required_attribute: RequiredAttribute,
     pub value: String,
