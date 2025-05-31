@@ -155,8 +155,8 @@ impl IdentityProvider {
             &optional_arguments.not_before,
             &optional_arguments.not_on_or_after,
             &optional_arguments.digest_algorithm,
-            &optional_arguments.destination.as_deref(),
-            &optional_arguments.recipient.as_deref(),
+            &optional_arguments.destination_override.as_deref(),
+            &optional_arguments.recipient_override.as_deref(),
         );
 
         let response_xml_unsigned = response.to_string()?;
@@ -181,11 +181,11 @@ pub struct OptionalSigningArgs {
     not_on_or_after: Option<DateTime<Utc>>,
 
     /// The top-level `Destination` tag. Will use the ACS url if not specified.
-    destination: Option<String>,
+    destination_override: Option<String>,
 
     /// The `Recipient` field in the `SubjectConfirmationData`. Will use the ACS
     /// if not specified.
-    recipient: Option<String>,
+    recipient_override: Option<String>,
 
     /// Indicates the format used by the `NameId` field.
     name_id_format: NameIdFormat,
@@ -199,8 +199,8 @@ impl Default for OptionalSigningArgs {
         Self {
             not_before: None,
             not_on_or_after: None,
-            destination: None,
-            recipient: None,
+            destination_override: None,
+            recipient_override: None,
             name_id_format: NameIdFormat::default(),
             digest_algorithm: DigestAlgorithm::default(),
         }
@@ -222,16 +222,16 @@ impl OptionalSigningArgs {
         }
     }
 
-    pub fn with_destination(self, destination: String) -> Self {
+    pub fn with_destination_override(self, destination_override: String) -> Self {
         Self {
-            destination: Some(destination),
+            destination_override: Some(destination_override),
             ..self
         }
     }
 
-    pub fn with_recipient(self, recipient: String) -> Self {
+    pub fn with_recipient_override(self, recipient_override: String) -> Self {
         Self {
-            recipient: Some(recipient),
+            recipient_override: Some(recipient_override),
             ..self
         }
     }

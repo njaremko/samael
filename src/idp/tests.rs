@@ -562,7 +562,7 @@ fn test_that_providing_destination_will_use_that_instead_of_acs() {
             "https://idp.example.com",
             verified.id.as_str(),
             &[],
-            &OptionalSigningArgs::default().with_destination(destination.to_owned()),
+            &OptionalSigningArgs::default().with_destination_override(destination.to_owned()),
         )
         .expect("failed to created and sign response");
 
@@ -617,7 +617,7 @@ fn test_that_providing_recipient_will_use_that_instead_of_destination() {
             "https://idp.example.com",
             verified.id.as_str(),
             &[],
-            &OptionalSigningArgs::default().with_destination(destination.to_owned()),
+            &OptionalSigningArgs::default().with_destination_override(destination.to_owned()),
         )
         .expect("failed to created and sign response");
 
@@ -631,8 +631,8 @@ fn test_that_providing_recipient_will_use_that_instead_of_destination() {
             verified.id.as_str(),
             &[],
             &OptionalSigningArgs::default()
-                .with_destination(destination.to_owned())
-                .with_recipient(recipient.to_owned()),
+                .with_destination_override(destination.to_owned())
+                .with_recipient_override(recipient.to_owned()),
         )
         .expect("failed to created and sign response");
 
