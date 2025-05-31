@@ -83,7 +83,7 @@ fn test_signed_response() {
                 name: attr.1.to_string(),
                 format: Some(attr.0.to_string()),
             },
-            value: attr.2,
+            value: attr.2.to_string(),
         })
         .collect::<Vec<ResponseAttribute>>();
 

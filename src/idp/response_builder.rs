@@ -41,9 +41,9 @@ fn build_authn_statement(class: &str) -> AuthnStatement {
     }
 }
 
-pub struct ResponseAttribute<'a> {
+pub struct ResponseAttribute {
     pub required_attribute: RequiredAttribute,
-    pub value: &'a str,
+    pub value: String,
 }
 
 fn build_attributes(formats_names_values: &[ResponseAttribute]) -> Vec<Attribute> {
