@@ -17,6 +17,30 @@ fn main() {
     println!("cargo:rustc-check-cfg=cfg(xmlsec_static)");
 
     if env::var_os("CARGO_FEATURE_XMLSEC").is_some() {
+        let lib = PkgConfig::new()
+            .probe("xmlsec1")
+            .expect("Could not find xmlsec1 using pkg-config");
+
+        // Show what we're using in the build outputpkg-config --modversion xmlsec1
+        println!("cargo:warning=xmlsec1 version: {}", lib.version);
+        for p in &lib.include_paths {
+            println!("cargo:warning=xmlsec1 include path: {}", p.display());
+        }
+        for p in &lib.link_paths {
+            println!("cargo:warning=xmlsec1 link path: {}", p.display());
+            // ensure rustc links against the same directory
+            println!("cargo:rustc-link-search=native={}", p.display());
+        }
+        println!("cargo:warning=xmlsec1 libs: {:?}", lib.libs);
+        println!(
+            "cargo:warning=xmlsec cflags: {}",
+            fetch_xmlsec_config_flags().join(" ")
+        );
+        println!(
+            "cargo:warning=xmlsec libs: {}",
+            fetch_xmlsec_config_libs().join(" ")
+        );
+
         let path_out = PathBuf::from(env::var("OUT_DIR").unwrap());
         let path_bindings = path_out.join(BINDINGS);
 
