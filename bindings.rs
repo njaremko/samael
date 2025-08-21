@@ -17,6 +17,27 @@ fn main() {
     println!("cargo:rustc-check-cfg=cfg(xmlsec_static)");
 
     if env::var_os("CARGO_FEATURE_XMLSEC").is_some() {
+
+
+        // In our homebrew, libxml2 falls back to the system library,
+        // even when pkg-config config file locations are explicitly set
+        // via PKG_CONFIG_PATH. Here the path to libxml2 is set explictly
+        // to the brew libxml2 library. 
+        let prefix = String::from_utf8(
+            std::process::Command::new("brew")
+                .args(["--prefix", "libxml2"])
+                .output()
+                .unwrap()
+                .stdout,
+        ).unwrap();
+        let prefix = prefix.trim();
+
+        // Make the linker search Homebrew's lib dir
+        println!("cargo:rustc-link-search=native={}/lib", prefix);
+
+        // Force the exact library file. No messing about
+        println!("cargo:rustc-link-arg={}/lib/libxml2.2.dylib", prefix);
+
         let lib = PkgConfig::new()
             .probe("xmlsec1")
             .expect("Could not find xmlsec1 using pkg-config");
@@ -31,15 +52,6 @@ fn main() {
             // ensure rustc links against the same directory
             println!("cargo:rustc-link-search=native={}", p.display());
         }
-        println!("cargo:warning=xmlsec1 libs: {:?}", lib.libs);
-        println!(
-            "cargo:warning=xmlsec cflags: {}",
-            fetch_xmlsec_config_flags().join(" ")
-        );
-        println!(
-            "cargo:warning=xmlsec libs: {}",
-            fetch_xmlsec_config_libs().join(" ")
-        );
 
         let path_out = PathBuf::from(env::var("OUT_DIR").unwrap());
         let path_bindings = path_out.join(BINDINGS);
@@ -61,7 +73,7 @@ fn main() {
             println!("cargo:rustc-link-lib=xmlsec1-openssl"); // -lxmlsec1-openssl
         }
         println!("cargo:rustc-link-lib=xmlsec1"); // -lxmlsec1
-        println!("cargo:rustc-link-lib=xml2"); // -lxml2
+        // Removed a `rust-link-lib` call here to libxml2. 
         println!("cargo:rustc-link-lib=ssl"); // -lssl
         println!("cargo:rustc-link-lib=crypto"); // -lcrypto
 
