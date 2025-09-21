@@ -1,6 +1,6 @@
+use crate::crypto::{Crypto, CryptoProvider};
 use crate::schema::{Conditions, Issuer, NameIdPolicy, RequestedAuthnContext, Subject};
 use crate::signature::Signature;
-use crate::crypto::{Crypto, CryptoProvider};
 use chrono::prelude::*;
 use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
@@ -8,7 +8,6 @@ use serde::Deserialize;
 use std::io::Cursor;
 use std::str::FromStr;
 use thiserror::Error;
-
 
 const NAME: &str = "saml2p:AuthnRequest";
 const SCHEMA: (&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
@@ -262,12 +261,9 @@ mod test {
             .add_key_info(public_cert)
             .to_signed_xml(private_key)?;
 
-        assert!(Crypto::verify_signed_xml(
-            signed_authn_request,
-            &public_cert[..],
-            Some("ID"),
-        )
-        .is_ok());
+        assert!(
+            Crypto::verify_signed_xml(signed_authn_request, &public_cert[..], Some("ID"),).is_ok()
+        );
 
         Ok(())
     }

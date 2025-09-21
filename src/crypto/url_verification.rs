@@ -1,8 +1,8 @@
-use std::collections::HashMap;
-use thiserror::Error;
 use crate::signature::SignatureAlgorithm;
 use base64::{engine::general_purpose, Engine as _};
+use std::collections::HashMap;
 use std::str::FromStr;
+use thiserror::Error;
 
 #[derive(Debug, Error, Clone)]
 pub enum UrlVerifierError {
@@ -134,7 +134,7 @@ impl UrlVerifier {
                 signed_url.scheme(),
                 signed_url.host_str().unwrap(),
             )
-                .as_str(),
+            .as_str(),
         )?;
 
         // Section 3.4.4.1 of
@@ -193,13 +193,13 @@ mod test {
     #[test]
     fn test_verify_uri() {
         let private_key = include_bytes!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/test_vectors/private.der"
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/private.der"
         ));
 
         let idp_metadata_xml = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/test_vectors/idp_2_metadata.xml"
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/idp_2_metadata.xml"
         ));
 
         let response_instant = "2014-07-17T01:01:48Z".parse::<DateTime<Utc>>().unwrap();
@@ -245,13 +245,13 @@ mod test {
     #[test]
     fn test_verify_uri_ec() {
         let private_key = include_bytes!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/test_vectors/ec_private.pem"
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/ec_private.pem"
         ));
 
         let idp_metadata_xml = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/test_vectors/idp_ecdsa_metadata.xml"
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/idp_ecdsa_metadata.xml"
         ));
 
         let response_instant = "2014-07-17T01:01:48Z".parse::<DateTime<Utc>>().unwrap();

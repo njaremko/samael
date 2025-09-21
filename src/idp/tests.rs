@@ -220,7 +220,10 @@ fn test_do_not_accept_unsigned_response() {
 
     let err = resp.err().unwrap();
     //todo: is this the correct error, doesn't really seem to fit the test description.
-    assert!(matches!(err, crate::service_provider::Error::FailedToParseSamlResponse(_)))
+    assert!(matches!(
+        err,
+        crate::service_provider::Error::FailedToParseSamlResponse(_)
+    ))
 }
 
 #[test]

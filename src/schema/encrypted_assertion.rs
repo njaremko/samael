@@ -7,9 +7,9 @@ use crate::schema::Assertion;
 use crate::service_provider::Error;
 use openssl::pkey::{PKey, Private};
 
+use crate::crypto::{Crypto, CryptoProvider};
 use crate::key_info::{EncryptedKeyInfo, KeyInfo};
 use crate::signature::DigestMethod;
-use crate::crypto::{Crypto, CryptoProvider};
 
 const NAME: &str = "saml2:EncryptedAssertion";
 const SCHEMA: (&str, &str) = ("xmlns:saml2", "urn:oasis:names:tc:SAML:2.0:assertion");
@@ -53,7 +53,8 @@ impl EncryptedAssertion {
                 let i = e.utf8_error().valid_up_to();
                 let mut plaintext = e.into_bytes();
                 plaintext.truncate(i);
-                let s = String::from_utf8(plaintext).map_err(|_| Error::EncryptedAssertionInvalid)?;
+                let s =
+                    String::from_utf8(plaintext).map_err(|_| Error::EncryptedAssertionInvalid)?;
                 let fi = s.find("<").unwrap();
                 let li = s.rfind(">").unwrap();
                 s[fi..li + 1].to_owned()

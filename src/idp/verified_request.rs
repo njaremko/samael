@@ -1,6 +1,6 @@
 use quick_xml::events::Event;
 
-use crate::crypto::{Crypto, CryptoProvider, decode_x509_cert};
+use crate::crypto::{decode_x509_cert, Crypto, CryptoProvider};
 use crate::schema::AuthnRequest;
 
 use super::error::Error;

@@ -15,7 +15,7 @@ use openssl::pkey::Private;
 use openssl::{asn1::Asn1Time, pkey, x509};
 use std::str::FromStr;
 
-use crate::crypto::{self, Crypto, CryptoProvider};
+use crate::crypto::{Crypto, CryptoProvider};
 
 use crate::idp::response_builder::{build_response_template, ResponseAttribute};
 use crate::schema::Response;

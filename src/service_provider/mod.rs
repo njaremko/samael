@@ -1,5 +1,5 @@
 use crate::crypto;
-use crate::crypto::{CryptoError, CryptoProvider};
+use crate::crypto::{Crypto, CryptoError, CryptoProvider};
 use crate::metadata::{Endpoint, IndexedEndpoint, KeyDescriptor, NameIdFormat, SpSsoDescriptor};
 use crate::schema::{Assertion, Response};
 use crate::traits::ToXml;
@@ -22,8 +22,6 @@ use url::Url;
 #[cfg(test)]
 mod tests;
 
-#[cfg(feature = "xmlsec")]
-use crate::crypto::reduce_xml_to_signed;
 #[cfg(feature = "xmlsec")]
 use crate::schema::EncryptedAssertion;
 
@@ -107,7 +105,7 @@ pub enum Error {
 
     #[error("Failed to parse SAMLResponse")]
     FailedToParseSamlResponse(#[source] quick_xml::DeError),
-    
+
     #[error("Error parsing the XML in the crypto provider")]
     CryptoXmlError(#[source] CryptoError),
 
@@ -123,8 +121,7 @@ impl From<crypto::CryptoError> for Error {
         match value {
             crypto::CryptoError::InvalidSignature
             | crypto::CryptoError::Base64Error { .. }
-            | crypto::CryptoError::XmlMissingRootElement
-            => Error::CryptoXmlError(value),
+            | crypto::CryptoError::XmlMissingRootElement => Error::CryptoXmlError(value),
             crypto::CryptoError::CryptoProviderError(error) => Error::CryptoProviderError(error),
             _ => Error::CryptoProviderError(Box::new(value)),
         }
@@ -265,13 +262,12 @@ impl ServiceProvider {
     }
 
     fn name_id_format(&self) -> Option<String> {
-        self.authn_name_id_format
-            .clone()
-            .and_then(|v| -> Option<String> {
+        self.authn_name_id_format.as_ref()
+            .map(|v| -> String {
                 if v.is_empty() {
-                    Some(NameIdFormat::TransientNameIDFormat.value().to_string())
+                    NameIdFormat::TransientNameIDFormat.value().to_string()
                 } else {
-                    Some(v)
+                    v.to_string()
                 }
             })
     }
@@ -354,7 +350,7 @@ impl ServiceProvider {
         possible_request_ids: Option<&[&str]>,
     ) -> Result<Assertion, Error> {
         let reduced_xml = if let Some(sign_certs) = self.idp_signing_certs()? {
-            reduce_xml_to_signed(response_xml, &sign_certs)
+            Crypto::reduce_xml_to_signed(response_xml, &sign_certs)
                 .map_err(|_e| Error::FailedToValidateSignature)?
         } else {
             String::from(response_xml)

@@ -36,7 +36,6 @@ pub struct Response {
     pub assertion: Option<Assertion>,
 }
 
-
 impl FromStr for Response {
     type Err = quick_xml::DeError;
 

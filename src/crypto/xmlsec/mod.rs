@@ -1,16 +1,16 @@
+use super::CryptoError;
 use std::collections::HashMap;
 use thiserror::Error;
-use super::CryptoError;
 
+use crate::schema::CipherValue;
 use libxml::parser::Parser as XmlParser;
-use openssl::symm::{Cipher, Crypter, Mode};
-use std::ffi::CString;
 use libxml::parser::XmlParseError;
 use openssl::error::ErrorStack;
-use crate::schema::CipherValue;
+use openssl::symm::{Cipher, Crypter, Mode};
+use std::ffi::CString;
 
-mod xmlsec;
-use xmlsec::{XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
+mod wrapper;
+use wrapper::{XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
 
 const XMLNS_XML_DSIG: &str = "http://www.w3.org/2000/09/xmldsig#";
 const XMLNS_SIGVER: &str = "urn:urn-5:08Z8lPlI4JVjifINTfCtfelirUo";
@@ -40,7 +40,7 @@ pub enum XmlSecProviderError {
     #[error("xml sec Error: {}", error)]
     XmlSecError {
         #[from]
-        error: xmlsec::XmlSecError,
+        error: wrapper::XmlSecError,
     },
 
     #[error("failed to remove attribute: {}", error)]
@@ -62,8 +62,8 @@ pub enum XmlSecProviderError {
     },
 }
 
-impl From<xmlsec::XmlSecError> for CryptoError {
-    fn from(value: xmlsec::XmlSecError) -> Self {
+impl From<wrapper::XmlSecError> for CryptoError {
+    fn from(value: wrapper::XmlSecError) -> Self {
         CryptoError::CryptoProviderError(Box::new(value))
     }
 }
@@ -89,7 +89,6 @@ impl From<XmlParseError> for CryptoError {
 pub struct XmlSec;
 
 impl super::CryptoProvider for XmlSec {
-
     fn verify_signed_xml<Bytes: AsRef<[u8]>>(
         xml: Bytes,
         x509_cert_der: &[u8],
@@ -109,6 +108,72 @@ impl super::CryptoProvider for XmlSec {
         }
 
         Ok(())
+    }
+
+    /// Takes an XML document, parses it, verifies all XML digital signatures against the given
+    /// certificates, and returns a derived version of the document where all elements that are not
+    /// covered by a digital signature have been removed.
+    fn reduce_xml_to_signed(
+        xml_str: &str,
+        certs: &[openssl::x509::X509],
+    ) -> Result<String, CryptoError> {
+        let mut xml = XmlParser::default().parse_string(xml_str)?;
+        let mut root_elem = xml
+            .get_root_element()
+            .ok_or(XmlSecProviderError::XmlMissingRootElement)?;
+
+        // collect ID attribute values and tell libxml about them
+        collect_id_attributes(&mut xml)?;
+
+        // verify each signature
+        {
+            let mut signature_nodes = find_signature_nodes(&root_elem);
+            for sig_node in signature_nodes.drain(..) {
+                let mut verified = false;
+                for openssl_key in certs {
+                    let mut sig_ctx = XmlSecSignatureContext::new()?;
+                    let key_data = openssl_key.to_der()?;
+                    let key = XmlSecKey::from_memory(&key_data, XmlSecKeyFormat::CertDer)?;
+                    sig_ctx.insert_key(key);
+                    verified = sig_ctx.verify_node(&sig_node)?;
+                    if verified {
+                        break;
+                    }
+                }
+
+                if !verified {
+                    return Err(CryptoError::InvalidSignature);
+                }
+            }
+        }
+
+        // define the "signature verified" namespace
+        let sig_ver_ns = libxml::tree::Namespace::new("sv", XMLNS_SIGVER, &mut root_elem)
+            .map_err(|err| XmlSecProviderError::XmlNamespaceDefinitionError { error: err })?;
+
+        // remove all existing "signature verified" attributes
+        // (we can't do this before verifying the signatures:
+        // they might be contained in the XML document proper and signed)
+        remove_signature_verified_attributes(&mut root_elem)?;
+
+        // place the "signature verified" attributes on all elements that are:
+        // * signed
+        // * a descendant of a signed element
+        // * an ancestor of a signed element
+        place_signature_verified_attributes(root_elem, &xml, &sig_ver_ns);
+
+        // delete all elements that don't have a "signature verified" attribute
+        let mut root_elem = xml
+            .get_root_element()
+            .ok_or(XmlSecProviderError::XmlMissingRootElement)?;
+        remove_unverified_elements(&mut root_elem);
+
+        // remove all "signature verified" attributes again
+        remove_signature_verified_attributes(&mut root_elem)?;
+
+        // serialize XML again
+        let reduced_xml_str = xml.to_string();
+        Ok(reduced_xml_str)
     }
 
     fn decrypt_assertion_key_info(
@@ -180,10 +245,12 @@ impl super::CryptoProvider for XmlSec {
         };
 
         Ok(plaintext)
-
     }
 
-    fn sign_xml<Bytes: AsRef<[u8]>>(xml: Bytes, private_key_der: &[u8]) -> Result<String, CryptoError> {
+    fn sign_xml<Bytes: AsRef<[u8]>>(
+        xml: Bytes,
+        private_key_der: &[u8],
+    ) -> Result<String, CryptoError> {
         let parser = XmlParser::default();
         let document = parser.parse_string(xml)?;
 
@@ -196,7 +263,6 @@ impl super::CryptoProvider for XmlSec {
         Ok(document.to_string())
     }
 }
-
 
 /// Searches the document for all attributes named `ID` and stores them and their values in the XML
 /// document's internal ID table.
@@ -256,7 +322,9 @@ fn find_signature_nodes(node: &libxml::tree::Node) -> Vec<libxml::tree::Node> {
 
 /// Removes all signature-verified attributes ([`ATTRIB_SIGVER`] in the namespace [`XMLNS_SIGVER`])
 /// from all elements in the subtree rooted at the given node.
-pub fn remove_signature_verified_attributes(node: &mut libxml::tree::Node) -> Result<(), XmlSecProviderError> {
+fn remove_signature_verified_attributes(
+    node: &mut libxml::tree::Node,
+) -> Result<(), XmlSecProviderError> {
     node.remove_attribute_ns(ATTRIB_SIGVER, XMLNS_SIGVER)
         .map_err(|err| XmlSecProviderError::XmlAttributeRemovalError { error: err })?;
     for mut child_elem in node.get_child_elements() {
@@ -464,68 +532,6 @@ fn remove_unverified_elements(node: &mut libxml::tree::Node) {
     }
 }
 
-/// Takes an XML document, parses it, verifies all XML digital signatures against the given
-/// certificates, and returns a derived version of the document where all elements that are not
-/// covered by a digital signature have been removed.
-pub(crate) fn reduce_xml_to_signed(
-    xml_str: &str,
-    certs: &[openssl::x509::X509],
-) -> Result<String, XmlSecProviderError> {
-    let mut xml = XmlParser::default().parse_string(xml_str)?;
-    let mut root_elem = xml.get_root_element().ok_or(XmlSecProviderError::XmlMissingRootElement)?;
-
-    // collect ID attribute values and tell libxml about them
-    collect_id_attributes(&mut xml)?;
-
-    // verify each signature
-    {
-        let mut signature_nodes = find_signature_nodes(&root_elem);
-        for sig_node in signature_nodes.drain(..) {
-            let mut verified = false;
-            for openssl_key in certs {
-                let mut sig_ctx = XmlSecSignatureContext::new()?;
-                let key_data = openssl_key.to_der()?;
-                let key = XmlSecKey::from_memory(&key_data, XmlSecKeyFormat::CertDer)?;
-                sig_ctx.insert_key(key);
-                verified = sig_ctx.verify_node(&sig_node)?;
-                if verified {
-                    break;
-                }
-            }
-
-            if !verified {
-                return Err(XmlSecProviderError::InvalidSignature);
-            }
-        }
-    }
-
-    // define the "signature verified" namespace
-    let sig_ver_ns = libxml::tree::Namespace::new("sv", XMLNS_SIGVER, &mut root_elem)
-        .map_err(|err| XmlSecProviderError::XmlNamespaceDefinitionError { error: err })?;
-
-    // remove all existing "signature verified" attributes
-    // (we can't do this before verifying the signatures:
-    // they might be contained in the XML document proper and signed)
-    remove_signature_verified_attributes(&mut root_elem)?;
-
-    // place the "signature verified" attributes on all elements that are:
-    // * signed
-    // * a descendant of a signed element
-    // * an ancestor of a signed element
-    place_signature_verified_attributes(root_elem, &xml, &sig_ver_ns);
-
-    // delete all elements that don't have a "signature verified" attribute
-    let mut root_elem = xml.get_root_element().ok_or(XmlSecProviderError::XmlMissingRootElement)?;
-    remove_unverified_elements(&mut root_elem);
-
-    // remove all "signature verified" attributes again
-    remove_signature_verified_attributes(&mut root_elem)?;
-
-    // serialize XML again
-    let reduced_xml_str = xml.to_string();
-    Ok(reduced_xml_str)
-}
-
 
 fn decrypt(
     t: Cipher,
@@ -564,5 +570,3 @@ fn decrypt_aead(
     out.truncate(count + rest);
     Ok(out)
 }
-
-

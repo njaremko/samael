@@ -1,7 +1,7 @@
 //!
 //! Wrapper for XmlSec Key and Certificate management Context
 //!
-use crate::bindings;
+use crate::crypto::xmlsec::wrapper::bindings;
 
 use super::backend;
 use super::error::XmlSecError;
@@ -57,13 +57,13 @@ impl XmlSecKey {
         Ok(Self(key))
     }
 
-    /// Create from raw pointer to an underlying xmlsec key structure. Henceforth its lifetime will be managed by this
+    /// Create from raw pointer to an underlying wrapper key structure. Henceforth its lifetime will be managed by this
     /// object.
     pub unsafe fn from_ptr(ptr: *mut bindings::xmlSecKey) -> Self {
         Self(ptr)
     }
 
-    /// Leak the internal resource. This is needed by [`XmlSecSignatureContext`][sigctx], since xmlsec takes over the
+    /// Leak the internal resource. This is needed by [`XmlSecSignatureContext`][sigctx], since wrapper takes over the
     /// lifetime management of the underlying resource when setting it as the active key for signature signing or
     /// verification.
     ///

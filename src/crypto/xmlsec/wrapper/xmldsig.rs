@@ -1,12 +1,11 @@
 //!
 //! Wrapper for XmlSec Signature Context
 //!
-use crate::bindings;
+use crate::crypto::xmlsec::wrapper::bindings;
 
-use libxml::tree::Document;
-use super::{XmlDocument, XmlSecError};
 use super::XmlSecKey;
 use super::XmlSecResult;
+use super::{XmlDocument, XmlSecError};
 
 use std::os::raw::c_uchar;
 use std::ptr::{null, null_mut};
@@ -17,7 +16,7 @@ pub struct XmlSecSignatureContext {
 }
 
 impl XmlSecSignatureContext {
-    /// Builds a context, ensuring xmlsec is initialized.
+    /// Builds a context, ensuring wrapper is initialized.
     pub fn new() -> XmlSecResult<Self> {
         super::xmlsec_internal::guarantee_xmlsec_init()?;
 
