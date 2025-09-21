@@ -1,4 +1,5 @@
 use crate::crypto;
+use crate::crypto::{CryptoError, CryptoProvider};
 use crate::metadata::{Endpoint, IndexedEndpoint, KeyDescriptor, NameIdFormat, SpSsoDescriptor};
 use crate::schema::{Assertion, Response};
 use crate::traits::ToXml;
@@ -26,12 +27,7 @@ use crate::crypto::reduce_xml_to_signed;
 #[cfg(feature = "xmlsec")]
 use crate::schema::EncryptedAssertion;
 
-#[cfg(not(feature = "xmlsec"))]
-fn reduce_xml_to_signed<T>(xml_str: &str, _keys: &Vec<T>) -> Result<String, Error> {
-    Ok(String::from(xml_str))
-}
-
-#[derive(Clone, Debug, Error)]
+#[derive(Debug, Error)]
 pub enum Error {
     #[error(
         "SAML response destination does not match SP ACS URL. {:?} != {:?}",
@@ -90,38 +86,30 @@ pub enum Error {
     FailedToParseCert { cert: String },
     #[error("Unexpected Error Occurred!")]
     UnexpectedError,
-    #[cfg(feature = "xmlsec")]
     #[error("Missing private key on service provider")]
     MissingPrivateKeySP,
-    #[cfg(feature = "xmlsec")]
     #[error("Missing encrypted key info")]
     MissingEncryptedKeyInfo,
-    #[cfg(feature = "xmlsec")]
     #[error("Missing encrypted value info")]
     MissingEncryptedValueInfo,
-    #[cfg(feature = "xmlsec")]
     #[error("Unsupported key encryption method for encrypted assertion: {method}")]
     EncryptedAssertionKeyMethodUnsupported { method: String },
-    #[cfg(feature = "xmlsec")]
     #[error("Unsupported value encryption method for encrypted assertion: {method}")]
     EncryptedAssertionValueMethodUnsupported { method: String },
-    #[cfg(feature = "xmlsec")]
     #[error("Encrypted assertion invalid")]
     EncryptedAssertionInvalid,
-    #[cfg(feature = "xmlsec")]
-    #[error("OpenSSL error stack: {}", error)]
-    OpenSSLError {
-        #[from]
-        error: openssl::error::ErrorStack,
-    },
-    #[cfg(feature = "xmlsec")]
+    #[error("Crypto provider error.")]
+    CryptoProviderError(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Failed to decrypt assertion")]
     FailedToDecryptAssertion,
     #[error("Tried to use an unsupported key format")]
     UnsupportedKey,
 
     #[error("Failed to parse SAMLResponse")]
-    FailedToParseSamlResponse,
+    FailedToParseSamlResponse(#[source] quick_xml::DeError),
+    
+    #[error("Error parsing the XML in the crypto provider")]
+    CryptoXmlError(#[source] CryptoError),
 
     #[error("ACS url is missing")]
     MissingAcsUrl,
@@ -130,17 +118,15 @@ pub enum Error {
     MissingSloUrl,
 }
 
-impl From<crypto::Error> for Error {
-    fn from(value: crypto::Error) -> Self {
+impl From<crypto::CryptoError> for Error {
+    fn from(value: crypto::CryptoError) -> Self {
         match value {
-            crypto::Error::InvalidSignature
-            | crypto::Error::Base64Error { .. }
-            | crypto::Error::XmlMissingRootElement
-            | crypto::Error::XmlParseError { .. }
-            | crypto::Error::XmlSecError { .. }
-            | crypto::Error::XmlAttributeRemovalError { .. }
-            | crypto::Error::XmlNamespaceDefinitionError { .. } => Error::FailedToParseSamlResponse,
-            crypto::Error::OpenSSLError { error } => Error::OpenSSLError { error },
+            crypto::CryptoError::InvalidSignature
+            | crypto::CryptoError::Base64Error { .. }
+            | crypto::CryptoError::XmlMissingRootElement
+            => Error::CryptoXmlError(value),
+            crypto::CryptoError::CryptoProviderError(error) => Error::CryptoProviderError(error),
+            _ => Error::CryptoProviderError(Box::new(value)),
         }
     }
 }
@@ -375,7 +361,7 @@ impl ServiceProvider {
         };
         let response: Response = reduced_xml
             .parse()
-            .map_err(|_e| Error::FailedToParseSamlResponse)?;
+            .map_err(Error::FailedToParseSamlResponse)?;
         self.validate_destination(&response)?;
         let mut request_id_valid = false;
         if self.allow_idp_initiated {

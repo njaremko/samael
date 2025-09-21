@@ -15,7 +15,7 @@ use openssl::pkey::Private;
 use openssl::{asn1::Asn1Time, pkey, x509};
 use std::str::FromStr;
 
-use crate::crypto::{self};
+use crate::crypto::{self, Crypto, CryptoProvider};
 
 use crate::idp::response_builder::{build_response_template, ResponseAttribute};
 use crate::schema::Response;
@@ -150,7 +150,7 @@ impl IdentityProvider {
         );
 
         let response_xml_unsigned = response.to_string()?;
-        let signed_xml = crypto::sign_xml(
+        let signed_xml = Crypto::sign_xml(
             response_xml_unsigned.as_str(),
             self.export_private_key_der()?.as_slice(),
         )?;

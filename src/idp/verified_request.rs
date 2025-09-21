@@ -1,6 +1,6 @@
 use quick_xml::events::Event;
 
-use crate::crypto::{self, verify_signed_xml};
+use crate::crypto::{Crypto, CryptoProvider, decode_x509_cert};
 use crate::schema::AuthnRequest;
 
 use super::error::Error;
@@ -30,7 +30,7 @@ impl<'a> UnverifiedAuthnRequest<'a> {
             .ok_or(Error::NoKeyInfo)?
             .flat_map(|d| d.x509_data.as_ref())
             .flat_map(|d| d.certificates.iter())
-            .map(|cert| crypto::decode_x509_cert(cert))
+            .map(|cert| decode_x509_cert(cert))
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_| Error::InvalidCertificateEncoding)?;
 
@@ -45,14 +45,14 @@ impl<'a> UnverifiedAuthnRequest<'a> {
         let xml = self.xml.as_bytes();
         self.get_certs_der()?
             .into_iter()
-            .map(|der_cert| Ok(verify_signed_xml(xml, &der_cert, Some("ID"))?))
+            .map(|der_cert| Ok(Crypto::verify_signed_xml(xml, &der_cert, Some("ID"))?))
             .reduce(|a, b| a.or(b))
             .ok_or(Error::UnexpectedError)?
             .map(|()| VerifiedAuthnRequest(self.request))
     }
 
     pub fn try_verify_with_cert(self, der_cert: &[u8]) -> Result<VerifiedAuthnRequest, Error> {
-        verify_signed_xml(self.xml.as_bytes(), der_cert, Some("ID"))?;
+        Crypto::verify_signed_xml(self.xml.as_bytes(), der_cert, Some("ID"))?;
         Ok(VerifiedAuthnRequest(self.request))
     }
 }

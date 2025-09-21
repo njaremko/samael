@@ -1,7 +1,7 @@
 use super::*;
 use chrono::prelude::*;
 
-use crate::crypto::verify_signed_xml;
+use crate::crypto::{Crypto, CryptoProvider};
 use crate::idp::sp_extractor::{RequiredAttribute, SPMetadataExtractor};
 use crate::idp::verified_request::UnverifiedAuthnRequest;
 use crate::service_provider::ServiceProvider;
@@ -24,7 +24,7 @@ fn test_extract_sp() {
         .expect("failed to get x509 cert");
 
     let authn_request_xml = include_str!("../../test_vectors/authn_request.xml");
-    verify_signed_xml(authn_request_xml, x509cert.as_slice(), Some("ID"))
+    Crypto::verify_signed_xml(authn_request_xml, x509cert.as_slice(), Some("ID"))
         .expect("failed to verify authn request");
 
     let issuer = extractor.issuer().expect("no issuer");
@@ -104,7 +104,7 @@ fn test_signed_response() {
         .to_string()
         .expect("failed to serialize response xml");
 
-    verify_signed_xml(out_xml.as_bytes(), idp_cert.as_slice(), Some("ID"))
+    Crypto::verify_signed_xml(out_xml.as_bytes(), idp_cert.as_slice(), Some("ID"))
         .expect("verification failed");
 }
 
@@ -118,7 +118,7 @@ fn test_signed_response_threads() {
         let _ = unverified
             .try_verify_self_signed()
             .expect("failed to verify self signed signature");
-        verify_signed_xml(authn_request_xml, cert_der, Some("ID")).expect("failed verify");
+        Crypto::verify_signed_xml(authn_request_xml, cert_der, Some("ID")).expect("failed verify");
     };
 
     let mut handles = vec![];
@@ -219,10 +219,8 @@ fn test_do_not_accept_unsigned_response() {
     assert!(resp.is_err());
 
     let err = resp.err().unwrap();
-    assert_eq!(
-        err.to_string(),
-        crate::service_provider::Error::FailedToParseSamlResponse.to_string()
-    );
+    //todo: is this the correct error, doesn't really seem to fit the test description.
+    assert!(matches!(err, crate::service_provider::Error::FailedToParseSamlResponse(_)))
 }
 
 #[test]
