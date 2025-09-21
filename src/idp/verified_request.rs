@@ -1,6 +1,6 @@
 use quick_xml::events::Event;
 
-use crate::crypto::{decode_x509_cert, Crypto, CryptoProvider};
+use crate::crypto::{decode_x509_cert, Crypto, CryptoProvider, CertificateDer};
 use crate::schema::AuthnRequest;
 
 use super::error::Error;
@@ -18,7 +18,7 @@ impl<'a> UnverifiedAuthnRequest<'a> {
         })
     }
 
-    fn get_certs_der(&self) -> Result<Vec<Vec<u8>>, Error> {
+    fn get_certs_der(&self) -> Result<Vec<CertificateDer>, Error> {
         let x509_certs = self
             .request
             .signature
@@ -51,7 +51,7 @@ impl<'a> UnverifiedAuthnRequest<'a> {
             .map(|()| VerifiedAuthnRequest(self.request))
     }
 
-    pub fn try_verify_with_cert(self, der_cert: &[u8]) -> Result<VerifiedAuthnRequest, Error> {
+    pub fn try_verify_with_cert(self, der_cert: &CertificateDer) -> Result<VerifiedAuthnRequest, Error> {
         Crypto::verify_signed_xml(self.xml.as_bytes(), der_cert, Some("ID"))?;
         Ok(VerifiedAuthnRequest(self.request))
     }

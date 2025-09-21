@@ -24,7 +24,7 @@ fn test_extract_sp() {
         .expect("failed to get x509 cert");
 
     let authn_request_xml = include_str!("../../test_vectors/authn_request.xml");
-    Crypto::verify_signed_xml(authn_request_xml, x509cert.as_slice(), Some("ID"))
+    Crypto::verify_signed_xml(authn_request_xml, &x509cert, Some("ID"))
         .expect("failed to verify authn request");
 
     let issuer = extractor.issuer().expect("no issuer");
@@ -90,7 +90,7 @@ fn test_signed_response() {
     // create and sign a response
     let out_response = idp
         .sign_authn_response(
-            idp_cert.as_slice(),
+            &idp_cert,
             "testuser@example.com",
             "https://sp.example.com/audience",
             "https://sp.example.com/acs",
@@ -104,7 +104,7 @@ fn test_signed_response() {
         .to_string()
         .expect("failed to serialize response xml");
 
-    Crypto::verify_signed_xml(out_xml.as_bytes(), idp_cert.as_slice(), Some("ID"))
+    Crypto::verify_signed_xml(out_xml.as_bytes(), &idp_cert, Some("ID"))
         .expect("verification failed");
 }
 
@@ -112,13 +112,13 @@ fn test_signed_response() {
 fn test_signed_response_threads() {
     let verify = move || {
         let authn_request_xml = include_str!("../../test_vectors/authn_request.xml");
-        let cert_der = include_bytes!("../../test_vectors/sp_cert.der");
+        let cert_der = include_bytes!("../../test_vectors/sp_cert.der").to_vec().into();
         let unverified =
             UnverifiedAuthnRequest::from_xml(authn_request_xml).expect("failed to parse");
         let _ = unverified
             .try_verify_self_signed()
             .expect("failed to verify self signed signature");
-        Crypto::verify_signed_xml(authn_request_xml, cert_der, Some("ID")).expect("failed verify");
+        Crypto::verify_signed_xml(authn_request_xml, &cert_der, Some("ID")).expect("failed verify");
     };
 
     let mut handles = vec![];
@@ -149,7 +149,7 @@ fn test_signed_response_fingerprint() {
     let idp_cert = idp.create_certificate(&params).expect("idp cert error");
     let response = idp
         .sign_authn_response(
-            idp_cert.as_slice(),
+            &idp_cert,
             "testuser@example.com",
             "https://sp.example.com/audience",
             "https://sp.example.com/acs",

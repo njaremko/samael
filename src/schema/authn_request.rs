@@ -1,4 +1,4 @@
-use crate::crypto::{Crypto, CryptoProvider};
+use crate::crypto::{Crypto, CryptoProvider, CertificateDer};
 use crate::schema::{Conditions, Issuer, NameIdPolicy, RequestedAuthnContext, Subject};
 use crate::signature::Signature;
 use chrono::prelude::*;
@@ -115,7 +115,7 @@ impl AuthnRequest {
         self.issuer.clone().and_then(|iss| iss.value)
     }
 
-    pub fn add_key_info(&mut self, public_cert_der: &[u8]) -> &mut Self {
+    pub fn add_key_info(&mut self, public_cert_der: &CertificateDer) -> &mut Self {
         if let Some(ref mut signature) = self.signature {
             signature.add_key_info(public_cert_der);
         }
@@ -249,7 +249,7 @@ mod test {
         let public_cert = include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_vectors/public.der"
-        ));
+        )).to_vec().into();
 
         let authn_request_sign_template = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -258,11 +258,11 @@ mod test {
 
         let signed_authn_request = authn_request_sign_template
             .parse::<AuthnRequest>()?
-            .add_key_info(public_cert)
+            .add_key_info(&public_cert)
             .to_signed_xml(private_key)?;
 
         assert!(
-            Crypto::verify_signed_xml(signed_authn_request, &public_cert[..], Some("ID"),).is_ok()
+            Crypto::verify_signed_xml(signed_authn_request, &public_cert, Some("ID"),).is_ok()
         );
 
         Ok(())
@@ -290,7 +290,7 @@ mod test {
 
         let signed_authn_redirect_url = authn_request_sign_template
             .parse::<AuthnRequest>()?
-            .signed_redirect("", private_key)?
+            .signed_redirect("", &private_key)?
             .unwrap();
 
         let url_verifier = UrlVerifier::from_rsa_pem(public_key)?;
@@ -321,7 +321,7 @@ mod test {
 
         let signed_authn_redirect_url = authn_request_sign_template
             .parse::<AuthnRequest>()?
-            .signed_redirect("some_relay_state_here", private_key)?
+            .signed_redirect("some_relay_state_here", &private_key)?
             .unwrap();
 
         let url_verifier = UrlVerifier::from_rsa_der(public_key)?;
@@ -353,7 +353,7 @@ mod test {
 
         let signed_authn_redirect_url = authn_request_sign_template
             .parse::<AuthnRequest>()?
-            .signed_redirect("some_relay_state_here", private_key)?
+            .signed_redirect("some_relay_state_here", &private_key)?
             .unwrap();
 
         let url_verifier = UrlVerifier::from_x509_cert_pem(public_cert)?;

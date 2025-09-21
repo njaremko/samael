@@ -1,4 +1,4 @@
-use super::CryptoError;
+use super::{CryptoError, CertificateDer};
 use std::collections::HashMap;
 use thiserror::Error;
 
@@ -8,6 +8,7 @@ use libxml::parser::XmlParseError;
 use openssl::error::ErrorStack;
 use openssl::symm::{Cipher, Crypter, Mode};
 use std::ffi::CString;
+use openssl::pkey::{PKey, Private};
 
 mod wrapper;
 use wrapper::{XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
@@ -89,15 +90,16 @@ impl From<XmlParseError> for CryptoError {
 pub struct XmlSec;
 
 impl super::CryptoProvider for XmlSec {
+    type PrivateKey = PKey<Private>;
     fn verify_signed_xml<Bytes: AsRef<[u8]>>(
         xml: Bytes,
-        x509_cert_der: &[u8],
+        x509_cert_der: &CertificateDer,
         id_attribute: Option<&str>,
     ) -> Result<(), CryptoError> {
         let parser = XmlParser::default();
         let document = parser.parse_string(xml)?;
 
-        let key = XmlSecKey::from_memory(x509_cert_der, XmlSecKeyFormat::CertDer)?;
+        let key = XmlSecKey::from_memory(x509_cert_der.der_data(), XmlSecKeyFormat::CertDer)?;
         let mut context = XmlSecSignatureContext::new()?;
         context.insert_key(key);
 
@@ -115,7 +117,7 @@ impl super::CryptoProvider for XmlSec {
     /// covered by a digital signature have been removed.
     fn reduce_xml_to_signed(
         xml_str: &str,
-        certs: &[openssl::x509::X509],
+        certs_der: &[CertificateDer],
     ) -> Result<String, CryptoError> {
         let mut xml = XmlParser::default().parse_string(xml_str)?;
         let mut root_elem = xml
@@ -130,10 +132,9 @@ impl super::CryptoProvider for XmlSec {
             let mut signature_nodes = find_signature_nodes(&root_elem);
             for sig_node in signature_nodes.drain(..) {
                 let mut verified = false;
-                for openssl_key in certs {
+                for key_data in certs_der {
                     let mut sig_ctx = XmlSecSignatureContext::new()?;
-                    let key_data = openssl_key.to_der()?;
-                    let key = XmlSecKey::from_memory(&key_data, XmlSecKeyFormat::CertDer)?;
+                    let key = XmlSecKey::from_memory(key_data.der_data(), XmlSecKeyFormat::CertDer)?;
                     sig_ctx.insert_key(key);
                     verified = sig_ctx.verify_node(&sig_node)?;
                     if verified {

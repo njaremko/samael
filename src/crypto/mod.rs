@@ -9,7 +9,7 @@ use crate::schema::CipherValue;
 pub use cert_encoding::*;
 pub use ids::*;
 use thiserror::Error;
-pub use url_verification::{UrlVerifier, UrlVerifierError};
+pub use url_verification::{UrlVerifier, UrlVerifierError, sign_url};
 #[cfg(feature = "xmlsec")]
 pub use xmlsec::*;
 
@@ -45,10 +45,28 @@ pub enum CryptoError {
     CryptoDisabled,
 }
 
+/// A certificate encoded in der format.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CertificateDer(Vec<u8>);
+
+impl CertificateDer {
+    pub fn der_data(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl From<Vec<u8>> for CertificateDer {
+    fn from(cert_der: Vec<u8>) -> Self {
+        Self(cert_der)
+    }
+}
+
 pub trait CryptoProvider {
+    type PrivateKey;
+    
     fn verify_signed_xml<Bytes: AsRef<[u8]>>(
         xml: Bytes,
-        x509_cert_der: &[u8],
+        x509_cert_der: &CertificateDer,
         id_attribute: Option<&str>,
     ) -> Result<(), CryptoError>;
 
@@ -57,13 +75,13 @@ pub trait CryptoProvider {
     /// covered by a digital signature have been removed.
     fn reduce_xml_to_signed(
         xml_str: &str,
-        certs: &[openssl::x509::X509],
+        certs_der: &[CertificateDer],
     ) -> Result<String, CryptoError>;
 
     fn decrypt_assertion_key_info(
         cipher_value: &CipherValue,
         method: &str,
-        decryption_key: &openssl::pkey::PKey<openssl::pkey::Private>,
+        decryption_key: &Self::PrivateKey,
     ) -> Result<Vec<u8>, CryptoError>;
 
     fn decrypt_assertion_value_info(

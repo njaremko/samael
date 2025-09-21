@@ -2,12 +2,22 @@ use crate::signature::SignatureAlgorithm;
 use base64::{engine::general_purpose, Engine as _};
 use std::collections::HashMap;
 use std::str::FromStr;
+use openssl::error::ErrorStack;
+use openssl::pkey::{PKey, Private};
 use thiserror::Error;
+use url::Url;
+use crate::crypto::CertificateDer;
 
 #[derive(Debug, Error, Clone)]
 pub enum UrlVerifierError {
     #[error("Unimplemented SigAlg: {:?}", sigalg)]
     SigAlgUnimplemented { sigalg: String },
+    #[error("The key type is not supported for url signing")]
+    UnsupportedKey,
+    #[error("No query to sign")]
+    NoQueryToSign,
+    #[error("Signing error")]
+    SigningError(#[from] ErrorStack)
 }
 
 pub struct UrlVerifier {
@@ -46,8 +56,9 @@ impl UrlVerifier {
     }
 
     pub fn from_x509(
-        public_cert: &openssl::x509::X509,
+        public_cert: &CertificateDer,
     ) -> Result<Self, Box<dyn std::error::Error>> {
+        let public_cert = openssl::x509::X509::from_der(public_cert.der_data())?;
         let public_key = public_cert.public_key()?;
         Ok(Self { public_key })
     }
@@ -184,6 +195,56 @@ impl UrlVerifier {
     }
 }
 
+
+pub fn sign_url(mut unsigned_url: Url, private_key: &PKey<Private>) -> Result<Url, UrlVerifierError> {
+    // Refer to section 3.4.4.1 (page 17) of
+    //
+    // https://docs.oasis-open.org/security/saml/v2.0/saml-bindings-2.0-os.pdf
+    //
+    // Note: the spec says to remove the Signature related XML elements
+    // from the document but leaving them in usually works too.
+
+    // see RFC 4051 for choices
+    if private_key.ec_key().is_ok() {
+        unsigned_url.query_pairs_mut().append_pair(
+            "SigAlg",
+            "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256",
+        );
+    } else if private_key.rsa().is_ok() {
+        unsigned_url.query_pairs_mut().append_pair(
+            "SigAlg",
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+        );
+    } else {
+        return Err(UrlVerifierError::UnsupportedKey)?;
+    }
+
+    // Sign *only* the existing url's encoded query parameters:
+    //
+    // http://some.idp.com?SAMLRequest=value&RelayState=value&SigAlg=value
+    //                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    //
+    // then add the "Signature" query parameter afterwards.
+    let string_to_sign: String = unsigned_url
+        .query()
+        .ok_or(UrlVerifierError::NoQueryToSign)?
+        .to_string();
+
+
+    let mut signer =
+        openssl::sign::Signer::new(openssl::hash::MessageDigest::sha256(), private_key)?;
+
+    signer.update(string_to_sign.as_bytes())?;
+
+    unsigned_url.query_pairs_mut().append_pair(
+        "Signature",
+        &general_purpose::STANDARD.encode(signer.sign_to_vec()?),
+    );
+
+    // Past this point, it's a signed url :)
+    Ok(unsigned_url)
+}
+
 #[cfg(test)]
 mod test {
     use super::UrlVerifier;
@@ -221,7 +282,7 @@ mod test {
         let private_key = openssl::pkey::PKey::from_rsa(private_key).unwrap();
 
         let signed_request_url = authn_request
-            .signed_redirect("", private_key)
+            .signed_redirect("", &private_key)
             .unwrap()
             .unwrap();
 
@@ -273,7 +334,7 @@ mod test {
         let private_key = openssl::pkey::PKey::from_ec_key(private_key).unwrap();
 
         let signed_request_url = authn_request
-            .signed_redirect("", private_key)
+            .signed_redirect("", &private_key)
             .unwrap()
             .unwrap();
 

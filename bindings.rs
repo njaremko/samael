@@ -9,7 +9,7 @@ use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
-const BINDINGS: &str = "bindings.rs";
+const BINDINGS: &str = "xmlsec_bindings.rs";
 
 fn main() {
     // Tell the compiler about our custom cfg flags

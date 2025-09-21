@@ -9,6 +9,7 @@ use chrono::Utc;
 
 use super::sp_extractor::RequiredAttribute;
 use crate::crypto;
+use crate::crypto::CertificateDer;
 
 fn build_conditions(audience: &str) -> Conditions {
     Conditions {
@@ -107,7 +108,7 @@ fn build_response(
     attributes: &[ResponseAttribute],
     destination: &str,
     audience: &str,
-    x509_cert: &[u8],
+    x509_cert: &CertificateDer,
 ) -> Response {
     let issuer = Issuer {
         value: Some(issuer.to_string()),
@@ -145,7 +146,7 @@ fn build_response(
 }
 
 pub fn build_response_template(
-    cert_der: &[u8],
+    cert_der: &CertificateDer,
     name_id: &str,
     audience: &str,
     issuer: &str,
