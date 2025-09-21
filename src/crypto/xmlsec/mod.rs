@@ -2,13 +2,15 @@ use std::collections::HashMap;
 use thiserror::Error;
 use super::CryptoError;
 
-use crate::xmlsec::{self, XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
 use libxml::parser::Parser as XmlParser;
 use openssl::symm::{Cipher, Crypter, Mode};
 use std::ffi::CString;
 use libxml::parser::XmlParseError;
 use openssl::error::ErrorStack;
-use crate::schema::{CipherValue};
+use crate::schema::CipherValue;
+
+mod xmlsec;
+use xmlsec::{XmlSecKey, XmlSecKeyFormat, XmlSecSignatureContext};
 
 const XMLNS_XML_DSIG: &str = "http://www.w3.org/2000/09/xmldsig#";
 const XMLNS_SIGVER: &str = "urn:urn-5:08Z8lPlI4JVjifINTfCtfelirUo";
@@ -32,7 +34,7 @@ pub enum XmlSecProviderError {
     #[error("xml sec Error: {}", error)]
     XmlParseError {
         #[from]
-        error: libxml::parser::XmlParseError,
+        error: XmlParseError,
     },
 
     #[error("xml sec Error: {}", error)]
@@ -56,7 +58,7 @@ pub enum XmlSecProviderError {
     #[error("OpenSSL error stack: {}", error)]
     OpenSSLError {
         #[from]
-        error: openssl::error::ErrorStack,
+        error: ErrorStack,
     },
 }
 
@@ -128,7 +130,7 @@ impl super::CryptoProvider for XmlSec {
 
         let encrypted_key =
             openssl::base64::decode_block(&cipher_value.value.lines().collect::<String>())?;
-        let pkey_size = decryption_key.size() as usize;
+        let pkey_size = decryption_key.size();
         let mut decrypted_key = vec![0u8; pkey_size];
         let rsa = decryption_key.rsa()?;
         let i = rsa.private_decrypt(&encrypted_key, &mut decrypted_key, padding)?;
@@ -159,7 +161,7 @@ impl super::CryptoProvider for XmlSec {
             "http://www.w3.org/2009/xmlenc11#aes128-gcm" => {
                 let cipher = Cipher::aes_128_gcm();
                 let iv_len = cipher.iv_len().unwrap();
-                let tag_len = 16 as usize;
+                let tag_len = 16usize;
                 let data_end = encoded_value.len() - tag_len;
                 decrypt_aead(
                     cipher,
@@ -304,18 +306,6 @@ fn get_elements_by_predicate<F: FnMut(&libxml::tree::Node) -> bool>(
         nodes_to_visit.append(&mut children);
     }
     nodes
-}
-
-/// Searches for and returns the element with the given value of the `ID` attribute from the subtree
-/// rooted at the given node.
-fn get_element_by_id(elem: &libxml::tree::Node, id: &str) -> Option<libxml::tree::Node> {
-    let mut elems = get_elements_by_predicate(elem, |node| {
-        node.get_attribute("ID")
-            .map(|node_id| node_id == id)
-            .unwrap_or(false)
-    });
-    let elem = elems.drain(..).next();
-    elem
 }
 
 /// Searches for and returns the element with the given pointer value from the subtree rooted at the

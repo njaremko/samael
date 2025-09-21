@@ -3,8 +3,8 @@
 //!
 use crate::bindings;
 
-use super::XmlDocument;
-use super::XmlSecError;
+use libxml::tree::Document;
+use super::{XmlDocument, XmlSecError};
 use super::XmlSecKey;
 use super::XmlSecResult;
 
