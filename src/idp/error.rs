@@ -46,6 +46,6 @@ pub enum Error {
     #[error("Verification Error: {}", error)]
     VerificationError {
         #[from]
-        error: crate::crypto::Error,
+        error: crate::crypto::CryptoError,
     },
 }

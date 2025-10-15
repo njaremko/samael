@@ -1,5 +1,6 @@
 use super::error::Error;
 use crate::crypto;
+use crate::crypto::CertificateDer;
 use crate::metadata::EntityDescriptor;
 
 pub struct SPMetadataExtractor(EntityDescriptor);
@@ -67,7 +68,7 @@ impl SPMetadataExtractor {
             .unwrap_or_default()
     }
 
-    pub fn verification_cert(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    pub fn verification_cert(&self) -> Result<CertificateDer, Box<dyn std::error::Error>> {
         let sp_descriptors = self
             .0
             .sp_sso_descriptors

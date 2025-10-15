@@ -13,13 +13,3 @@ pub fn write_plain_element<W: Write>(
     writer.write_event(Event::End(BytesEnd::new(element_name)))?;
     Ok(())
 }
-
-#[allow(unused)]
-pub fn write_plain_attribute<W: Write>(
-    writer: &mut BytesStart,
-    attribute: &str,
-    text: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    writer.push_attribute((attribute, text));
-    Ok(())
-}

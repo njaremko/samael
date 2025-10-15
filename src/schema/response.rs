@@ -6,7 +6,6 @@ use quick_xml::Writer;
 use serde::Deserialize;
 use std::io::Cursor;
 use std::str::FromStr;
-use thiserror::Error;
 
 const NAME: &str = "saml2p:Response";
 const SCHEMA: (&str, &str) = ("xmlns:saml2p", "urn:oasis:names:tc:SAML:2.0:protocol");
@@ -37,20 +36,11 @@ pub struct Response {
     pub assertion: Option<Assertion>,
 }
 
-#[derive(Debug, Error)]
-pub enum Error {
-    #[error("Failed to deserialize SAMLResponse: {:?}", source)]
-    ParseError {
-        #[from]
-        source: quick_xml::DeError,
-    },
-}
-
 impl FromStr for Response {
-    type Err = Error;
+    type Err = quick_xml::DeError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(quick_xml::de::from_str(s)?)
+        quick_xml::de::from_str(s)
     }
 }
 

@@ -1,4 +1,5 @@
 use crate::crypto;
+use crate::crypto::{CertificateDer, Crypto, CryptoError, CryptoProvider, sign_url};
 use crate::metadata::{Endpoint, IndexedEndpoint, KeyDescriptor, NameIdFormat, SpSsoDescriptor};
 use crate::schema::{Assertion, Response};
 use crate::traits::ToXml;
@@ -11,8 +12,6 @@ use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
 use chrono::Duration;
 use flate2::{write::DeflateEncoder, Compression};
-use openssl::pkey::Private;
-use openssl::x509;
 use std::fmt::Debug;
 use std::io::Write;
 use thiserror::Error;
@@ -21,17 +20,9 @@ use url::Url;
 #[cfg(test)]
 mod tests;
 
-#[cfg(feature = "xmlsec")]
-use crate::crypto::reduce_xml_to_signed;
-#[cfg(feature = "xmlsec")]
 use crate::schema::EncryptedAssertion;
 
-#[cfg(not(feature = "xmlsec"))]
-fn reduce_xml_to_signed<T>(xml_str: &str, _keys: &Vec<T>) -> Result<String, Error> {
-    Ok(String::from(xml_str))
-}
-
-#[derive(Clone, Debug, Error)]
+#[derive(Debug, Error)]
 pub enum Error {
     #[error(
         "SAML response destination does not match SP ACS URL. {:?} != {:?}",
@@ -90,38 +81,30 @@ pub enum Error {
     FailedToParseCert { cert: String },
     #[error("Unexpected Error Occurred!")]
     UnexpectedError,
-    #[cfg(feature = "xmlsec")]
     #[error("Missing private key on service provider")]
     MissingPrivateKeySP,
-    #[cfg(feature = "xmlsec")]
     #[error("Missing encrypted key info")]
     MissingEncryptedKeyInfo,
-    #[cfg(feature = "xmlsec")]
     #[error("Missing encrypted value info")]
     MissingEncryptedValueInfo,
-    #[cfg(feature = "xmlsec")]
     #[error("Unsupported key encryption method for encrypted assertion: {method}")]
     EncryptedAssertionKeyMethodUnsupported { method: String },
-    #[cfg(feature = "xmlsec")]
     #[error("Unsupported value encryption method for encrypted assertion: {method}")]
     EncryptedAssertionValueMethodUnsupported { method: String },
-    #[cfg(feature = "xmlsec")]
     #[error("Encrypted assertion invalid")]
     EncryptedAssertionInvalid,
-    #[cfg(feature = "xmlsec")]
-    #[error("OpenSSL error stack: {}", error)]
-    OpenSSLError {
-        #[from]
-        error: openssl::error::ErrorStack,
-    },
-    #[cfg(feature = "xmlsec")]
+    #[error("Crypto provider error.")]
+    CryptoProviderError(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Failed to decrypt assertion")]
     FailedToDecryptAssertion,
     #[error("Tried to use an unsupported key format")]
     UnsupportedKey,
 
     #[error("Failed to parse SAMLResponse")]
-    FailedToParseSamlResponse,
+    FailedToParseSamlResponse(#[source] quick_xml::DeError),
+
+    #[error("Error parsing the XML in the crypto provider")]
+    CryptoXmlError(#[source] CryptoError),
 
     #[error("ACS url is missing")]
     MissingAcsUrl,
@@ -130,17 +113,14 @@ pub enum Error {
     MissingSloUrl,
 }
 
-impl From<crypto::Error> for Error {
-    fn from(value: crypto::Error) -> Self {
+impl From<CryptoError> for Error {
+    fn from(value: CryptoError) -> Self {
         match value {
-            crypto::Error::InvalidSignature
-            | crypto::Error::Base64Error { .. }
-            | crypto::Error::XmlMissingRootElement
-            | crypto::Error::XmlParseError { .. }
-            | crypto::Error::XmlSecError { .. }
-            | crypto::Error::XmlAttributeRemovalError { .. }
-            | crypto::Error::XmlNamespaceDefinitionError { .. } => Error::FailedToParseSamlResponse,
-            crypto::Error::OpenSSLError { error } => Error::OpenSSLError { error },
+            CryptoError::InvalidSignature
+            | CryptoError::Base64Error { .. }
+            | CryptoError::XmlMissingRootElement => Error::CryptoXmlError(value),
+            CryptoError::CryptoProviderError(error) => Error::CryptoProviderError(error),
+            _ => Error::CryptoProviderError(Box::new(value)),
         }
     }
 }
@@ -149,15 +129,15 @@ impl From<crypto::Error> for Error {
 #[builder(default, setter(into))]
 pub struct ServiceProvider {
     pub entity_id: Option<String>,
-    pub key: Option<openssl::pkey::PKey<Private>>,
-    pub certificate: Option<x509::X509>,
-    pub intermediates: Option<Vec<x509::X509>>,
+    pub key: Option<<Crypto as CryptoProvider>::PrivateKey>,
+    pub certificate: Option<CertificateDer>,
+    pub intermediates: Option<Vec<CertificateDer>>,
     pub metadata_url: Option<String>,
     pub acs_url: Option<String>,
     pub slo_url: Option<String>,
     pub idp_metadata: EntityDescriptor,
     pub authn_name_id_format: Option<String>,
-    pub metadata_valid_duration: Option<chrono::Duration>,
+    pub metadata_valid_duration: Option<Duration>,
     pub force_authn: bool,
     pub allow_idp_initiated: bool,
     pub contact_person: Option<ContactPerson>,
@@ -192,7 +172,7 @@ impl ServiceProvider {
         let valid_duration = if let Some(duration) = self.metadata_valid_duration {
             Some(duration)
         } else {
-            Some(chrono::Duration::hours(48))
+            Some(Duration::hours(48))
         };
 
         let valid_until = valid_duration.map(|d| Utc::now() + d);
@@ -205,10 +185,10 @@ impl ServiceProvider {
 
         let mut key_descriptors = vec![];
         if let Some(cert) = &self.certificate {
-            let mut cert_bytes: Vec<u8> = cert.to_der()?;
+            let mut cert_bytes: Vec<u8> = cert.der_data().to_vec();
             if let Some(intermediates) = &self.intermediates {
                 for intermediate in intermediates {
-                    cert_bytes.append(&mut intermediate.to_der()?);
+                    cert_bytes.extend_from_slice(intermediate.der_data());
                 }
             }
             key_descriptors.push(KeyDescriptor {
@@ -279,13 +259,12 @@ impl ServiceProvider {
     }
 
     fn name_id_format(&self) -> Option<String> {
-        self.authn_name_id_format
-            .clone()
-            .and_then(|v| -> Option<String> {
+        self.authn_name_id_format.as_ref()
+            .map(|v| -> String {
                 if v.is_empty() {
-                    Some(NameIdFormat::TransientNameIDFormat.value().to_string())
+                    NameIdFormat::TransientNameIDFormat.value().to_string()
                 } else {
-                    Some(v)
+                    v.to_string()
                 }
             })
     }
@@ -316,7 +295,7 @@ impl ServiceProvider {
         None
     }
 
-    pub fn idp_signing_certs(&self) -> Result<Option<Vec<openssl::x509::X509>>, Error> {
+    pub fn idp_signing_certs(&self) -> Result<Option<Vec<CertificateDer>>, Error> {
         let mut result = vec![];
         if let Some(idp_sso_descriptors) = &self.idp_metadata.idp_sso_descriptors {
             for idp_sso_descriptor in idp_sso_descriptors {
@@ -368,14 +347,14 @@ impl ServiceProvider {
         possible_request_ids: Option<&[&str]>,
     ) -> Result<Assertion, Error> {
         let reduced_xml = if let Some(sign_certs) = self.idp_signing_certs()? {
-            reduce_xml_to_signed(response_xml, &sign_certs)
+            Crypto::reduce_xml_to_signed(response_xml, &sign_certs)
                 .map_err(|_e| Error::FailedToValidateSignature)?
         } else {
             String::from(response_xml)
         };
         let response: Response = reduced_xml
             .parse()
-            .map_err(|_e| Error::FailedToParseSamlResponse)?;
+            .map_err(Error::FailedToParseSamlResponse)?;
         self.validate_destination(&response)?;
         let mut request_id_valid = false;
         if self.allow_idp_initiated {
@@ -441,7 +420,6 @@ impl ServiceProvider {
         }
     }
 
-    #[cfg(feature = "xmlsec")]
     fn decrypt_assertion(
         &self,
         encrypted_assertion: &EncryptedAssertion,
@@ -551,7 +529,7 @@ impl ServiceProvider {
     }
 }
 
-fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<x509::X509>, Error> {
+fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<CertificateDer>, Error> {
     key_descriptor
         .key_info
         .x509_data
@@ -562,7 +540,6 @@ fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<x509::X509>,
                 .map(|cert| {
                     crypto::decode_x509_cert(cert)
                         .ok()
-                        .and_then(|decoded| openssl::x509::X509::from_der(&decoded).ok())
                         .ok_or_else(|| Error::FailedToParseCert {
                             cert: cert.to_string(),
                         })
@@ -615,65 +592,20 @@ impl AuthnRequest {
         }
     }
 
+    // todo: how does this fit to the seperate crypto?
     pub fn signed_redirect(
         &self,
         relay_state: &str,
-        private_key: openssl::pkey::PKey<Private>,
+        private_key: &<Crypto as CryptoProvider>::PrivateKey,
     ) -> Result<Option<Url>, Box<dyn std::error::Error>> {
         let unsigned_url = self.redirect(relay_state)?;
-
-        if unsigned_url.is_none() {
-            return Ok(unsigned_url);
+        match unsigned_url {
+            None => Ok(None),
+            Some(url) => {
+                let signed_url = sign_url(url, private_key)?;
+                Ok(Some(signed_url))
+            }
         }
-
-        let mut unsigned_url = unsigned_url.unwrap();
-
-        // Refer to section 3.4.4.1 (page 17) of
-        //
-        // https://docs.oasis-open.org/security/saml/v2.0/saml-bindings-2.0-os.pdf
-        //
-        // Note: the spec says to remove the Signature related XML elements
-        // from the document but leaving them in usually works too.
-
-        // see RFC 4051 for choices
-        if private_key.ec_key().is_ok() {
-            unsigned_url.query_pairs_mut().append_pair(
-                "SigAlg",
-                "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256",
-            );
-        } else if private_key.rsa().is_ok() {
-            unsigned_url.query_pairs_mut().append_pair(
-                "SigAlg",
-                "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
-            );
-        } else {
-            return Err(Error::UnsupportedKey)?;
-        }
-
-        // Sign *only* the existing url's encoded query parameters:
-        //
-        // http://some.idp.com?SAMLRequest=value&RelayState=value&SigAlg=value
-        //                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        //
-        // then add the "Signature" query parameter afterwards.
-        let string_to_sign: String = unsigned_url
-            .query()
-            .ok_or(Error::UnexpectedError)?
-            .to_string();
-
-        let pkey = private_key;
-
-        let mut signer =
-            openssl::sign::Signer::new(openssl::hash::MessageDigest::sha256(), pkey.as_ref())?;
-
-        signer.update(string_to_sign.as_bytes())?;
-
-        unsigned_url.query_pairs_mut().append_pair(
-            "Signature",
-            &general_purpose::STANDARD.encode(signer.sign_to_vec()?),
-        );
-
-        // Past this point, it's a signed url :)
-        Ok(Some(unsigned_url))
     }
+
 }

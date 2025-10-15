@@ -3,11 +3,11 @@
 //!
 
 #[cfg(xmlsec_dynamic)]
-use crate::bindings as backend;
+use crate::crypto::xmlsec::wrapper::bindings as backend_inner;
 
 #[cfg(xmlsec_static)]
-mod backend {
-    pub use crate::bindings::{
+mod backend_inner {
+    pub use crate::crypto::xmlsec::wrapper::bindings::{
         xmlSecOpenSSLAppInit as xmlSecCryptoAppInit,
         xmlSecOpenSSLAppKeyCertLoad as xmlSecCryptoAppKeyCertLoad,
         xmlSecOpenSSLAppKeyCertLoadMemory as xmlSecCryptoAppKeyCertLoadMemory,
@@ -17,4 +17,4 @@ mod backend {
     };
 }
 
-pub use backend::*;
+pub use backend_inner::*;

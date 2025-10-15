@@ -1,7 +1,7 @@
 //!
 //! Central XmlSec1 Context
 //!
-use crate::bindings;
+use crate::crypto::xmlsec::wrapper::bindings;
 
 use lazy_static::lazy_static;
 
@@ -19,7 +19,7 @@ lazy_static! {
 pub fn guarantee_xmlsec_init() -> XmlSecResult<()> {
     let mut inner = XMLSEC
         .lock()
-        .expect("Unable to lock global xmlsec initalization wrapper");
+        .expect("Unable to lock global wrapper initalization wrapper");
 
     if inner.is_none() {
         *inner = Some(XmlSecContext::new()?);
@@ -30,7 +30,7 @@ pub fn guarantee_xmlsec_init() -> XmlSecResult<()> {
 
 /// XmlSec Global Context
 ///
-/// This object initializes the underlying xmlsec global state and cleans it
+/// This object initializes the underlying wrapper global state and cleans it
 /// up once gone out of scope. It is checked by all objects in the library that
 /// require the context to be initialized. See [`globals`][globals].
 ///
@@ -38,7 +38,7 @@ pub fn guarantee_xmlsec_init() -> XmlSecResult<()> {
 pub struct XmlSecContext {}
 
 impl XmlSecContext {
-    /// Runs xmlsec initialization and returns instance of itself.
+    /// Runs wrapper initialization and returns instance of itself.
     pub fn new() -> XmlSecResult<Self> {
         unsafe {
             libxml::bindings::xmlInitParser();
@@ -60,7 +60,7 @@ impl Drop for XmlSecContext {
     }
 }
 
-/// Init xmlsec library
+/// Init wrapper library
 fn init_xmlsec() -> XmlSecResult<()> {
     let rc = unsafe {
         bindings::xmlSecCheckVersionExt(
@@ -85,8 +85,8 @@ fn init_xmlsec() -> XmlSecResult<()> {
 }
 
 /// Load default crypto engine if we are supporting dynamic loading for
-/// xmlsec-crypto libraries. Use the crypto library name ("openssl",
-/// "nss", etc.) to load corresponding xmlsec-crypto library.
+/// wrapper-crypto libraries. Use the crypto library name ("openssl",
+/// "nss", etc.) to load corresponding wrapper-crypto library.
 fn init_crypto_app() -> XmlSecResult<()> {
     #[cfg(xmlsec_dynamic)]
     {
@@ -105,7 +105,7 @@ fn init_crypto_app() -> XmlSecResult<()> {
     }
 }
 
-/// Init xmlsec-crypto library
+/// Init wrapper-crypto library
 fn init_crypto() -> XmlSecResult<()> {
     let rc = unsafe { backend::xmlSecCryptoInit() };
 
@@ -116,7 +116,7 @@ fn init_crypto() -> XmlSecResult<()> {
     }
 }
 
-/// Shutdown xmlsec-crypto library
+/// Shutdown wrapper-crypto library
 fn cleanup_crypto() {
     unsafe { backend::xmlSecCryptoShutdown() };
 }
@@ -126,7 +126,7 @@ fn cleanup_crypto_app() {
     unsafe { backend::xmlSecCryptoAppShutdown() };
 }
 
-/// Shutdown xmlsec library
+/// Shutdown wrapper library
 fn cleanup_xmlsec() {
     unsafe { bindings::xmlSecShutdown() };
 }

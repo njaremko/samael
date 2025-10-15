@@ -5,6 +5,7 @@ use quick_xml::Writer;
 use serde::Deserialize;
 use std::io::Cursor;
 use std::str::FromStr;
+use crate::crypto::CertificateDer;
 
 const NAME: &str = "ds:Signature";
 const SCHEMA: (&str, &str) = ("xmlns:ds", "http://www.w3.org/2000/09/xmldsig#");
@@ -22,7 +23,7 @@ pub struct Signature {
 }
 
 impl Signature {
-    pub fn template(ref_id: &str, x509_cert_der: &[u8]) -> Self {
+    pub fn template(ref_id: &str, x509_cert_der: &CertificateDer) -> Self {
         Signature {
             id: None,
             signed_info: SignedInfo {
@@ -72,11 +73,11 @@ impl Signature {
         }
     }
 
-    pub fn add_key_info(&mut self, public_cert_der: &[u8]) -> &mut Self {
+    pub fn add_key_info(&mut self, public_cert_der: &CertificateDer) -> &mut Self {
         self.key_info.get_or_insert(Vec::new()).push(KeyInfo {
             id: None,
             x509_data: Some(X509Data {
-                certificates: vec![general_purpose::STANDARD.encode(public_cert_der)],
+                certificates: vec![general_purpose::STANDARD.encode(public_cert_der.der_data())],
             }),
         });
         self

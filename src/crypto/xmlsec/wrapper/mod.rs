@@ -1,5 +1,5 @@
 //
-// Source of xmlsec adapted from a separate project: https://github.com/voipir/rust-xmlsec
+// Source of wrapper adapted from a separate project: https://github.com/voipir/rust-xmlsec
 // MIT Licence (Voipir Group): https://github.com/voipir/rust-xmlsec/blob/master/LICENSE
 
 //!
@@ -20,6 +20,7 @@ mod error;
 mod keys;
 mod xmldsig;
 mod xmlsec_internal;
+mod bindings;
 
 // exports
 pub use self::error::XmlSecError;
@@ -27,4 +28,3 @@ pub use self::error::XmlSecResult;
 pub use self::keys::XmlSecKey;
 pub use self::keys::XmlSecKeyFormat;
 pub use self::xmldsig::XmlSecSignatureContext;
-pub use self::xmlsec_internal::XmlSecContext;

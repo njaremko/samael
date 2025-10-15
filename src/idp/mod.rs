@@ -15,7 +15,7 @@ use openssl::pkey::Private;
 use openssl::{asn1::Asn1Time, pkey, x509};
 use std::str::FromStr;
 
-use crate::crypto::{self};
+use crate::crypto::{CertificateDer, Crypto, CryptoProvider};
 
 use crate::idp::response_builder::{build_response_template, ResponseAttribute};
 use crate::schema::Response;
@@ -94,7 +94,7 @@ impl IdentityProvider {
         }
     }
 
-    pub fn create_certificate(&self, params: &CertificateParams) -> Result<Vec<u8>, Error> {
+    pub fn create_certificate(&self, params: &CertificateParams) -> Result<CertificateDer, Error> {
         let mut name = x509::X509Name::builder()?;
         name.append_entry_by_nid(Nid::COMMONNAME, params.common_name)?;
         let name = name.build();
@@ -126,12 +126,12 @@ impl IdentityProvider {
         builder.sign(&self.private_key, openssl::hash::MessageDigest::sha256())?;
 
         let certificate: x509::X509 = builder.build();
-        Ok(certificate.to_der()?)
+        Ok(certificate.to_der()?.into())
     }
 
     pub fn sign_authn_response(
         &self,
-        idp_x509_cert_der: &[u8],
+        idp_x509_cert_der: &CertificateDer,
         subject_name_id: &str,
         audience: &str,
         acs_url: &str,
@@ -150,7 +150,7 @@ impl IdentityProvider {
         );
 
         let response_xml_unsigned = response.to_string()?;
-        let signed_xml = crypto::sign_xml(
+        let signed_xml = Crypto::sign_xml(
             response_xml_unsigned.as_str(),
             self.export_private_key_der()?.as_slice(),
         )?;
