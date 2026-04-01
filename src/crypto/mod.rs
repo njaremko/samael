@@ -65,11 +65,14 @@ impl From<Vec<u8>> for CertificateDer {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ReduceMode {
     /// Returns xmlsec's pre-digest content for exactly one verified reference across the document.
+    ///
+    /// This is the strictest mode. It only works if there is one Signature element
+    /// in the XML.
     PreDigest,
     /// Legacy mode that preserves the verified content and every element ancestor up to the
     /// document root.
     ///
-    /// This is kept for compatibility with older callers. It is not the default because unsigned
+    /// This is kept for compatibility with older callers. It is not recommended because unsigned
     /// ancestors can survive reduction in this mode.
     ValidateAndMark,
     /// Returns a rooted XML document containing only xmlsec-verified content.
