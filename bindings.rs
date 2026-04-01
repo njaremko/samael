@@ -12,6 +12,11 @@ use std::process::Command;
 const BINDINGS: &str = "xmlsec_bindings.rs";
 
 fn main() {
+    // Don't run the script when building just for docs.rs
+    if std::env::var("DOCS_RS").is_ok() {
+        return;
+    }
+
     // Tell the compiler about our custom cfg flags
     println!("cargo:rustc-check-cfg=cfg(xmlsec_dynamic)");
     println!("cargo:rustc-check-cfg=cfg(xmlsec_static)");

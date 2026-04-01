@@ -3,6 +3,7 @@ mod crypto_disabled;
 mod ids;
 mod url_verification;
 #[cfg(feature = "xmlsec")]
+#[cfg(not(doc))]
 mod xmlsec;
 
 use crate::schema::CipherValue;
@@ -11,11 +12,13 @@ pub use ids::*;
 use thiserror::Error;
 pub use url_verification::{sign_url, UrlVerifier, UrlVerifierError};
 #[cfg(feature = "xmlsec")]
+#[cfg(not(doc))]
 pub use xmlsec::*;
 
 #[cfg(feature = "xmlsec")]
+#[cfg(not(doc))]
 pub type Crypto = XmlSec;
-#[cfg(not(feature = "xmlsec"))]
+#[cfg(any(not(feature = "xmlsec"), doc))]
 pub type Crypto = crypto_disabled::NoCrypto;
 
 #[derive(Debug, Error)]
