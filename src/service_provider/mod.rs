@@ -711,7 +711,7 @@ impl ServiceProvider {
     }
 }
 
-fn root_element_local_name(xml: &str) -> Option<String> {
+pub(crate) fn root_element_local_name(xml: &str) -> Option<String> {
     let mut reader = Reader::from_str(xml);
 
     loop {

@@ -208,10 +208,20 @@ impl super::CryptoProvider for XmlSec {
         }
 
         if reduce_mode == ReduceMode::PreDigest {
-            if predigest_results.len() != 1 {
-                return Err(CryptoError::InvalidSignature);
+            if predigest_results.len() == 1 {
+                return Ok(predigest_results.remove(0));
+            } else {
+                for predigest in predigest_results {
+                    return match crate::service_provider::root_element_local_name(&predigest)
+                        .as_deref()
+                    {
+                        // We want to trust the full response as that includes the relevant data.
+                        // Everything is signed so even if we found a signed Assertion in here we could trust it, for now lets keep it minimal.
+                        Some("Response") => Ok(predigest),
+                        _ => Err(CryptoError::InvalidSignature),
+                    };
+                }
             }
-            return Ok(predigest_results.remove(0));
         }
 
         if selections.is_empty() {

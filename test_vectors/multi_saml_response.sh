@@ -1,0 +1,6 @@
+#!/bin/env bash
+
+openssl req -new -x509 -key test_vectors/private.der -inform DER -out test_vectors/cert.pem -days 365 -subj "/CN=Test"
+openssl pkey -in test_vectors/private.der -inform DER -out test_vectors/private.pem
+xmlsec1 --sign --privkey-pem:signing test_vectors/private.pem,test_vectors/cert.pem --id-attr:ID urn:oasis:names:tc:SAML:2.0:assertion:Assertion --id-attr:ID urn:oasis:names:tc:SAML:2.0:protocol:Response --node-xpath "//*[local-name()='Assertion' and namespace-uri()='urn:oasis:names:tc:SAML:2.0:assertion']/*[local-name()='Signature' and namespace-uri()='http://www.w3.org/2000/09/xmldsig#']" --output test_vectors/multi_saml_response_signed.xml --verbose test_vectors/multi_saml_response_template.xml
+xmlsec1 --sign --privkey-pem:signing test_vectors/private.pem,test_vectors/cert.pem --id-attr:ID urn:oasis:names:tc:SAML:2.0:assertion:Assertion --id-attr:ID urn:oasis:names:tc:SAML:2.0:protocol:Response --node-xpath "/*[local-name()='Response' and namespace-uri()='urn:oasis:names:tc:SAML:2.0:protocol']/*[local-name()='Signature' and namespace-uri()='http://www.w3.org/2000/09/xmldsig#']" --output test_vectors/multi_saml_response_signed_2.xml --verbose test_vectors/multi_saml_response_signed.xml
