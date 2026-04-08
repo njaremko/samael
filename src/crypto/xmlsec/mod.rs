@@ -49,6 +49,12 @@ pub enum XmlSecProviderError {
         error: Box<dyn std::error::Error + Send + Sync>,
     },
 
+    #[error("failed to preserve namespace declaration: {}", error)]
+    XmlNamespaceDeclarationError {
+        #[source]
+        error: Box<dyn std::error::Error + Send + Sync>,
+    },
+
     #[error("encountered malformed XML ID attribute value: {id}")]
     XmlInvalidIdAttribute { id: String },
 
@@ -115,10 +121,90 @@ struct AttributeName {
     namespace: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct NamespaceDeclaration {
+    prefix: String,
+    href: String,
+}
+
 struct ParsedSelection {
     _document: libxml::tree::Document,
     shell_source: Option<libxml::tree::Node>,
     sequence_nodes: Vec<libxml::tree::Node>,
+}
+
+fn signature_uses_allowed_algorithm(
+    sig_node: &libxml::tree::Node,
+    allowed: &[super::AllowedSignatureAlgorithm],
+) -> bool {
+    let Some(signed_info) = signed_info_node(sig_node) else {
+        return false;
+    };
+    let Some(signature_algorithm) = signature_method_algorithm(&signed_info) else {
+        return false;
+    };
+    if !allowed
+        .iter()
+        .any(|allowed_algorithm| allowed_algorithm.signature_uri() == signature_algorithm)
+    {
+        return false;
+    }
+
+    let allowed_digest_algorithms = allowed
+        .iter()
+        .map(super::AllowedSignatureAlgorithm::digest_uri)
+        .collect::<HashSet<_>>();
+    let Some(digest_algorithms) = reference_digest_algorithms(&signed_info) else {
+        return false;
+    };
+
+    digest_algorithms
+        .iter()
+        .all(|algorithm| allowed_digest_algorithms.contains(algorithm.as_str()))
+}
+
+fn signed_info_node(sig_node: &libxml::tree::Node) -> Option<libxml::tree::Node> {
+    sig_node
+        .get_child_elements()
+        .into_iter()
+        .find(|child| is_xml_dsig_element(child, "SignedInfo"))
+}
+
+fn signature_method_algorithm(signed_info: &libxml::tree::Node) -> Option<String> {
+    signed_info
+        .get_child_elements()
+        .into_iter()
+        .find(|child| is_xml_dsig_element(child, "SignatureMethod"))?
+        .get_attribute("Algorithm")
+}
+
+fn reference_digest_algorithms(signed_info: &libxml::tree::Node) -> Option<Vec<String>> {
+    let references = signed_info
+        .get_child_elements()
+        .into_iter()
+        .filter(|child| is_xml_dsig_element(child, "Reference"))
+        .collect::<Vec<_>>();
+    if references.is_empty() {
+        return None;
+    }
+
+    references.iter().map(reference_digest_algorithm).collect()
+}
+
+fn reference_digest_algorithm(reference: &libxml::tree::Node) -> Option<String> {
+    reference
+        .get_child_elements()
+        .into_iter()
+        .find(|child| is_xml_dsig_element(child, "DigestMethod"))?
+        .get_attribute("Algorithm")
+}
+
+fn is_xml_dsig_element(node: &libxml::tree::Node, expected_name: &str) -> bool {
+    node.get_name() == expected_name
+        && node
+            .get_namespace()
+            .map(|namespace| namespace.get_href() == XMLNS_XML_DSIG)
+            .unwrap_or(false)
 }
 
 pub struct XmlSec;
@@ -149,10 +235,14 @@ impl super::CryptoProvider for XmlSec {
     /// Takes an XML document, parses it, verifies all XML digital signatures against the given
     /// certificates, and returns a derived version of the document where all elements that are not
     /// covered by a digital signature have been removed.
-    fn reduce_xml_to_signed(
+    ///
+    /// If `allowed_algorithms` is provided, only those signature algorithms will be accepted.
+    /// This provides protection against algorithm substitution attacks.
+    fn reduce_xml_to_signed_with_allowed_algorithms(
         xml_str: &str,
         certs_der: &[CertificateDer],
         reduce_mode: ReduceMode,
+        allowed_algorithms: Option<&[super::AllowedSignatureAlgorithm]>,
     ) -> Result<String, CryptoError> {
         let mut xml = XmlParser::default().parse_string(xml_str)?;
 
@@ -173,6 +263,12 @@ impl super::CryptoProvider for XmlSec {
         let mut selections = Vec::new();
 
         for sig_node in &signature_nodes {
+            if let Some(allowed) = allowed_algorithms {
+                if !signature_uses_allowed_algorithm(sig_node, allowed) {
+                    return Err(CryptoError::InvalidSignature);
+                }
+            }
+
             let mut verified = false;
             let mut verified_references = Vec::new();
 
@@ -180,6 +276,7 @@ impl super::CryptoProvider for XmlSec {
                 let mut sig_ctx = XmlSecSignatureContext::new_with_flags(
                     wrapper::XMLSEC_DSIG_FLAGS_STORE_SIGNEDINFO_REFERENCES,
                 )?;
+
                 let key = XmlSecKey::from_memory(key_data.der_data(), XmlSecKeyFormat::CertDer)?;
                 sig_ctx.insert_key(key);
                 verified = sig_ctx.verify_node(sig_node)?;
@@ -208,20 +305,7 @@ impl super::CryptoProvider for XmlSec {
         }
 
         if reduce_mode == ReduceMode::PreDigest {
-            if predigest_results.len() == 1 {
-                return Ok(predigest_results.remove(0));
-            } else {
-                for predigest in predigest_results {
-                    return match crate::service_provider::root_element_local_name(&predigest)
-                        .as_deref()
-                    {
-                        // We want to trust the full response as that includes the relevant data.
-                        // Everything is signed so even if we found a signed Assertion in here we could trust it, for now lets keep it minimal.
-                        Some("Response") => Ok(predigest),
-                        _ => Err(CryptoError::InvalidSignature),
-                    };
-                }
-            }
+            return predigest_result(predigest_results);
         }
 
         if selections.is_empty() {
@@ -330,6 +414,26 @@ impl super::CryptoProvider for XmlSec {
 
         Ok(document.to_string())
     }
+}
+
+fn predigest_result(mut predigest_results: Vec<String>) -> Result<String, CryptoError> {
+    if predigest_results.len() == 1 {
+        return Ok(predigest_results.remove(0));
+    }
+
+    let mut response_predigests = predigest_results
+        .into_iter()
+        .filter(|predigest| predigest_root_is_response(predigest))
+        .collect::<Vec<_>>();
+    if response_predigests.len() == 1 {
+        Ok(response_predigests.remove(0))
+    } else {
+        Err(CryptoError::InvalidSignature)
+    }
+}
+
+fn predigest_root_is_response(predigest: &str) -> bool {
+    crate::service_provider::root_element_is_saml_protocol_response(predigest)
 }
 
 /// Searches the document for all attributes named `ID` and stores them and their values in the XML
@@ -843,9 +947,51 @@ fn move_output_root_to_document_root(
 
     let mut new_root = find_node_by_ptr_in_tree(&current_root, output_root_ptr as *const _)
         .ok_or(XmlSecProviderError::XmlPredigestFragmentInvalid)?;
+    let namespaces = in_scope_namespace_declarations(doc, &new_root);
     new_root.unlink();
+    preserve_namespace_declarations(&mut new_root, namespaces)?;
     doc.set_root_element(&new_root);
     Ok(())
+}
+
+fn in_scope_namespace_declarations(
+    doc: &libxml::tree::Document,
+    node: &libxml::tree::Node,
+) -> Vec<NamespaceDeclaration> {
+    node.get_namespaces(doc)
+        .into_iter()
+        .map(|namespace| NamespaceDeclaration {
+            prefix: namespace.get_prefix(),
+            href: namespace.get_href(),
+        })
+        .filter(namespace_declaration_should_be_preserved)
+        .collect()
+}
+
+fn preserve_namespace_declarations(
+    node: &mut libxml::tree::Node,
+    namespaces: Vec<NamespaceDeclaration>,
+) -> Result<(), CryptoError> {
+    let mut declared_prefixes = node
+        .get_namespace_declarations()
+        .into_iter()
+        .map(|namespace| namespace.get_prefix())
+        .collect::<HashSet<_>>();
+
+    for namespace in namespaces {
+        if !declared_prefixes.insert(namespace.prefix.clone()) {
+            continue;
+        }
+
+        libxml::tree::Namespace::new(&namespace.prefix, &namespace.href, node)
+            .map_err(|error| XmlSecProviderError::XmlNamespaceDeclarationError { error })?;
+    }
+
+    Ok(())
+}
+
+fn namespace_declaration_should_be_preserved(namespace: &NamespaceDeclaration) -> bool {
+    !namespace.href.is_empty() && namespace.prefix != "xml" && namespace.prefix != "xmlns"
 }
 
 fn element_identity_matches(left: &libxml::tree::Node, right: &libxml::tree::Node) -> bool {
@@ -1275,6 +1421,57 @@ mod tests {
     }
 
     #[test]
+    fn predigest_result_returns_single_result_without_reclassifying_it() {
+        let assertion = r#"<saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"/>"#;
+
+        assert_eq!(
+            predigest_result(vec![assertion.to_string()]).unwrap(),
+            assertion
+        );
+    }
+
+    #[test]
+    fn predigest_result_selects_the_only_response_from_multiple_verified_references() {
+        let response = r#"<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"/>"#;
+        let assertion = r#"<saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"/>"#;
+
+        assert_eq!(
+            predigest_result(vec![assertion.to_string(), response.to_string()]).unwrap(),
+            response
+        );
+    }
+
+    #[test]
+    fn predigest_result_rejects_multiple_response_predigests() {
+        let first_response =
+            r#"<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" ID="first"/>"#;
+        let second_response =
+            r#"<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" ID="second"/>"#;
+
+        assert!(matches!(
+            predigest_result(vec![
+                first_response.to_string(),
+                second_response.to_string()
+            ]),
+            Err(CryptoError::InvalidSignature)
+        ));
+    }
+
+    #[test]
+    fn predigest_result_rejects_wrong_namespace_response_from_multiple_verified_references() {
+        let wrong_namespace_response = r#"<evil:Response xmlns:evil="urn:example:evil"/>"#;
+        let assertion = r#"<saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"/>"#;
+
+        assert!(matches!(
+            predigest_result(vec![
+                assertion.to_string(),
+                wrong_namespace_response.to_string()
+            ]),
+            Err(CryptoError::InvalidSignature)
+        ));
+    }
+
+    #[test]
     fn validate_and_mark_keeps_ancestors_for_signed_assertions() {
         let xml = r#"
 <Envelope>
@@ -1315,9 +1512,9 @@ mod tests {
     fn validate_and_mark_no_ancestors_roots_signed_assertions_at_the_assertion() {
         let xml = r#"
 <Envelope>
-  <samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" ID="response">
+  <samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" ID="response">
     <Wrapper>
-      <saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" ID="assertion">
+      <saml:Assertion ID="assertion">
         <saml:Issuer>https://idp.example.com</saml:Issuer>
       </saml:Assertion>
     </Wrapper>
@@ -1344,6 +1541,7 @@ mod tests {
         });
 
         assert!(reduced.contains("<saml:Assertion"));
+        assert!(reduced.contains("xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\""));
         assert!(!reduced.contains("<samlp:Response"));
         assert!(!reduced.contains("<Wrapper>"));
     }

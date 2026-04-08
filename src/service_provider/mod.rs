@@ -14,13 +14,22 @@ use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
 use chrono::Duration;
 use flate2::{write::DeflateEncoder, Compression};
-use quick_xml::{de::DeError, events::Event as XmlEvent, Reader};
+#[cfg(feature = "xmlsec")]
+use quick_xml::{
+    de::DeError,
+    events::{BytesStart, Event as XmlEvent},
+    name::ResolveResult,
+    NsReader, Writer,
+};
 use std::fmt::Debug;
-use std::io::Write;
+use std::io::{Cursor, Write};
 use thiserror::Error;
 use url::Url;
 
 const SUBJECT_CONFIRMATION_METHOD_BEARER: &str = "urn:oasis:names:tc:SAML:2.0:cm:bearer";
+const SAML_PROTOCOL_NS: &str = "urn:oasis:names:tc:SAML:2.0:protocol";
+const SAML_ASSERTION_NS: &str = "urn:oasis:names:tc:SAML:2.0:assertion";
+const SAML_STATUS_SUCCESS: &str = "urn:oasis:names:tc:SAML:2.0:status:Success";
 
 #[cfg(test)]
 mod tests;
@@ -174,6 +183,11 @@ pub struct ServiceProvider {
     pub contact_person: Option<ContactPerson>,
     pub max_issue_delay: Duration,
     pub max_clock_skew: Duration,
+    /// Optional list of allowed signature algorithms for signature verification.
+    /// If None, all algorithms are allowed (insecure, not recommended).
+    /// If Some, only the specified algorithms will be accepted, providing protection
+    /// against algorithm substitution attacks.
+    pub allowed_signature_algorithms: Option<Vec<crypto::AllowedSignatureAlgorithm>>,
 }
 
 impl Default for ServiceProvider {
@@ -194,6 +208,7 @@ impl Default for ServiceProvider {
             contact_person: None,
             max_issue_delay: Duration::seconds(90),
             max_clock_skew: Duration::seconds(180),
+            allowed_signature_algorithms: None,
         }
     }
 }
@@ -401,33 +416,51 @@ impl ServiceProvider {
     ) -> Result<Assertion, Error> {
         let (reduced_xml, reduced_from_verified_signature) =
             if let Some(sign_certs) = self.idp_signing_certs()? {
+                let allowed_algorithms = self.allowed_signature_algorithms.as_deref();
+
                 (
-                    Crypto::reduce_xml_to_signed(response_xml, &sign_certs, reduce_mode)
-                        .map_err(|_e| Error::FailedToValidateSignature)?,
+                    Crypto::reduce_xml_to_signed_with_allowed_algorithms(
+                        response_xml,
+                        &sign_certs,
+                        reduce_mode,
+                        allowed_algorithms,
+                    )
+                    .map_err(|_e| Error::FailedToValidateSignature)?,
                     true,
                 )
             } else {
                 (String::from(response_xml), false)
             };
 
-        match root_element_local_name(&reduced_xml).as_deref() {
-            Some("Response") => {
-                let response: Response = reduced_xml
-                    .parse()
-                    .map_err(Error::FailedToParseSamlResponse)?;
-                return self.validate_parsed_response(response, possible_request_ids);
-            }
-            Some("Assertion") if reduced_from_verified_signature => {
+        match saml_root_element(&reduced_xml)
+            .map_err(|error| Error::FailedToParseSamlResponse(DeError::from(error)))?
+        {
+            Some(SamlRootElement::ProtocolResponse) => match reduced_xml.parse::<Response>() {
+                Ok(response) => {
+                    return self.validate_parsed_response(response, possible_request_ids);
+                }
+                Err(_) if reduced_from_verified_signature => {
+                    let assertion_xml = verified_assertion_from_response_shell(&reduced_xml)
+                        .map_err(Error::FailedToParseSamlAssertion)?;
+                    let assertion: Assertion = assertion_xml
+                        .parse()
+                        .map_err(Error::FailedToParseSamlAssertion)?;
+                    self.validate_assertion(&assertion, possible_request_ids)?;
+                    return Ok(assertion);
+                }
+                Err(error) => return Err(Error::FailedToParseSamlResponse(error)),
+            },
+            Some(SamlRootElement::Assertion) if reduced_from_verified_signature => {
                 let assertion: Assertion = reduced_xml
                     .parse()
                     .map_err(Error::FailedToParseSamlAssertion)?;
                 self.validate_assertion(&assertion, possible_request_ids)?;
                 return Ok(assertion);
             }
-            Some(root_name) => {
-                return Err(Error::FailedToParseSamlResponse(DeError::Custom(format!(
-                    "unexpected SAML root element `{root_name}`"
-                ))));
+            Some(_) => {
+                return Err(Error::FailedToParseSamlResponse(DeError::Custom(
+                    "unexpected SAML root element".to_string(),
+                )));
             }
             None => {}
         }
@@ -711,19 +744,515 @@ impl ServiceProvider {
     }
 }
 
-pub(crate) fn root_element_local_name(xml: &str) -> Option<String> {
-    let mut reader = Reader::from_str(xml);
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+enum SamlRootElement {
+    ProtocolResponse,
+    Assertion,
+    Unsupported,
+}
+
+#[cfg(feature = "xmlsec")]
+pub(crate) fn root_element_is_saml_protocol_response(xml: &str) -> bool {
+    matches!(
+        saml_root_element(xml),
+        Ok(Some(SamlRootElement::ProtocolResponse))
+    )
+}
+
+fn saml_root_element(xml: &str) -> quick_xml::Result<Option<SamlRootElement>> {
+    let mut reader = NsReader::from_str(xml);
 
     loop {
-        match reader.read_event() {
-            Ok(XmlEvent::Start(start)) | Ok(XmlEvent::Empty(start)) => {
-                return Some(String::from_utf8_lossy(start.local_name().as_ref()).into_owned());
+        match reader.read_resolved_event()? {
+            (namespace, XmlEvent::Start(start)) | (namespace, XmlEvent::Empty(start)) => {
+                return Ok(Some(classify_saml_root(
+                    &namespace,
+                    start.local_name().as_ref(),
+                )));
             }
-            Ok(XmlEvent::Eof) => return None,
-            Ok(_) => {}
-            Err(_) => return None,
+            (_, XmlEvent::Eof) => return Ok(None),
+            _ => {}
         }
     }
+}
+
+fn classify_saml_root(namespace: &ResolveResult<'_>, local_name: &[u8]) -> SamlRootElement {
+    if element_is(namespace, local_name, SAML_PROTOCOL_NS, "Response") {
+        SamlRootElement::ProtocolResponse
+    } else if element_is(namespace, local_name, SAML_ASSERTION_NS, "Assertion") {
+        SamlRootElement::Assertion
+    } else {
+        SamlRootElement::Unsupported
+    }
+}
+
+fn verified_assertion_from_response_shell(xml: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let mut reader = NsReader::from_str(xml);
+    let mut writer = Writer::new(Cursor::new(Vec::new()));
+    let mut namespace_stack = Vec::new();
+    let mut root_seen = false;
+    let mut response_closed = false;
+    let mut depth = 0usize;
+    let mut assertion_count = 0usize;
+    let mut capture_depth = 0usize;
+    let mut status_seen = false;
+    let mut status_depth = None;
+    let mut status_code_count = 0usize;
+
+    loop {
+        let (namespace, event) = reader.read_resolved_event()?;
+        match event {
+            XmlEvent::Start(start) => {
+                if !root_seen {
+                    require_response_root(&namespace, start.local_name().as_ref())?;
+                    validate_only_namespace_declarations(&start, "Response")?;
+                    namespace_stack.push(namespace_declarations(&start)?);
+                    root_seen = true;
+                    depth = 1;
+                    continue;
+                }
+
+                reject_content_after_response(response_closed)?;
+
+                if capture_depth > 0 {
+                    reject_nested_assertion(&namespace, start.local_name().as_ref())?;
+                    namespace_stack.push(namespace_declarations(&start)?);
+                    capture_depth += 1;
+                    depth += 1;
+                    writer.write_event(XmlEvent::Start(start.into_owned()))?;
+                    continue;
+                }
+
+                if status_depth.is_some() && depth > status_depth.unwrap() {
+                    require_status_code(&namespace, start.local_name().as_ref())?;
+                    validate_status_code(&start)?;
+                    namespace_stack.push(namespace_declarations(&start)?);
+                    status_code_count += 1;
+                    depth += 1;
+                    continue;
+                }
+
+                if depth == 1
+                    && element_is(
+                        &namespace,
+                        start.local_name().as_ref(),
+                        SAML_ASSERTION_NS,
+                        "Assertion",
+                    )
+                {
+                    assertion_count += 1;
+                    reject_multiple_assertions(assertion_count)?;
+                    namespace_stack.push(namespace_declarations(&start)?);
+                    let standalone_start = standalone_assertion_start(start, &namespace_stack)?;
+                    writer.write_event(XmlEvent::Start(standalone_start))?;
+                    capture_depth = 1;
+                    depth += 1;
+                } else if depth == 1
+                    && element_is(
+                        &namespace,
+                        start.local_name().as_ref(),
+                        SAML_PROTOCOL_NS,
+                        "Status",
+                    )
+                {
+                    if status_seen {
+                        return reduced_response_shell_error(
+                            "reduced signed response shell contains multiple Status elements",
+                        );
+                    }
+                    validate_only_namespace_declarations(&start, "Status")?;
+                    namespace_stack.push(namespace_declarations(&start)?);
+                    status_seen = true;
+                    status_depth = Some(depth);
+                    status_code_count = 0;
+                    depth += 1;
+                } else {
+                    reject_unexpected_element(&namespace, start.local_name().as_ref())?;
+                }
+            }
+            XmlEvent::Empty(empty) => {
+                if !root_seen {
+                    require_response_root(&namespace, empty.local_name().as_ref())?;
+                    validate_only_namespace_declarations(&empty, "Response")?;
+                    root_seen = true;
+                    response_closed = true;
+                    continue;
+                }
+
+                reject_content_after_response(response_closed)?;
+
+                if capture_depth > 0 {
+                    reject_nested_assertion(&namespace, empty.local_name().as_ref())?;
+                    writer.write_event(XmlEvent::Empty(empty.into_owned()))?;
+                    continue;
+                }
+
+                if status_depth.is_some() && depth > status_depth.unwrap() {
+                    require_status_code(&namespace, empty.local_name().as_ref())?;
+                    validate_status_code(&empty)?;
+                    status_code_count += 1;
+                    continue;
+                }
+
+                if depth == 1
+                    && element_is(
+                        &namespace,
+                        empty.local_name().as_ref(),
+                        SAML_ASSERTION_NS,
+                        "Assertion",
+                    )
+                {
+                    assertion_count += 1;
+                    reject_multiple_assertions(assertion_count)?;
+                    namespace_stack.push(namespace_declarations(&empty)?);
+                    let standalone_empty = standalone_assertion_start(empty, &namespace_stack)?;
+                    namespace_stack.pop();
+                    writer.write_event(XmlEvent::Empty(standalone_empty))?;
+                } else if depth == 1
+                    && element_is(
+                        &namespace,
+                        empty.local_name().as_ref(),
+                        SAML_PROTOCOL_NS,
+                        "Status",
+                    )
+                {
+                    return reduced_response_shell_error(
+                        "reduced signed response shell Status is missing StatusCode",
+                    );
+                } else {
+                    reject_unexpected_element(&namespace, empty.local_name().as_ref())?;
+                }
+            }
+            XmlEvent::End(end) => {
+                let closes_status = status_depth.is_some_and(|open_status_depth| {
+                    depth == open_status_depth + 1
+                        && element_is(
+                            &namespace,
+                            end.local_name().as_ref(),
+                            SAML_PROTOCOL_NS,
+                            "Status",
+                        )
+                });
+                let closes_response = depth == 1
+                    && element_is(
+                        &namespace,
+                        end.local_name().as_ref(),
+                        SAML_PROTOCOL_NS,
+                        "Response",
+                    );
+
+                if capture_depth > 0 {
+                    writer.write_event(XmlEvent::End(end.into_owned()))?;
+                    capture_depth -= 1;
+                }
+
+                if closes_status {
+                    if status_code_count == 0 {
+                        return reduced_response_shell_error(
+                            "reduced signed response shell Status is missing StatusCode",
+                        );
+                    }
+                    status_depth = None;
+                }
+
+                if closes_response {
+                    response_closed = true;
+                }
+
+                if depth == 0 {
+                    return reduced_response_shell_error(
+                        "reduced signed response shell has an unmatched end element",
+                    );
+                }
+                depth -= 1;
+                namespace_stack.pop();
+            }
+            XmlEvent::Text(text) => {
+                if capture_depth > 0 {
+                    writer.write_event(XmlEvent::Text(text.into_owned()))?;
+                } else if !xml_text_is_whitespace(text.as_ref()) {
+                    return reduced_response_shell_error(
+                        "reduced signed response shell contains non-whitespace text",
+                    );
+                }
+            }
+            XmlEvent::CData(cdata) => {
+                if capture_depth > 0 {
+                    writer.write_event(XmlEvent::CData(cdata.into_owned()))?;
+                } else if !xml_text_is_whitespace(cdata.as_ref()) {
+                    return reduced_response_shell_error(
+                        "reduced signed response shell contains non-whitespace CDATA",
+                    );
+                }
+            }
+            XmlEvent::Comment(comment) => {
+                if capture_depth > 0 {
+                    writer.write_event(XmlEvent::Comment(comment.into_owned()))?;
+                } else {
+                    return reduced_response_shell_error(
+                        "reduced signed response shell contains an unexpected comment",
+                    );
+                }
+            }
+            XmlEvent::Decl(_) if !root_seen => {}
+            XmlEvent::Eof => break,
+            event => {
+                if capture_depth > 0 {
+                    writer.write_event(event.into_owned())?;
+                } else {
+                    return reduced_response_shell_error(
+                        "reduced signed response shell contains unexpected XML content",
+                    );
+                }
+            }
+        }
+    }
+
+    if !root_seen {
+        return reduced_response_shell_error(
+            "reduced signed response shell is missing Response root",
+        );
+    }
+
+    if assertion_count != 1 {
+        return reduced_response_shell_error(
+            "reduced signed response shell must contain exactly one direct SAML assertion",
+        );
+    }
+
+    Ok(String::from_utf8(writer.into_inner().into_inner())?)
+}
+
+fn require_response_root(
+    namespace: &ResolveResult<'_>,
+    local_name: &[u8],
+) -> Result<(), Box<dyn std::error::Error>> {
+    if element_is(namespace, local_name, SAML_PROTOCOL_NS, "Response") {
+        Ok(())
+    } else {
+        reduced_response_shell_error("reduced signed response shell root is not a SAML Response")
+    }
+}
+
+fn require_status_code(
+    namespace: &ResolveResult<'_>,
+    local_name: &[u8],
+) -> Result<(), Box<dyn std::error::Error>> {
+    if element_is(namespace, local_name, SAML_PROTOCOL_NS, "StatusCode") {
+        Ok(())
+    } else {
+        reduced_response_shell_error(
+            "reduced signed response shell Status contains an unexpected element",
+        )
+    }
+}
+
+fn reject_content_after_response(response_closed: bool) -> Result<(), Box<dyn std::error::Error>> {
+    if response_closed {
+        reduced_response_shell_error(
+            "reduced signed response shell contains content after Response",
+        )
+    } else {
+        Ok(())
+    }
+}
+
+fn reject_multiple_assertions(assertion_count: usize) -> Result<(), Box<dyn std::error::Error>> {
+    if assertion_count > 1 {
+        reduced_response_shell_error(
+            "reduced signed response shell contains multiple direct SAML assertions",
+        )
+    } else {
+        Ok(())
+    }
+}
+
+fn reject_nested_assertion(
+    namespace: &ResolveResult<'_>,
+    local_name: &[u8],
+) -> Result<(), Box<dyn std::error::Error>> {
+    if element_is(namespace, local_name, SAML_ASSERTION_NS, "Assertion") {
+        reduced_response_shell_error(
+            "reduced signed response shell contains a nested SAML assertion",
+        )
+    } else {
+        Ok(())
+    }
+}
+
+fn reject_unexpected_element(
+    namespace: &ResolveResult<'_>,
+    local_name: &[u8],
+) -> Result<(), Box<dyn std::error::Error>> {
+    if local_name_is(local_name, "Assertion")
+        && !element_is(namespace, local_name, SAML_ASSERTION_NS, "Assertion")
+    {
+        reduced_response_shell_error(
+            "reduced signed response shell contains an Assertion outside the SAML assertion namespace",
+        )
+    } else if local_name_is(local_name, "Status")
+        && !element_is(namespace, local_name, SAML_PROTOCOL_NS, "Status")
+    {
+        reduced_response_shell_error(
+            "reduced signed response shell contains a Status outside the SAML protocol namespace",
+        )
+    } else {
+        reduced_response_shell_error(
+            "reduced signed response shell contains an unexpected direct child element",
+        )
+    }
+}
+
+fn validate_only_namespace_declarations(
+    start: &BytesStart<'_>,
+    element_name: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    for attribute in start.attributes() {
+        let attribute = attribute?;
+        if !attribute_is_namespace_declaration(attribute.key.as_ref()) {
+            return reduced_response_shell_error(format!(
+                "reduced signed response shell {element_name} contains a non-namespace attribute"
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+fn validate_status_code(start: &BytesStart<'_>) -> Result<(), Box<dyn std::error::Error>> {
+    let mut value = None;
+
+    for attribute in start.attributes() {
+        let attribute = attribute?;
+        let key = attribute.key.as_ref();
+        if attribute_is_namespace_declaration(key) {
+            continue;
+        }
+
+        if key == b"Value" {
+            value = Some(String::from_utf8_lossy(attribute.value.as_ref()).into_owned());
+        } else {
+            return reduced_response_shell_error(
+                "reduced signed response shell StatusCode contains an unexpected attribute",
+            );
+        }
+    }
+
+    match value.as_deref() {
+        Some(SAML_STATUS_SUCCESS) => Ok(()),
+        Some(code) => reduced_response_shell_error(format!(
+            "reduced signed response shell StatusCode is not successful: {code}"
+        )),
+        None => reduced_response_shell_error(
+            "reduced signed response shell StatusCode is missing Value",
+        ),
+    }
+}
+
+fn standalone_assertion_start(
+    start: BytesStart<'_>,
+    namespace_stack: &[Vec<(String, String)>],
+) -> Result<BytesStart<'static>, Box<dyn std::error::Error>> {
+    let declared_on_assertion = namespace_stack.last().cloned().unwrap_or_default();
+    let mut standalone = start.into_owned();
+
+    for (prefix, href) in in_scope_namespaces(namespace_stack) {
+        if namespace_is_declared(&declared_on_assertion, &prefix) {
+            continue;
+        }
+
+        let attribute_name = namespace_attribute_name(&prefix);
+        standalone.push_attribute((attribute_name.as_str(), href.as_str()));
+    }
+
+    Ok(standalone)
+}
+
+fn namespace_declarations(
+    start: &BytesStart<'_>,
+) -> Result<Vec<(String, String)>, Box<dyn std::error::Error>> {
+    let mut declarations = Vec::new();
+
+    for attribute in start.attributes() {
+        let attribute = attribute?;
+        let key = String::from_utf8_lossy(attribute.key.as_ref());
+        let prefix = if key == "xmlns" {
+            Some(String::new())
+        } else {
+            key.strip_prefix("xmlns:").map(ToString::to_string)
+        };
+
+        if let Some(prefix) = prefix {
+            declarations.push((
+                prefix,
+                String::from_utf8_lossy(attribute.value.as_ref()).into_owned(),
+            ));
+        }
+    }
+
+    Ok(declarations)
+}
+
+fn in_scope_namespaces(namespace_stack: &[Vec<(String, String)>]) -> Vec<(String, String)> {
+    let mut namespaces = Vec::new();
+
+    for frame in namespace_stack {
+        for (prefix, href) in frame {
+            if let Some(existing) = namespaces
+                .iter_mut()
+                .find(|(existing_prefix, _)| existing_prefix == prefix)
+            {
+                existing.1 = href.clone();
+            } else {
+                namespaces.push((prefix.clone(), href.clone()));
+            }
+        }
+    }
+
+    namespaces
+}
+
+fn namespace_is_declared(declarations: &[(String, String)], prefix: &str) -> bool {
+    declarations
+        .iter()
+        .any(|(declared_prefix, _)| declared_prefix == prefix)
+}
+
+fn namespace_attribute_name(prefix: &str) -> String {
+    if prefix.is_empty() {
+        "xmlns".to_string()
+    } else {
+        format!("xmlns:{prefix}")
+    }
+}
+
+fn element_is(
+    namespace: &ResolveResult<'_>,
+    local_name: &[u8],
+    expected_namespace: &str,
+    expected_local_name: &str,
+) -> bool {
+    matches!(namespace, ResolveResult::Bound(bound) if bound.as_ref() == expected_namespace.as_bytes())
+        && local_name_is(local_name, expected_local_name)
+}
+
+fn local_name_is(local_name: &[u8], expected: &str) -> bool {
+    local_name == expected.as_bytes()
+}
+
+fn attribute_is_namespace_declaration(attribute_name: &[u8]) -> bool {
+    attribute_name == b"xmlns" || attribute_name.starts_with(b"xmlns:")
+}
+
+fn xml_text_is_whitespace(text: &[u8]) -> bool {
+    text.iter()
+        .all(|byte| matches!(byte, b' ' | b'\n' | b'\r' | b'\t'))
+}
+
+fn reduced_response_shell_error<T>(
+    message: impl Into<String>,
+) -> Result<T, Box<dyn std::error::Error>> {
+    Err(Box::new(DeError::Custom(message.into())))
 }
 
 fn parse_certificates(key_descriptor: &KeyDescriptor) -> Result<Vec<CertificateDer>, Error> {
@@ -813,5 +1342,181 @@ impl AuthnRequest {
         _private_key: &<Crypto as CryptoProvider>::PrivateKey,
     ) -> Result<Option<Url>, Box<dyn std::error::Error>> {
         Err(Box::new(CryptoError::CryptoDisabled))
+    }
+}
+
+#[cfg(test)]
+mod reduced_response_shell_tests {
+    use super::*;
+
+    const DIRECT_ASSERTION_SHELL: &str = r#"
+<saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol"
+                 xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
+  <saml:Assertion/>
+</saml2p:Response>
+"#;
+
+    #[test]
+    fn reduced_response_shell_accepts_single_direct_assertion_and_reconstructs_inherited_namespaces(
+    ) {
+        let xml = r#"
+<saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol"
+                 xmlns="urn:oasis:names:tc:SAML:2.0:assertion"
+                 xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <Assertion>
+    <Issuer>http://idp.example.com/metadata.php</Issuer>
+  </Assertion>
+</saml2p:Response>
+"#;
+
+        let assertion_xml = verified_assertion_from_response_shell(xml)
+            .expect("single direct SAML assertion should be extracted");
+
+        assert!(assertion_xml.starts_with("<Assertion"));
+        assert!(assertion_xml.contains("xmlns=\"urn:oasis:names:tc:SAML:2.0:assertion\""));
+        assert!(assertion_xml.contains("xmlns:xs=\"http://www.w3.org/2001/XMLSchema\""));
+        assert!(assertion_xml.contains("<Issuer>http://idp.example.com/metadata.php</Issuer>"));
+    }
+
+    #[test]
+    fn reduced_response_shell_accepts_success_status_and_single_direct_assertion() {
+        let xml = r#"
+<saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol"
+                 xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
+  <saml2p:Status>
+    <saml2p:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
+  </saml2p:Status>
+  <saml:Assertion/>
+</saml2p:Response>
+"#;
+
+        let assertion_xml = verified_assertion_from_response_shell(xml)
+            .expect("success Status should be allowed in the reduced shell");
+
+        assert!(assertion_xml.starts_with("<saml:Assertion"));
+    }
+
+    #[test]
+    fn reduced_response_shell_rejects_non_success_status() {
+        let xml = r#"
+<saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol"
+                 xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
+  <saml2p:Status>
+    <saml2p:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Requester"/>
+  </saml2p:Status>
+  <saml:Assertion/>
+</saml2p:Response>
+"#;
+
+        assert!(verified_assertion_from_response_shell(xml).is_err());
+    }
+
+    #[test]
+    fn reduced_response_shell_rejects_multiple_direct_assertions() {
+        let xml = DIRECT_ASSERTION_SHELL.replace(
+            "  <saml:Assertion/>",
+            "  <saml:Assertion/>\n  <saml:Assertion/>",
+        );
+
+        assert!(verified_assertion_from_response_shell(&xml).is_err());
+    }
+
+    #[test]
+    fn reduced_response_shell_rejects_wrong_namespace_assertion() {
+        let wrong_namespace = r#"
+<saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol"
+                 xmlns:evil="urn:example:evil">
+  <evil:Assertion/>
+</saml2p:Response>
+"#;
+        let no_namespace = r#"
+<saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol">
+  <Assertion/>
+</saml2p:Response>
+"#;
+
+        assert!(verified_assertion_from_response_shell(wrong_namespace).is_err());
+        assert!(verified_assertion_from_response_shell(no_namespace).is_err());
+    }
+
+    #[test]
+    fn reduced_response_shell_rejects_nested_assertion() {
+        let xml = r#"
+<saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol"
+                 xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
+  <Container>
+    <saml:Assertion/>
+  </Container>
+</saml2p:Response>
+"#;
+
+        assert!(verified_assertion_from_response_shell(xml).is_err());
+    }
+
+    #[test]
+    fn reduced_response_shell_rejects_assertion_nested_inside_direct_assertion() {
+        let xml = r#"
+<saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol"
+                 xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
+  <saml:Assertion>
+    <saml:Assertion/>
+  </saml:Assertion>
+</saml2p:Response>
+"#;
+
+        assert!(verified_assertion_from_response_shell(xml).is_err());
+    }
+
+    #[test]
+    fn reduced_response_shell_rejects_signature_object_assertion() {
+        let xml = r#"
+<saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol"
+                 xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+                 xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+  <ds:Signature>
+    <ds:Object>
+      <saml:Assertion/>
+    </ds:Object>
+  </ds:Signature>
+</saml2p:Response>
+"#;
+
+        assert!(verified_assertion_from_response_shell(xml).is_err());
+    }
+
+    #[test]
+    fn reduced_response_shell_rejects_response_attributes() {
+        let xml = DIRECT_ASSERTION_SHELL.replace(
+            "<saml2p:Response ",
+            "<saml2p:Response ID=\"unsigned-wrapper\" ",
+        );
+
+        assert!(verified_assertion_from_response_shell(&xml).is_err());
+    }
+
+    #[test]
+    fn saml_root_element_classifies_only_saml_protocol_response_and_assertion_roots() {
+        let protocol_response =
+            r#"<saml2p:Response xmlns:saml2p="urn:oasis:names:tc:SAML:2.0:protocol"/>"#;
+        let assertion = r#"<saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"/>"#;
+        let local_name_only_response = r#"<Response xmlns="urn:example:wrong"/>"#;
+        let wrong_namespace_assertion = r#"<evil:Assertion xmlns:evil="urn:example:evil"/>"#;
+
+        assert_eq!(
+            saml_root_element(protocol_response).unwrap(),
+            Some(SamlRootElement::ProtocolResponse)
+        );
+        assert_eq!(
+            saml_root_element(assertion).unwrap(),
+            Some(SamlRootElement::Assertion)
+        );
+        assert_eq!(
+            saml_root_element(local_name_only_response).unwrap(),
+            Some(SamlRootElement::Unsupported)
+        );
+        assert_eq!(
+            saml_root_element(wrong_namespace_assertion).unwrap(),
+            Some(SamlRootElement::Unsupported)
+        );
     }
 }

@@ -244,7 +244,7 @@ pub fn sign_url(
     Ok(unsigned_url)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "xmlsec"))]
 mod test {
     use super::UrlVerifier;
     use crate::service_provider::ServiceProvider;

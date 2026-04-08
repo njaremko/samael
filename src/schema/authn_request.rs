@@ -1,4 +1,6 @@
-use crate::crypto::{CertificateDer, Crypto, CryptoProvider};
+use crate::crypto::CertificateDer;
+#[cfg(feature = "xmlsec")]
+use crate::crypto::{Crypto, CryptoProvider};
 use crate::schema::{Conditions, Issuer, NameIdPolicy, RequestedAuthnContext, Subject};
 use crate::signature::Signature;
 use chrono::prelude::*;
@@ -233,7 +235,7 @@ impl TryFrom<&AuthnRequest> for Event<'_> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "xmlsec"))]
 mod test {
     use super::*;
     use crate::crypto::UrlVerifier;

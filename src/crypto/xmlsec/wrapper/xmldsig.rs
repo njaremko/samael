@@ -93,25 +93,6 @@ impl XmlSecSignatureContext {
         Ok(result)
     }
 
-    /// Retrieves the URI strings from the verified reference contexts.
-    pub fn get_verified_reference_uris(&self) -> XmlSecResult<Vec<String>> {
-        Ok(self
-            .get_verified_references()?
-            .into_iter()
-            .filter_map(|reference| reference.uri)
-            .collect())
-    }
-
-    /// Retrieves the pre-digest data from the first and only verified reference.
-    pub fn get_predigest_data(&self) -> XmlSecResult<String> {
-        let mut references = self.get_verified_references()?;
-        if references.len() != 1 {
-            return Err(XmlSecError::SigningError);
-        }
-
-        Ok(references.remove(0).predigest_xml)
-    }
-
     /// Sets the key to use for signature or verification. In case a key had
     /// already been set, the latter one gets released in the optional return.
     pub fn insert_key(&mut self, key: XmlSecKey) -> Option<XmlSecKey> {
@@ -127,23 +108,6 @@ impl XmlSecSignatureContext {
         }
 
         old
-    }
-
-    /// Releases a currently set key returning `Some(key)` or None otherwise.
-    #[allow(unused)]
-    pub fn release_key(&mut self) -> Option<XmlSecKey> {
-        unsafe {
-            let ctx = self.ctx.as_mut();
-            if ctx.signKey.is_null() {
-                None
-            } else {
-                let key = XmlSecKey::from_ptr(ctx.signKey);
-
-                ctx.signKey = null_mut();
-
-                Some(key)
-            }
-        }
     }
 
     /// Takes a [`XmlDocument`][xmldoc] and attempts to sign it. For this to work it has to have a properly structured
