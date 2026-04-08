@@ -30,3 +30,15 @@ pub use self::keys::XmlSecKey;
 pub use self::keys::XmlSecKeyFormat;
 pub use self::xmldsig::VerifiedReference;
 pub use self::xmldsig::XmlSecSignatureContext;
+
+// Export transform ID getters for signature algorithm restrictions
+#[doc(hidden)]
+pub use self::bindings::{
+    xmlSecOpenSSLTransformDsaSha256GetKlass, xmlSecOpenSSLTransformEcdsaSha224GetKlass,
+    xmlSecOpenSSLTransformEcdsaSha256GetKlass, xmlSecOpenSSLTransformEcdsaSha384GetKlass,
+    xmlSecOpenSSLTransformEcdsaSha512GetKlass, xmlSecOpenSSLTransformRsaSha224GetKlass,
+    xmlSecOpenSSLTransformRsaSha256GetKlass, xmlSecOpenSSLTransformRsaSha384GetKlass,
+    xmlSecOpenSSLTransformRsaSha512GetKlass, xmlSecOpenSSLTransformSha1GetKlass,
+    xmlSecOpenSSLTransformSha256GetKlass, xmlSecTransformEnvelopedGetKlass,
+    xmlSecTransformExclC14NGetKlass,
+};

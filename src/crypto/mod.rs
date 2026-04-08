@@ -61,6 +61,48 @@ impl From<Vec<u8>> for CertificateDer {
     }
 }
 
+/// Allowed signature algorithms for signature verification.
+/// By default, all algorithms are allowed (insecure). Use this to restrict
+/// to only strong, approved algorithms.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum AllowedSignatureAlgorithm {
+    /// RSA-SHA256 (required by most SAML profiles)
+    RsaSha256,
+    /// ECDSA-SHA256 (required by most SAML profiles)
+    EcdsaSha256,
+    /// RSA-SHA224
+    RsaSha224,
+    /// RSA-SHA384
+    RsaSha384,
+    /// RSA-SHA512
+    RsaSha512,
+    /// ECDSA-SHA224
+    EcdsaSha224,
+    /// ECDSA-SHA384
+    EcdsaSha384,
+    /// ECDSA-SHA512
+    EcdsaSha512,
+    /// DSA-SHA256
+    DsaSha256,
+}
+
+impl AllowedSignatureAlgorithm {
+    /// Returns the algorithm URI as defined in XML Signature specifications
+    pub fn uri(&self) -> &'static str {
+        match self {
+            Self::RsaSha256 => "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+            Self::EcdsaSha256 => "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256",
+            Self::RsaSha224 => "http://www.w3.org/2001/04/xmldsig-more#rsa-sha224",
+            Self::RsaSha384 => "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384",
+            Self::RsaSha512 => "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512",
+            Self::EcdsaSha224 => "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha224",
+            Self::EcdsaSha384 => "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384",
+            Self::EcdsaSha512 => "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512",
+            Self::DsaSha256 => "http://www.w3.org/2009/xmldsig11#dsa-sha256",
+        }
+    }
+}
+
 /// Defines which algorithm is used to reduce signed XML.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ReduceMode {
@@ -105,6 +147,28 @@ pub trait CryptoProvider {
         xml_str: &str,
         certs_der: &[CertificateDer],
         reduce_mode: ReduceMode,
+    ) -> Result<String, CryptoError> {
+        Self::reduce_xml_to_signed_with_allowed_algorithms(
+            xml_str,
+            certs_der,
+            reduce_mode,
+            None,
+        )
+    }
+
+    /// Takes an XML document, parses it, verifies all XML digital signatures against the given
+    /// certificates, and returns output according to `reduce_mode`.
+    ///
+    /// If `allowed_algorithms` is `Some`, only the specified signature algorithms will be accepted.
+    /// If `None`, all algorithms are allowed (insecure, not recommended for production).
+    ///
+    /// This provides protection against algorithm substitution attacks by enforcing signature
+    /// algorithm restrictions at the xmlsec library level before any cryptographic operations.
+    fn reduce_xml_to_signed_with_allowed_algorithms(
+        xml_str: &str,
+        certs_der: &[CertificateDer],
+        reduce_mode: ReduceMode,
+        allowed_algorithms: Option<&[AllowedSignatureAlgorithm]>,
     ) -> Result<String, CryptoError>;
 
     fn decrypt_assertion_key_info(

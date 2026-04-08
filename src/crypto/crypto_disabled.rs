@@ -1,6 +1,6 @@
 //! This module provides the behaviour if no crypto is available.
 
-use crate::crypto::{CertificateDer, CryptoError, CryptoProvider, ReduceMode};
+use crate::crypto::{AllowedSignatureAlgorithm, CertificateDer, CryptoError, CryptoProvider, ReduceMode};
 use crate::schema::CipherValue;
 
 pub struct NoCrypto;
@@ -16,10 +16,11 @@ impl CryptoProvider for NoCrypto {
         Ok(())
     }
 
-    fn reduce_xml_to_signed(
+    fn reduce_xml_to_signed_with_allowed_algorithms(
         _xml_str: &str,
         _certs: &[CertificateDer],
         _reduce_mode: ReduceMode,
+        _allowed_algorithms: Option<&[AllowedSignatureAlgorithm]>,
     ) -> Result<String, CryptoError> {
         Err(CryptoError::CryptoDisabled)
     }

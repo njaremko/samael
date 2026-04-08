@@ -43,6 +43,40 @@ impl XmlSecSignatureContext {
         Ok(ctx)
     }
 
+    /// Enables a specific signature algorithm transform. Once called, only explicitly
+    /// enabled transforms will be allowed (whitelist mode).
+    pub fn enable_signature_transform(
+        &mut self,
+        transform_id: bindings::xmlSecTransformId,
+    ) -> XmlSecResult<()> {
+        let rc = unsafe {
+            bindings::xmlSecDSigCtxEnableSignatureTransform(self.ctx.as_ptr(), transform_id)
+        };
+
+        if rc < 0 {
+            Err(XmlSecError::ContextInitError)
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Enables a specific reference transform. Once called, only explicitly
+    /// enabled transforms will be allowed for references (whitelist mode).
+    pub fn enable_reference_transform(
+        &mut self,
+        transform_id: bindings::xmlSecTransformId,
+    ) -> XmlSecResult<()> {
+        let rc = unsafe {
+            bindings::xmlSecDSigCtxEnableReferenceTransform(self.ctx.as_ptr(), transform_id)
+        };
+
+        if rc < 0 {
+            Err(XmlSecError::ContextInitError)
+        } else {
+            Ok(())
+        }
+    }
+
     /// Retrieves the verified references from `<ds:SignedInfo>`.
     pub fn get_verified_references(&self) -> XmlSecResult<Vec<VerifiedReference>> {
         let mut result = Vec::new();
