@@ -412,6 +412,29 @@ mod encrypted_assertion_tests {
         );
     }
 
+    // TODO: this should work, but it does not with ValidateAndMark
+    #[test]
+    fn test_validate_and_mark_only_assertion_signed() {
+        let sp = create_predigest_assertion_sp("http://sp.example.com/demo1/index.php?acs");
+        let response_xml = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/test_vectors/response_signed_assertion.xml"
+        ));
+
+        let assertion = sp
+            .parse_xml_response_with_mode(
+                &response_xml,
+                Some(&["ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"]),
+                ReduceMode::ValidateAndMark
+            )
+            .unwrap();
+
+        assert_eq!(
+            assertion.issuer.value.as_deref(),
+            Some("http://idp.example.com/metadata.php")
+        );
+    }
+
     #[test]
     fn test_response_validation_requires_assertion_recipient_binding() {
         let sp = create_predigest_assertion_sp("http://sp.example.com/demo1/index.php?acs");
