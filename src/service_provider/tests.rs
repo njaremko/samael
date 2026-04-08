@@ -583,4 +583,65 @@ mod encrypted_assertion_tests {
             Error::AssertionSubjectConfirmationExpiredBefore { .. }
         ));
     }
+
+    #[test]
+    fn test_allowed_signature_algorithms_rejects_weak_algorithms() {
+        use crate::crypto::AllowedSignatureAlgorithm;
+
+        let idp_metadata: EntityDescriptor =
+            include_str!("../../test_vectors/idp_metadata.xml")
+                .parse()
+                .unwrap();
+
+        // Create a ServiceProvider that only allows strong algorithms (SHA256 and above)
+        let sp = ServiceProviderBuilder::default()
+            .idp_metadata(idp_metadata)
+            .acs_url("http://sp.example.com/acs".to_string())
+            .allowed_signature_algorithms(vec![
+                AllowedSignatureAlgorithm::RsaSha256,
+                AllowedSignatureAlgorithm::EcdsaSha256,
+                AllowedSignatureAlgorithm::RsaSha384,
+                AllowedSignatureAlgorithm::RsaSha512,
+            ])
+            .build()
+            .unwrap();
+
+        // Verify the configuration is set
+        assert!(sp.allowed_signature_algorithms.is_some());
+        assert_eq!(sp.allowed_signature_algorithms.as_ref().unwrap().len(), 4);
+
+        // Test that a response signed with weak RSA-SHA1 is REJECTED
+        // This test vector is signed with RSA-SHA1, which is NOT in our allowed list
+        let response_xml = include_str!("../../test_vectors/response_signed_by_idp_2.xml");
+        let result = sp.parse_xml_response(response_xml, Some(&["id-sRfZ4Fe8w3bPPOtxPcLEYW6aWpZm"]));
+
+        // This should FAIL because RSA-SHA1 is not in the allowed list
+        assert!(
+            result.is_err(),
+            "RSA-SHA1 should be rejected when not in allowed list"
+        );
+        assert!(matches!(result, Err(Error::FailedToValidateSignature)));
+    }
+
+    #[test]
+    fn test_default_has_no_algorithm_restrictions() {
+        let idp_metadata: EntityDescriptor =
+            include_str!("../../test_vectors/idp_metadata.xml")
+                .parse()
+                .unwrap();
+
+        // ServiceProvider without explicit algorithm restrictions
+        let sp = ServiceProviderBuilder::default()
+            .idp_metadata(idp_metadata)
+            .acs_url("http://sp.example.com/acs".to_string())
+            .build()
+            .unwrap();
+
+        // Verify no restrictions are set by default
+        assert!(sp.allowed_signature_algorithms.is_none());
+
+        // Note: All other existing tests in the suite pass without restrictions,
+        // demonstrating that the default behavior (no restrictions) works correctly.
+        // This test simply verifies that the field defaults to None.
+    }
 }

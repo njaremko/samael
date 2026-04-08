@@ -174,6 +174,11 @@ pub struct ServiceProvider {
     pub contact_person: Option<ContactPerson>,
     pub max_issue_delay: Duration,
     pub max_clock_skew: Duration,
+    /// Optional list of allowed signature algorithms for signature verification.
+    /// If None, all algorithms are allowed (insecure, not recommended).
+    /// If Some, only the specified algorithms will be accepted, providing protection
+    /// against algorithm substitution attacks.
+    pub allowed_signature_algorithms: Option<Vec<crypto::AllowedSignatureAlgorithm>>,
 }
 
 impl Default for ServiceProvider {
@@ -194,6 +199,7 @@ impl Default for ServiceProvider {
             contact_person: None,
             max_issue_delay: Duration::seconds(90),
             max_clock_skew: Duration::seconds(180),
+            allowed_signature_algorithms: None,
         }
     }
 }
@@ -391,9 +397,19 @@ impl ServiceProvider {
     ) -> Result<Assertion, Error> {
         let (reduced_xml, reduced_from_verified_signature) =
             if let Some(sign_certs) = self.idp_signing_certs()? {
+                let allowed_algorithms = self
+                    .allowed_signature_algorithms
+                    .as_ref()
+                    .map(|v| v.as_slice());
+
                 (
-                    Crypto::reduce_xml_to_signed(response_xml, &sign_certs, reduce_mode)
-                        .map_err(|_e| Error::FailedToValidateSignature)?,
+                    Crypto::reduce_xml_to_signed_with_allowed_algorithms(
+                        response_xml,
+                        &sign_certs,
+                        reduce_mode,
+                        allowed_algorithms,
+                    )
+                    .map_err(|_e| Error::FailedToValidateSignature)?,
                     true,
                 )
             } else {
@@ -701,7 +717,7 @@ impl ServiceProvider {
     }
 }
 
-fn root_element_local_name(xml: &str) -> Option<String> {
+pub(crate) fn root_element_local_name(xml: &str) -> Option<String> {
     let mut reader = Reader::from_str(xml);
 
     loop {

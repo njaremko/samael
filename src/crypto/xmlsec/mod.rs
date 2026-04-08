@@ -121,6 +121,72 @@ struct ParsedSelection {
     sequence_nodes: Vec<libxml::tree::Node>,
 }
 
+/// Helper function to enable only allowed signature algorithms in the signature context.
+/// Once called, xmlsec switches to whitelist mode and rejects all other algorithms.
+///
+/// This also enables the necessary reference transforms (C14N, enveloped signature, digests)
+/// that are commonly used in SAML signatures.
+fn enable_allowed_signature_algorithms(
+    sig_ctx: &mut XmlSecSignatureContext,
+    allowed: &[super::AllowedSignatureAlgorithm],
+) -> Result<(), XmlSecProviderError> {
+    use super::AllowedSignatureAlgorithm;
+
+    // Enable the allowed signature algorithms
+    for algo in allowed {
+        let transform_id = unsafe {
+            match algo {
+                AllowedSignatureAlgorithm::RsaSha224 => {
+                    wrapper::xmlSecOpenSSLTransformRsaSha224GetKlass()
+                }
+                AllowedSignatureAlgorithm::RsaSha256 => {
+                    wrapper::xmlSecOpenSSLTransformRsaSha256GetKlass()
+                }
+                AllowedSignatureAlgorithm::RsaSha384 => {
+                    wrapper::xmlSecOpenSSLTransformRsaSha384GetKlass()
+                }
+                AllowedSignatureAlgorithm::RsaSha512 => {
+                    wrapper::xmlSecOpenSSLTransformRsaSha512GetKlass()
+                }
+                AllowedSignatureAlgorithm::EcdsaSha224 => {
+                    wrapper::xmlSecOpenSSLTransformEcdsaSha224GetKlass()
+                }
+                AllowedSignatureAlgorithm::EcdsaSha256 => {
+                    wrapper::xmlSecOpenSSLTransformEcdsaSha256GetKlass()
+                }
+                AllowedSignatureAlgorithm::EcdsaSha384 => {
+                    wrapper::xmlSecOpenSSLTransformEcdsaSha384GetKlass()
+                }
+                AllowedSignatureAlgorithm::EcdsaSha512 => {
+                    wrapper::xmlSecOpenSSLTransformEcdsaSha512GetKlass()
+                }
+                AllowedSignatureAlgorithm::DsaSha256 => {
+                    wrapper::xmlSecOpenSSLTransformDsaSha256GetKlass()
+                }
+            }
+        };
+
+        sig_ctx.enable_signature_transform(transform_id)?;
+    }
+
+    // Enable common transforms used in SAML signatures
+    unsafe {
+        // Exclusive C14N (most common in SAML) - needed for both signature and references
+        let c14n_transform = wrapper::xmlSecTransformExclC14NGetKlass();
+        sig_ctx.enable_signature_transform(c14n_transform)?;
+        sig_ctx.enable_reference_transform(c14n_transform)?;
+
+        // Enveloped signature transform (required for embedded signatures)
+        sig_ctx.enable_reference_transform(wrapper::xmlSecTransformEnvelopedGetKlass())?;
+
+        // Digest algorithms - SHA1 and SHA256 are most common in SAML
+        sig_ctx.enable_reference_transform(wrapper::xmlSecOpenSSLTransformSha1GetKlass())?;
+        sig_ctx.enable_reference_transform(wrapper::xmlSecOpenSSLTransformSha256GetKlass())?;
+    }
+
+    Ok(())
+}
+
 pub struct XmlSec;
 
 impl super::CryptoProvider for XmlSec {
@@ -149,10 +215,14 @@ impl super::CryptoProvider for XmlSec {
     /// Takes an XML document, parses it, verifies all XML digital signatures against the given
     /// certificates, and returns a derived version of the document where all elements that are not
     /// covered by a digital signature have been removed.
-    fn reduce_xml_to_signed(
+    ///
+    /// If `allowed_algorithms` is provided, only those signature algorithms will be accepted.
+    /// This provides protection against algorithm substitution attacks.
+    fn reduce_xml_to_signed_with_allowed_algorithms(
         xml_str: &str,
         certs_der: &[CertificateDer],
         reduce_mode: ReduceMode,
+        allowed_algorithms: Option<&[super::AllowedSignatureAlgorithm]>,
     ) -> Result<String, CryptoError> {
         let mut xml = XmlParser::default().parse_string(xml_str)?;
 
@@ -180,6 +250,12 @@ impl super::CryptoProvider for XmlSec {
                 let mut sig_ctx = XmlSecSignatureContext::new_with_flags(
                     wrapper::XMLSEC_DSIG_FLAGS_STORE_SIGNEDINFO_REFERENCES,
                 )?;
+
+                // Enable only allowed algorithms if specified
+                if let Some(allowed) = allowed_algorithms {
+                    enable_allowed_signature_algorithms(&mut sig_ctx, allowed)?;
+                }
+
                 let key = XmlSecKey::from_memory(key_data.der_data(), XmlSecKeyFormat::CertDer)?;
                 sig_ctx.insert_key(key);
                 verified = sig_ctx.verify_node(sig_node)?;
