@@ -371,18 +371,18 @@ fn test_malicious_ancestors_not_included() {
         "/test_vectors/idp_2_metadata_public.pem"
     )));
 
-    for (reduce_mode, result) in [
-        (ReduceMode::PreDigest, true),
-        (ReduceMode::ValidateAndMark, true),
-        (ReduceMode::ValidateAndMarkNoAncestors, true),
+    for (reduce_mode, should_contain_attacker_url) in [
+        (ReduceMode::PreDigest, false),
+        (ReduceMode::ValidateAndMark, false),
+        (ReduceMode::ValidateAndMarkNoAncestors, false),
     ] {
         let reduced = XmlSec::reduce_xml_to_signed(signed_xml, &[cert.clone()], reduce_mode)
             .expect("reduce_xml_to_signed should succeed");
 
         assert_eq!(
-            !reduced.contains("https://attacker.evil.com"),
-            result,
-            "ancestor should not be contained in {reduce_mode:?}"
+            reduced.contains("https://attacker.evil.com"),
+            should_contain_attacker_url,
+            "Attacker URL containment mismatch for {reduce_mode:?}: expected {should_contain_attacker_url}"
         );
     }
 }
@@ -398,18 +398,18 @@ fn test_object_reference_removed() {
         "/test_vectors/idp_2_metadata_public.pem"
     )));
 
-    for (reduce_mode, result) in [
-        (ReduceMode::PreDigest, true),
-        (ReduceMode::ValidateAndMark, true),
-        (ReduceMode::ValidateAndMarkNoAncestors, true),
+    for (reduce_mode, should_contain_object) in [
+        (ReduceMode::PreDigest, false),
+        (ReduceMode::ValidateAndMark, false),
+        (ReduceMode::ValidateAndMarkNoAncestors, false),
     ] {
         let reduced = XmlSec::reduce_xml_to_signed(signed_xml, &[cert.clone()], reduce_mode)
             .expect("reduce_xml_to_signed should succeed");
 
         assert_eq!(
-            !reduced.contains("ds:Object"),
-            result,
-            "object should not be present in {reduce_mode:?}"
+            reduced.contains("ds:Object"),
+            should_contain_object,
+            "Object containment mismatch for {reduce_mode:?}: expected {should_contain_object}"
         );
     }
 }
@@ -448,18 +448,18 @@ fn test_xpath_transforms_validated() {
         "/test_vectors/idp_2_metadata_public.pem"
     )));
 
-    for (reduce_mode, result) in [
-        (ReduceMode::PreDigest, true),
-        (ReduceMode::ValidateAndMark, true),
-        (ReduceMode::ValidateAndMarkNoAncestors, true),
+    for (reduce_mode, should_contain_malicious) in [
+        (ReduceMode::PreDigest, false),
+        (ReduceMode::ValidateAndMark, false),
+        (ReduceMode::ValidateAndMarkNoAncestors, false),
     ] {
         let reduced = XmlSec::reduce_xml_to_signed(signed_xml, &[cert.clone()], reduce_mode)
             .expect("reduce_xml_to_signed should succeed");
 
         assert_eq!(
-            !reduced.contains("malicious"),
-            result,
-            "malicious content should not be present in {reduce_mode:?}"
+            reduced.contains("malicious"),
+            should_contain_malicious,
+            "Malicious content containment mismatch for {reduce_mode:?}: expected {should_contain_malicious}"
         );
     }
 }

@@ -412,6 +412,29 @@ mod encrypted_assertion_tests {
         );
     }
 
+    // TODO: this should work, but it does not with ValidateAndMark
+    #[test]
+    fn test_validate_and_mark_only_assertion_signed() {
+        let sp = create_predigest_assertion_sp("http://sp.example.com/demo1/index.php?acs");
+        let response_xml = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/test_vectors/response_signed_assertion.xml"
+        ));
+
+        let assertion = sp
+            .parse_xml_response_with_mode(
+                &response_xml,
+                Some(&["ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"]),
+                ReduceMode::ValidateAndMark
+            )
+            .unwrap();
+
+        assert_eq!(
+            assertion.issuer.value.as_deref(),
+            Some("http://idp.example.com/metadata.php")
+        );
+    }
+
     #[test]
     fn test_response_validation_requires_assertion_recipient_binding() {
         let sp = create_predigest_assertion_sp("http://sp.example.com/demo1/index.php?acs");
@@ -582,5 +605,34 @@ mod encrypted_assertion_tests {
             error,
             Error::AssertionSubjectConfirmationExpiredBefore { .. }
         ));
+    }
+
+    #[test]
+    fn test_parse_xml_response_with_empty_saml_response() {
+        let mut sp = create_predigest_assertion_sp_with_metadata("https://api.dev.zoo.dev/auth/saml/00000000-00000000-00000000-00000000/login", r#"<?xml version="1.0"?>
+<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" entityID="https://some.idp.test/blah/">
+  <md:IDPSSODescriptor WantAuthnRequestsSigned="false" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <md:KeyDescriptor use="signing">
+      <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <ds:X509Data>
+          <ds:X509Certificate>MIIB+jCCAWOgAwIBAgIUdcXUPTE+mOSWxRCJh8ldmDMPzREwDQYJKoZIhvcNAQELBQAwDzENMAsGA1UEAwwEVGVzdDAeFw0yNjA0MDIxMjQzMTNaFw0yNzA0MDIxMjQzMTNaMA8xDTALBgNVBAMMBFRlc3QwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAJEBNDJKH5nXr0hZKcSNIY1l4HeYLPBEKJLXyAnoFTdgGrvi40YyIx9lHh0LbDVWCgxJp21BmKll0CkgmeKidvGlr3FUwtETro44L+SgmjiJNbftvFxhNkgA26O2GDQuBoQwgSiagVadWXwJKkodH8tx4ojBPYK1pBO8fHf3wOnxAgMBAAGjUzBRMB0GA1UdDgQWBBSLoT4AEwcK1+0IMwgo6JYfA4e8ZTAfBgNVHSMEGDAWgBSLoT4AEwcK1+0IMwgo6JYfA4e8ZTAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4GBAAtV1hclbZBD17LMbBwyrTj7szmmeUVISPeFEPaAKqiTXrHwRZ+akajboB2JjT3YYMXX2/eDaSvq9f20vJQUvkEAaYu8eNNDKWgm4btJFAeJT8uGxizmTspdJ0cxFSwxqaosV3qIqJgpwLbzUXEcu6mKfyqDM6AeFZdZevkxmKlE</ds:X509Certificate>
+        </ds:X509Data>
+      </ds:KeyInfo>
+    </md:KeyDescriptor>
+    <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://some.idp.test/blah/"/>
+    <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
+    <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://some.idp.test/blah/"/>
+  </md:IDPSSODescriptor>
+</md:EntityDescriptor>
+"#.parse().unwrap());
+        sp.allow_idp_initiated = true;
+        let response_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/multi_saml_response_signed_2.xml"
+        ));
+
+        let assertion = sp
+            .parse_xml_response_with_mode(response_xml, None, ReduceMode::PreDigest)
+            .expect("signed assertion should parse in pre-digest mode");
     }
 }

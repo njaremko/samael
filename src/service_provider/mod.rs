@@ -365,9 +365,23 @@ impl ServiceProvider {
         encoded_resp: &str,
         possible_request_ids: Option<&[&str]>,
     ) -> Result<Assertion, Box<dyn std::error::Error>> {
+        self.parse_base64_response_with_mode(
+            encoded_resp,
+            possible_request_ids,
+            ReduceMode::default(),
+        )
+    }
+
+    pub fn parse_base64_response_with_mode(
+        &self,
+        encoded_resp: &str,
+        possible_request_ids: Option<&[&str]>,
+        reduce_mode: ReduceMode,
+    ) -> Result<Assertion, Box<dyn std::error::Error>> {
         let bytes = general_purpose::STANDARD.decode(encoded_resp)?;
         let decoded = std::str::from_utf8(&bytes)?;
-        let assertion = self.parse_xml_response(decoded, possible_request_ids)?;
+        let assertion =
+            self.parse_xml_response_with_mode(decoded, possible_request_ids, reduce_mode)?;
         Ok(assertion)
     }
 
@@ -376,11 +390,7 @@ impl ServiceProvider {
         response_xml: &str,
         possible_request_ids: Option<&[&str]>,
     ) -> Result<Assertion, Error> {
-        self.parse_xml_response_with_mode(
-            response_xml,
-            possible_request_ids,
-            ReduceMode::ValidateAndMarkNoAncestors,
-        )
+        self.parse_xml_response_with_mode(response_xml, possible_request_ids, ReduceMode::default())
     }
 
     pub fn parse_xml_response_with_mode(
@@ -701,7 +711,7 @@ impl ServiceProvider {
     }
 }
 
-fn root_element_local_name(xml: &str) -> Option<String> {
+pub(crate) fn root_element_local_name(xml: &str) -> Option<String> {
     let mut reader = Reader::from_str(xml);
 
     loop {
