@@ -1,8 +1,7 @@
+use crate::crypto::native::{PrivateKey, PrivateKeyOps, PublicKey, PublicKeyOps};
 use crate::crypto::CertificateDer;
 use crate::signature::SignatureAlgorithm;
 use base64::{engine::general_purpose, Engine as _};
-use openssl::error::ErrorStack;
-use openssl::pkey::{PKey, Private};
 use std::collections::HashMap;
 use std::str::FromStr;
 use thiserror::Error;
@@ -16,49 +15,49 @@ pub enum UrlVerifierError {
     UnsupportedKey,
     #[error("No query to sign")]
     NoQueryToSign,
-    #[error("Signing error")]
-    SigningError(#[from] ErrorStack),
+    #[error("Signing error: {0}")]
+    SigningError(String),
 }
 
 pub struct UrlVerifier {
-    public_key: openssl::pkey::PKey<openssl::pkey::Public>,
+    public_key: PublicKey,
 }
 
 impl UrlVerifier {
     pub fn from_rsa_pem(public_key_pem: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let public = openssl::rsa::Rsa::public_key_from_pem(public_key_pem)?;
-        let public_key = openssl::pkey::PKey::from_rsa(public)?;
-        Ok(Self { public_key })
+        Ok(Self {
+            public_key: PublicKey::from_rsa_pem(public_key_pem)?,
+        })
     }
 
     pub fn from_rsa_der(public_key_der: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let public = openssl::rsa::Rsa::public_key_from_der(public_key_der)?;
-        let public_key = openssl::pkey::PKey::from_rsa(public)?;
-        Ok(Self { public_key })
+        Ok(Self {
+            public_key: PublicKey::from_rsa_der(public_key_der)?,
+        })
     }
 
     pub fn from_ec_pem(public_key_pem: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let public = openssl::ec::EcKey::public_key_from_pem(public_key_pem)?;
-        let public_key = openssl::pkey::PKey::from_ec_key(public)?;
-        Ok(Self { public_key })
+        Ok(Self {
+            public_key: PublicKey::from_ec_pem(public_key_pem)?,
+        })
     }
 
     pub fn from_ec_der(public_key_der: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let public = openssl::ec::EcKey::public_key_from_der(public_key_der)?;
-        let public_key = openssl::pkey::PKey::from_ec_key(public)?;
-        Ok(Self { public_key })
+        Ok(Self {
+            public_key: PublicKey::from_ec_der(public_key_der)?,
+        })
     }
 
     pub fn from_x509_cert_pem(public_cert_pem: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let x509 = openssl::x509::X509::from_pem(public_cert_pem.as_bytes())?;
-        let public_key = x509.public_key()?;
-        Ok(Self { public_key })
+        Ok(Self {
+            public_key: PublicKey::from_x509_cert_pem(public_cert_pem)?,
+        })
     }
 
     pub fn from_x509(public_cert: &CertificateDer) -> Result<Self, Box<dyn std::error::Error>> {
-        let public_cert = openssl::x509::X509::from_der(public_cert.der_data())?;
-        let public_key = public_cert.public_key()?;
-        Ok(Self { public_key })
+        Ok(Self {
+            public_key: PublicKey::from_x509_cert_der(public_cert)?,
+        })
     }
 
     // Signed url should look like:
@@ -178,25 +177,11 @@ impl UrlVerifier {
         sig_alg: SignatureAlgorithm,
         signature: &[u8],
     ) -> Result<bool, Box<dyn std::error::Error>> {
-        let mut verifier = openssl::sign::Verifier::new(
-            match sig_alg {
-                SignatureAlgorithm::RsaSha256 => openssl::hash::MessageDigest::sha256(),
-                SignatureAlgorithm::EcdsaSha256 => openssl::hash::MessageDigest::sha256(),
-                _ => panic!("sig_alg is bad!"),
-            },
-            &self.public_key,
-        )?;
-
-        verifier.update(data)?;
-
-        Ok(verifier.verify(signature)?)
+        Ok(self.public_key.verify_sha256(data, signature, &sig_alg)?)
     }
 }
 
-pub fn sign_url(
-    mut unsigned_url: Url,
-    private_key: &PKey<Private>,
-) -> Result<Url, UrlVerifierError> {
+pub fn sign_url(mut unsigned_url: Url, private_key: &PrivateKey) -> Result<Url, UrlVerifierError> {
     // Refer to section 3.4.4.1 (page 17) of
     //
     // https://docs.oasis-open.org/security/saml/v2.0/saml-bindings-2.0-os.pdf
@@ -205,18 +190,16 @@ pub fn sign_url(
     // from the document but leaving them in usually works too.
 
     // see RFC 4051 for choices
-    if private_key.ec_key().is_ok() {
+    if private_key.is_ecdsa() {
         unsigned_url.query_pairs_mut().append_pair(
             "SigAlg",
             "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256",
         );
-    } else if private_key.rsa().is_ok() {
+    } else {
         unsigned_url.query_pairs_mut().append_pair(
             "SigAlg",
             "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
         );
-    } else {
-        return Err(UrlVerifierError::UnsupportedKey)?;
     }
 
     // Sign *only* the existing url's encoded query parameters:
@@ -230,21 +213,20 @@ pub fn sign_url(
         .ok_or(UrlVerifierError::NoQueryToSign)?
         .to_string();
 
-    let mut signer =
-        openssl::sign::Signer::new(openssl::hash::MessageDigest::sha256(), private_key)?;
+    let signature = private_key
+        .sign_sha256(string_to_sign.as_bytes())
+        .map_err(|e| UrlVerifierError::SigningError(e.to_string()))?;
 
-    signer.update(string_to_sign.as_bytes())?;
-
-    unsigned_url.query_pairs_mut().append_pair(
-        "Signature",
-        &general_purpose::STANDARD.encode(signer.sign_to_vec()?),
-    );
+    unsigned_url
+        .query_pairs_mut()
+        .append_pair("Signature", &general_purpose::STANDARD.encode(signature));
 
     // Past this point, it's a signed url :)
     Ok(unsigned_url)
 }
 
-#[cfg(test)]
+// These tests construct keys directly via the OpenSSL crate.
+#[cfg(all(test, feature = "openssl"))]
 mod test {
     use super::UrlVerifier;
     use crate::service_provider::ServiceProvider;

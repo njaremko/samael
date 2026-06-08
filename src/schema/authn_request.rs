@@ -1,4 +1,6 @@
-use crate::crypto::{CertificateDer, Crypto, CryptoProvider};
+use crate::crypto::CertificateDer;
+#[cfg(feature = "xmlsec")]
+use crate::crypto::{Crypto, CryptoProvider};
 use crate::schema::{Conditions, Issuer, NameIdPolicy, RequestedAuthnContext, Subject};
 use crate::signature::Signature;
 use chrono::prelude::*;
@@ -236,6 +238,7 @@ impl TryFrom<&AuthnRequest> for Event<'_> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::crypto::native::{PrivateKey, PrivateKeyOps};
     use crate::crypto::UrlVerifier;
 
     #[test]
@@ -285,8 +288,7 @@ mod test {
             "/test_vectors/authn_request_sign_template.xml"
         ));
 
-        let private_key = openssl::rsa::Rsa::private_key_from_der(private_key).unwrap();
-        let private_key = openssl::pkey::PKey::from_rsa(private_key).unwrap();
+        let private_key = PrivateKey::from_rsa_der(private_key).unwrap();
 
         let signed_authn_redirect_url = authn_request_sign_template
             .parse::<AuthnRequest>()?
@@ -316,8 +318,7 @@ mod test {
             "/test_vectors/authn_request_sign_template.xml"
         ));
 
-        let private_key = openssl::rsa::Rsa::private_key_from_der(private_key).unwrap();
-        let private_key = openssl::pkey::PKey::from_rsa(private_key).unwrap();
+        let private_key = PrivateKey::from_rsa_der(private_key).unwrap();
 
         let signed_authn_redirect_url = authn_request_sign_template
             .parse::<AuthnRequest>()?
@@ -348,8 +349,7 @@ mod test {
             "/test_vectors/authn_request_sign_template.xml"
         ));
 
-        let private_key = openssl::rsa::Rsa::private_key_from_der(private_key).unwrap();
-        let private_key = openssl::pkey::PKey::from_rsa(private_key).unwrap();
+        let private_key = PrivateKey::from_rsa_der(private_key).unwrap();
 
         let signed_authn_redirect_url = authn_request_sign_template
             .parse::<AuthnRequest>()?
