@@ -30,6 +30,21 @@ Current Features:
 
 The `"xmlsec"` feature flag adds basic support for verifying and signing SAML messages. We're using a modified copy of [rust-xmlsec](https://github.com/voipir/rust-xmlsec) library (bindings to xmlsec1 library).
 
+### Crypto backends
+
+Key generation, X.509 certificate generation and HTTP-Redirect URL signing/verification are provided by a pluggable native crypto backend. Exactly one of the following mutually-exclusive features must be enabled:
+
+- `openssl` (default) — uses the OpenSSL crate.
+- `rustcrypto` — a pure-Rust backend (`rsa`, `p256`/`ecdsa`, `sha2`, `x509-cert`) with no OpenSSL/C dependency. Supports RSA (PKCS#1 v1.5 + SHA-256) and ECDSA P-256 (SHA-256).
+
+The default feature set is `["openssl", "xmlsec"]`. For a pure-Rust build (no OpenSSL, no xmlsec) use:
+
+```sh
+cargo build --no-default-features --features rustcrypto
+```
+
+Note that XML digital signature signing/verification of full SAML documents (`sign_xml` / `verify_signed_xml` / `reduce_xml_to_signed`) still requires the `xmlsec` feature, which in turn requires the `openssl` backend. The `rustcrypto` backend covers redirect-binding URL signatures and certificate/key handling.
+
 If you want to use the `"xmlsec"` feature, you'll need to install the following C libs:
 
 - libiconv

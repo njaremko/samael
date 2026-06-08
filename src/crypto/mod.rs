@@ -1,6 +1,17 @@
+#[cfg(not(any(feature = "openssl", feature = "rustcrypto")))]
+compile_error!(
+    "No native crypto backend is enabled. Enable exactly one of the `openssl` or `rustcrypto` features."
+);
+
+#[cfg(all(feature = "openssl", feature = "rustcrypto"))]
+compile_error!(
+    "The `openssl` and `rustcrypto` crypto backends are mutually exclusive; enable only one."
+);
+
 mod cert_encoding;
 mod crypto_disabled;
 mod ids;
+pub mod native;
 mod url_verification;
 #[cfg(feature = "xmlsec")]
 mod xmlsec;
@@ -8,6 +19,7 @@ mod xmlsec;
 use crate::schema::CipherValue;
 pub use cert_encoding::*;
 pub use ids::*;
+pub use native::{PrivateKey, PublicKey};
 use thiserror::Error;
 pub use url_verification::{sign_url, UrlVerifier, UrlVerifierError};
 #[cfg(feature = "xmlsec")]
@@ -43,6 +55,9 @@ pub enum CryptoError {
 
     #[error("The crypto provider is not enabled so encryption and signing methods are disabled")]
     CryptoDisabled,
+
+    #[error("Crypto key error: {0}")]
+    KeyError(String),
 }
 
 /// A certificate encoded in der format.

@@ -1,5 +1,4 @@
 use crate::crypto;
-#[cfg(feature = "xmlsec")]
 use crate::crypto::sign_url;
 use crate::crypto::{CertificateDer, Crypto, CryptoError, CryptoProvider, ReduceMode};
 use crate::metadata::{Endpoint, IndexedEndpoint, KeyDescriptor, NameIdFormat, SpSsoDescriptor};
@@ -789,12 +788,13 @@ impl AuthnRequest {
         }
     }
 
-    // todo: how does this fit to the seperate crypto?
-    #[cfg(feature = "xmlsec")]
+    /// Build a signed HTTP-Redirect binding URL. The signature is produced with
+    /// the native crypto backend, so this is available whenever the `openssl`
+    /// or `rustcrypto` feature is enabled (it does not require `xmlsec`).
     pub fn signed_redirect(
         &self,
         relay_state: &str,
-        private_key: &<Crypto as CryptoProvider>::PrivateKey,
+        private_key: &crate::crypto::native::PrivateKey,
     ) -> Result<Option<Url>, Box<dyn std::error::Error>> {
         let unsigned_url = self.redirect(relay_state)?;
         match unsigned_url {
@@ -804,14 +804,5 @@ impl AuthnRequest {
                 Ok(Some(signed_url))
             }
         }
-    }
-
-    #[cfg(not(feature = "xmlsec"))]
-    pub fn signed_redirect(
-        &self,
-        _relay_state: &str,
-        _private_key: &<Crypto as CryptoProvider>::PrivateKey,
-    ) -> Result<Option<Url>, Box<dyn std::error::Error>> {
-        Err(Box::new(CryptoError::CryptoDisabled))
     }
 }

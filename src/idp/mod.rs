@@ -8,13 +8,9 @@ pub mod verified_request;
 #[cfg(test)]
 mod tests;
 
-use openssl::bn::{BigNum, MsbOption};
-use openssl::ec::{EcGroup, EcKey};
-use openssl::nid::Nid;
-use openssl::pkey::Private;
-use openssl::{asn1::Asn1Time, pkey, x509};
 use std::str::FromStr;
 
+use crate::crypto::native::{PrivateKey, PrivateKeyOps};
 use crate::crypto::{CertificateDer, Crypto, CryptoProvider};
 
 use crate::idp::response_builder::{build_response_template, ResponseAttribute};
@@ -22,7 +18,7 @@ use crate::schema::Response;
 use crate::traits::ToXml;
 
 pub struct IdentityProvider {
-    private_key: pkey::PKey<Private>,
+    private_key: PrivateKey,
 }
 
 pub enum Rsa {
@@ -32,7 +28,7 @@ pub enum Rsa {
 }
 
 impl Rsa {
-    fn bit_length(&self) -> u32 {
+    pub fn bit_length(&self) -> u32 {
         match &self {
             Rsa::Rsa2048 => 2048,
             Rsa::Rsa3072 => 3072,
@@ -58,75 +54,21 @@ pub struct CertificateParams<'a> {
 
 impl IdentityProvider {
     pub fn generate_new(key_type: KeyType) -> Result<Self, Error> {
-        let private_key = match key_type {
-            KeyType::Rsa(rsa) => {
-                let bit_length = rsa.bit_length();
-                let rsa = openssl::rsa::Rsa::generate(bit_length)?;
-                pkey::PKey::from_rsa(rsa)?
-            }
-            KeyType::Elliptic(ecc) => {
-                let nid = match ecc {
-                    Elliptic::NISTP256 => Nid::X9_62_PRIME256V1,
-                };
-                let group = EcGroup::from_curve_name(nid)?;
-                let private_key: EcKey<Private> = EcKey::generate(&group)?;
-                pkey::PKey::from_ec_key(private_key)?
-            }
-        };
-
+        let private_key = PrivateKey::generate(key_type)?;
         Ok(IdentityProvider { private_key })
     }
 
     pub fn from_rsa_private_key_der(der_bytes: &[u8]) -> Result<Self, Error> {
-        let rsa = openssl::rsa::Rsa::private_key_from_der(der_bytes)?;
-        let private_key = pkey::PKey::from_rsa(rsa)?;
-
+        let private_key = PrivateKey::from_rsa_der(der_bytes)?;
         Ok(IdentityProvider { private_key })
     }
 
     pub fn export_private_key_der(&self) -> Result<Vec<u8>, Error> {
-        if let Ok(ec_key) = self.private_key.ec_key() {
-            Ok(ec_key.private_key_to_der()?)
-        } else if let Ok(rsa) = self.private_key.rsa() {
-            Ok(rsa.private_key_to_der()?)
-        } else {
-            Err(Error::UnexpectedError)?
-        }
+        Ok(self.private_key.to_der()?)
     }
 
     pub fn create_certificate(&self, params: &CertificateParams) -> Result<CertificateDer, Error> {
-        let mut name = x509::X509Name::builder()?;
-        name.append_entry_by_nid(Nid::COMMONNAME, params.common_name)?;
-        let name = name.build();
-
-        let mut iss = x509::X509Name::builder()?;
-        iss.append_entry_by_nid(Nid::COMMONNAME, params.issuer_name)?;
-        let iss = iss.build();
-
-        let mut builder = x509::X509::builder()?;
-
-        let serial_number = {
-            let mut serial = BigNum::new()?;
-            serial.rand(159, MsbOption::MAYBE_ZERO, false)?;
-            serial.to_asn1_integer()?
-        };
-
-        builder.set_serial_number(&serial_number)?;
-        builder.set_version(2)?;
-        builder.set_subject_name(&name)?;
-        builder.set_issuer_name(&iss)?;
-        builder.set_pubkey(&self.private_key)?;
-
-        let starts = Asn1Time::days_from_now(0)?; // now
-        builder.set_not_before(&starts)?;
-
-        let expires = Asn1Time::days_from_now(params.days_until_expiration)?;
-        builder.set_not_after(&expires)?;
-
-        builder.sign(&self.private_key, openssl::hash::MessageDigest::sha256())?;
-
-        let certificate: x509::X509 = builder.build();
-        Ok(certificate.to_der()?.into())
+        Ok(self.private_key.create_certificate(params)?)
     }
 
     pub fn sign_authn_response(
