@@ -12,5 +12,5 @@ jobs:
         with:
           name: nix-community
       - run: |
-          nix build
-          nix flake check
+          nix build --accept-flake-config
+          nix flake check --accept-flake-config --no-pure-eval
