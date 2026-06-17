@@ -43,35 +43,27 @@ If you want to use the `"xmlsec"` feature, you'll need to install the following 
 
 # Build instructions
 
-We use [nix](https://nixos.org) to faciliate reproducible builds of `samael`.
-It will ensure you have the required libraries installed in a way that won't cause any issues with the rest of your system.
-If you want to take advantage of this, you'll need to put in a little bit of work.
+We use [nix](https://nixos.org) flakes to provide the Rust toolchain and the C libraries required by the `xmlsec` feature without installing them globally. `flake.lock` is the single project lock file for both builds and the development shell.
 
 1. [Install nix](https://github.com/DeterminateSystems/nix-installer)
-1. Install [direnv](https://direnv.net/) and [cachix](https://docs.cachix.org)
+1. Build the library:
+   ```sh
+   nix build --accept-flake-config
    ```
-   # Add ~/.nix-profile/bin to your path first
-   nix profile install nixpkgs#direnv
-   nix profile install nixpkgs#cachix
+1. Enter the development shell:
+   ```sh
+   nix develop --no-pure-eval --accept-flake-config
    ```
-1. Run `cachix use nix-community` to enable a binary cache for the rust toolchain (otherwise you'll build the rust toolchain from scratch)
-1. `cd` into this repo and run `direnv allow` and `nix-direnv-reload`
-1. Install the [direnv VS Code extension](https://marketplace.visualstudio.com/items?itemName=mkhl.direnv)
 
-## Building the library
-
-Just run `nix build`
-
-## Entering a dev environment
-
-If you followed the above instructions, just `cd`-ing into the directory will setup a reproducible dev environment,
-but if you don't want to install `direnv`, then just run `nix develop`.
-
-From their you can build as normal:
+Useful commands inside the development shell:
 
 ```sh
-cargo build --features xmlsec
-cargo test --features xmlsec
+samael-build
+samael-test
+samael-clippy
+samael-fmt
+samael-doc
+samael-audit
 ```
 
 # How do I use this library?

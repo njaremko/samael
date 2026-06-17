@@ -16,9 +16,19 @@
       url = "github:rustsec/advisory-db";
       flake = false;
     };
+    devenv = {
+      url = "github:cachix/devenv";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.rust-overlay.follows = "rust-overlay";
+    };
   };
 
-  outputs = { self, nixpkgs, nix-filter, rust-overlay, crane, advisory-db, flake-utils }:
+  nixConfig = {
+    extra-trusted-public-keys = [ "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=" ];
+    extra-substituters = [ "https://devenv.cachix.org" ];
+  };
+
+  outputs = { self, nixpkgs, nix-filter, rust-overlay, crane, advisory-db, flake-utils, devenv } @ inputs:
     flake-utils.lib.eachDefaultSystem
       (system:
         let
@@ -26,10 +36,7 @@
             (import rust-overlay)
             (final: prev: {
               nix-filter = nix-filter.lib;
-              rust-toolchain = pkgs.rust-bin.nightly.latest.default;
-              rust-dev-toolchain = pkgs.rust-toolchain.override {
-                extensions = [ "rust-src" ];
-              };
+              rust-toolchain = final.rust-bin.nightly.latest.default;
             })
           ];
           pkgs = import nixpkgs {
@@ -38,17 +45,7 @@
           craneLib =
             (crane.mkLib pkgs).overrideToolchain pkgs.rust-toolchain;
           lib = pkgs.lib;
-          stdenv = pkgs.stdenv;
-          commonNativeBuildInputs = with pkgs; [
-            libiconv
-            libtool
-            libxml2
-            libxslt
-            llvmPackages.libclang
-            openssl
-            pkg-config
-            xmlsec
-          ];
+          samaelEnv = import ./nix/samael-env.nix { inherit pkgs lib; };
           fixtureFilter = path: _type:
             builtins.match ".*test_vectors.*" path != null ||
             builtins.match ".*\.h" path != null;
@@ -59,29 +56,12 @@
             filter = sourceAndFixtures;
           };
           cargoFile = builtins.fromTOML (builtins.readFile ./Cargo.toml);
-          commonArgs = {
+          commonArgs = samaelEnv.env // {
             pname = "samael";
             inherit src;
             version = cargoFile.package.version;
 
-            # Need to tell bindgen where to find libclang
-            LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
-
-            # Set C flags for Rust's bindgen program. Unlike ordinary C
-            # compilation, bindgen does not invoke $CC directly. Instead it
-            # uses LLVM's libclang. To make sure all necessary flags are
-            # included we need to look in a few places.
-            # See https://web.archive.org/web/20220523141208/https://hoverbear.org/blog/rust-bindgen-in-nix/
-            BINDGEN_EXTRA_CLANG_ARGS = "${builtins.readFile "${stdenv.cc}/nix-support/libc-crt1-cflags"} \
-                ${builtins.readFile "${stdenv.cc}/nix-support/libc-cflags"} \
-                ${builtins.readFile "${stdenv.cc}/nix-support/cc-cflags"} \
-                ${builtins.readFile "${stdenv.cc}/nix-support/libcxx-cxxflags"} \
-                -idirafter ${pkgs.libiconv}/include \
-                ${lib.optionalString stdenv.cc.isClang "-idirafter ${stdenv.cc.cc}/lib/clang/${lib.getVersion stdenv.cc.cc}/include"} \
-                ${lib.optionalString stdenv.cc.isGNU "-isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc} -isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc}/${stdenv.hostPlatform.config} -idirafter ${stdenv.cc.cc}/lib/gcc/${stdenv.hostPlatform.config}/${lib.getVersion stdenv.cc.cc}/include"} \
-            ";
-
-            nativeBuildInputs = commonNativeBuildInputs;
+            nativeBuildInputs = samaelEnv.nativeBuildInputs;
             cargoExtraArgs = "--features xmlsec";
             cargoTestExtraArgs = "--features xmlsec";
           };
@@ -96,27 +76,9 @@
           # `nix build`
           packages.default = samael;
 
-          # `nix develop`
-          devShells.default = pkgs.mkShell {
-            # Need to tell bindgen where to find libclang
-            LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
-
-            # Set C flags for Rust's bindgen program. Unlike ordinary C
-            # compilation, bindgen does not invoke $CC directly. Instead it
-            # uses LLVM's libclang. To make sure all necessary flags are
-            # included we need to look in a few places.
-            # See https://web.archive.org/web/20220523141208/https://hoverbear.org/blog/rust-bindgen-in-nix/
-            BINDGEN_EXTRA_CLANG_ARGS = "${builtins.readFile "${stdenv.cc}/nix-support/libc-crt1-cflags"} \
-                ${builtins.readFile "${stdenv.cc}/nix-support/libc-cflags"} \
-                ${builtins.readFile "${stdenv.cc}/nix-support/cc-cflags"} \
-                ${builtins.readFile "${stdenv.cc}/nix-support/libcxx-cxxflags"} \
-                -idirafter ${pkgs.libiconv}/include \
-                ${lib.optionalString stdenv.cc.isClang "-idirafter ${stdenv.cc.cc}/lib/clang/${lib.getVersion stdenv.cc.cc}/include"} \
-                ${lib.optionalString stdenv.cc.isGNU "-isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc} -isystem ${stdenv.cc.cc}/include/c++/${lib.getVersion stdenv.cc.cc}/${stdenv.hostPlatform.config} -idirafter ${stdenv.cc.cc}/lib/gcc/${stdenv.hostPlatform.config}/${lib.getVersion stdenv.cc.cc}/include"} \
-            ";
-
-            buildInputs = with pkgs; [ rust-dev-toolchain nixpkgs-fmt ];
-            nativeBuildInputs = commonNativeBuildInputs;
+          devShells.default = devenv.lib.mkShell {
+            inherit inputs pkgs;
+            modules = [ ./devenv.nix ];
           };
 
           checks = {

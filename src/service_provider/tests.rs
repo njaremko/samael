@@ -278,6 +278,34 @@ mod encrypted_assertion_tests {
             .unwrap()
     }
 
+    fn create_multi_signed_response_sp() -> ServiceProvider {
+        let idp_metadata = r#"<?xml version="1.0"?>
+<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" entityID="https://some.idp.test/blah/">
+  <md:IDPSSODescriptor WantAuthnRequestsSigned="false" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <md:KeyDescriptor use="signing">
+      <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <ds:X509Data>
+          <ds:X509Certificate>MIIB+jCCAWOgAwIBAgIUdcXUPTE+mOSWxRCJh8ldmDMPzREwDQYJKoZIhvcNAQELBQAwDzENMAsGA1UEAwwEVGVzdDAeFw0yNjA0MDIxMjQzMTNaFw0yNzA0MDIxMjQzMTNaMA8xDTALBgNVBAMMBFRlc3QwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAJEBNDJKH5nXr0hZKcSNIY1l4HeYLPBEKJLXyAnoFTdgGrvi40YyIx9lHh0LbDVWCgxJp21BmKll0CkgmeKidvGlr3FUwtETro44L+SgmjiJNbftvFxhNkgA26O2GDQuBoQwgSiagVadWXwJKkodH8tx4ojBPYK1pBO8fHf3wOnxAgMBAAGjUzBRMB0GA1UdDgQWBBSLoT4AEwcK1+0IMwgo6JYfA4e8ZTAfBgNVHSMEGDAWgBSLoT4AEwcK1+0IMwgo6JYfA4e8ZTAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4GBAAtV1hclbZBD17LMbBwyrTj7szmmeUVISPeFEPaAKqiTXrHwRZ+akajboB2JjT3YYMXX2/eDaSvq9f20vJQUvkEAaYu8eNNDKWgm4btJFAeJT8uGxizmTspdJ0cxFSwxqaosV3qIqJgpwLbzUXEcu6mKfyqDM6AeFZdZevkxmKlE</ds:X509Certificate>
+        </ds:X509Data>
+      </ds:KeyInfo>
+    </md:KeyDescriptor>
+    <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://some.idp.test/blah/"/>
+    <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
+    <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://some.idp.test/blah/"/>
+  </md:IDPSSODescriptor>
+</md:EntityDescriptor>
+"#
+        .parse()
+        .unwrap();
+
+        let mut sp = create_predigest_assertion_sp_with_metadata(
+            "https://api.dev.zoo.dev/auth/saml/00000000-00000000-00000000-00000000/login",
+            idp_metadata,
+        );
+        sp.allow_idp_initiated = true;
+        sp
+    }
+
     fn refresh_assertion_validation_windows(assertion: &mut Assertion) {
         if let Some(conditions) = assertion.conditions.as_mut() {
             conditions.not_before = Some(Utc::now() - Duration::minutes(1));
@@ -417,15 +445,15 @@ mod encrypted_assertion_tests {
     fn test_validate_and_mark_only_assertion_signed() {
         let sp = create_predigest_assertion_sp("http://sp.example.com/demo1/index.php?acs");
         let response_xml = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/test_vectors/response_signed_assertion.xml"
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/response_signed_assertion.xml"
         ));
 
         let assertion = sp
             .parse_xml_response_with_mode(
                 &response_xml,
                 Some(&["ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"]),
-                ReduceMode::ValidateAndMark
+                ReduceMode::ValidateAndMark,
             )
             .unwrap();
 
@@ -606,33 +634,121 @@ mod encrypted_assertion_tests {
             Error::AssertionSubjectConfirmationExpiredBefore { .. }
         ));
     }
-
     #[test]
     fn test_parse_xml_response_with_empty_saml_response() {
-        let mut sp = create_predigest_assertion_sp_with_metadata("https://api.dev.zoo.dev/auth/saml/00000000-00000000-00000000-00000000/login", r#"<?xml version="1.0"?>
-<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" entityID="https://some.idp.test/blah/">
-  <md:IDPSSODescriptor WantAuthnRequestsSigned="false" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
-    <md:KeyDescriptor use="signing">
-      <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
-        <ds:X509Data>
-          <ds:X509Certificate>MIIB+jCCAWOgAwIBAgIUdcXUPTE+mOSWxRCJh8ldmDMPzREwDQYJKoZIhvcNAQELBQAwDzENMAsGA1UEAwwEVGVzdDAeFw0yNjA0MDIxMjQzMTNaFw0yNzA0MDIxMjQzMTNaMA8xDTALBgNVBAMMBFRlc3QwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAJEBNDJKH5nXr0hZKcSNIY1l4HeYLPBEKJLXyAnoFTdgGrvi40YyIx9lHh0LbDVWCgxJp21BmKll0CkgmeKidvGlr3FUwtETro44L+SgmjiJNbftvFxhNkgA26O2GDQuBoQwgSiagVadWXwJKkodH8tx4ojBPYK1pBO8fHf3wOnxAgMBAAGjUzBRMB0GA1UdDgQWBBSLoT4AEwcK1+0IMwgo6JYfA4e8ZTAfBgNVHSMEGDAWgBSLoT4AEwcK1+0IMwgo6JYfA4e8ZTAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4GBAAtV1hclbZBD17LMbBwyrTj7szmmeUVISPeFEPaAKqiTXrHwRZ+akajboB2JjT3YYMXX2/eDaSvq9f20vJQUvkEAaYu8eNNDKWgm4btJFAeJT8uGxizmTspdJ0cxFSwxqaosV3qIqJgpwLbzUXEcu6mKfyqDM6AeFZdZevkxmKlE</ds:X509Certificate>
-        </ds:X509Data>
-      </ds:KeyInfo>
-    </md:KeyDescriptor>
-    <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://some.idp.test/blah/"/>
-    <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
-    <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://some.idp.test/blah/"/>
-  </md:IDPSSODescriptor>
-</md:EntityDescriptor>
-"#.parse().unwrap());
-        sp.allow_idp_initiated = true;
+        let sp = create_multi_signed_response_sp();
         let response_xml = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/test_vectors/multi_saml_response_signed_2.xml"
         ));
 
-        let assertion = sp
-            .parse_xml_response_with_mode(response_xml, None, ReduceMode::PreDigest)
+        sp.parse_xml_response_with_mode(response_xml, None, ReduceMode::PreDigest)
             .expect("signed assertion should parse in pre-digest mode");
+    }
+
+    #[test]
+    fn test_allowed_signature_algorithms_accepts_listed_algorithm() {
+        use crate::crypto::AllowedSignatureAlgorithm;
+
+        let mut sp = create_multi_signed_response_sp();
+        sp.allowed_signature_algorithms = Some(vec![AllowedSignatureAlgorithm::RsaSha256]);
+
+        let response_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/multi_saml_response_signed_2.xml"
+        ));
+
+        sp.parse_xml_response_with_mode(response_xml, None, ReduceMode::PreDigest)
+            .expect("RSA-SHA256 should verify when RSA-SHA256 is allowed");
+    }
+
+    #[test]
+    fn test_allowed_signature_algorithms_rejects_weak_algorithms() {
+        use crate::crypto::AllowedSignatureAlgorithm;
+
+        let idp_metadata: EntityDescriptor = include_str!("../../test_vectors/idp_metadata.xml")
+            .parse()
+            .unwrap();
+
+        // Create a ServiceProvider that only allows strong algorithms (SHA256 and above)
+        let sp = ServiceProviderBuilder::default()
+            .idp_metadata(idp_metadata)
+            .acs_url(Some("http://sp.example.com/acs".to_string()))
+            .allowed_signature_algorithms(Some(vec![
+                AllowedSignatureAlgorithm::RsaSha256,
+                AllowedSignatureAlgorithm::EcdsaSha256,
+                AllowedSignatureAlgorithm::RsaSha384,
+                AllowedSignatureAlgorithm::RsaSha512,
+            ]))
+            .build()
+            .unwrap();
+
+        // Verify the configuration is set
+        assert!(sp.allowed_signature_algorithms.is_some());
+        assert_eq!(sp.allowed_signature_algorithms.as_ref().unwrap().len(), 4);
+
+        // Test that a response signed with weak RSA-SHA1 is REJECTED
+        // This test vector is signed with RSA-SHA1, which is NOT in our allowed list
+        let response_xml = include_str!("../../test_vectors/response_signed_by_idp_2.xml");
+        let result =
+            sp.parse_xml_response(response_xml, Some(&["id-sRfZ4Fe8w3bPPOtxPcLEYW6aWpZm"]));
+
+        // This should FAIL because RSA-SHA1 is not in the allowed list
+        assert!(
+            result.is_err(),
+            "RSA-SHA1 should be rejected when not in allowed list"
+        );
+        assert!(matches!(result, Err(Error::FailedToValidateSignature)));
+    }
+
+    #[test]
+    fn test_allowed_signature_algorithms_rejects_weak_digest_methods() {
+        use crate::crypto::AllowedSignatureAlgorithm;
+
+        let idp_metadata_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/idp_ecdsa_metadata.xml"
+        ));
+        let response_instant = "2014-07-17T01:01:48Z".parse::<DateTime<Utc>>().unwrap();
+        let sp = ServiceProvider {
+            metadata_url: Some("http://test_accept_signed_with_correct_key.test".into()),
+            acs_url: Some("http://sp.example.com/demo1/index.php?acs".into()),
+            idp_metadata: idp_metadata_xml.parse().unwrap(),
+            max_issue_delay: Utc::now() - response_instant + Duration::seconds(60),
+            allowed_signature_algorithms: Some(vec![AllowedSignatureAlgorithm::EcdsaSha256]),
+            ..Default::default()
+        };
+
+        let response_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/response_signed_by_idp_ecdsa.xml"
+        ));
+        let result = sp.parse_xml_response(
+            response_xml,
+            Some(&["ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"]),
+        );
+
+        assert!(matches!(result, Err(Error::FailedToValidateSignature)));
+    }
+
+    #[test]
+    fn test_default_has_no_algorithm_restrictions() {
+        let idp_metadata: EntityDescriptor = include_str!("../../test_vectors/idp_metadata.xml")
+            .parse()
+            .unwrap();
+
+        // ServiceProvider without explicit algorithm restrictions
+        let sp = ServiceProviderBuilder::default()
+            .idp_metadata(idp_metadata)
+            .acs_url(Some("http://sp.example.com/acs".to_string()))
+            .build()
+            .unwrap();
+
+        // Verify no restrictions are set by default
+        assert!(sp.allowed_signature_algorithms.is_none());
+
+        // Note: All other existing tests in the suite pass without restrictions,
+        // demonstrating that the default behavior (no restrictions) works correctly.
+        // This test simply verifies that the field defaults to None.
     }
 }
