@@ -1,0 +1,45 @@
+<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" ID="_valid_aes256_cbc_encrypted_response" InResponseTo="example" Version="2.0" IssueInstant="2025-03-04T21:09:01.566Z" Destination="http://localhost:8080/saml/acs">
+    <saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">saml-mock</saml:Issuer>
+    <samlp:Status>
+        <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
+    </samlp:Status>
+    <saml:EncryptedAssertion><xenc:EncryptedData xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" Type="http://www.w3.org/2001/04/xmlenc#Element">
+    <xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes256-cbc"/>
+    <dsig:KeyInfo xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
+        <xenc:EncryptedKey>
+            <xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"/>
+            <xenc:CipherData>
+                <xenc:CipherValue>VQBQQnQHXQIj4e973qbjAWz0OgQpDlDoSe5oI+PO6Yuk+HshU0wjc6iENANxJkOy
+P72V0ImlnczCiph80kVhRfge/vpV8zs0OYW5nwH9lnASqE9vlkwJyvrVd6NSQOJD
+lGFLowlRmRM0hm7vZoZXC8uNX54bX0Ix3XFbSX8ZMKQ=</xenc:CipherValue>
+            </xenc:CipherData>
+        </xenc:EncryptedKey>
+    </dsig:KeyInfo>
+    <xenc:CipherData>
+        <xenc:CipherValue>tYs1i+8foCn7/rF4UF4Y+1BvNU9Rb8HiXYGhO0EWOmNPX91LcFaNbnqXmeBXcx4e
+K0aXelvF/2rn3pmFxZeucplUs5hNlUEUvyQsZOlWDXluAkaLDXLasZhsEojfGqRX
+NYboZGT/psKKzW9JSg+k2oOq9N+qEpzxHDJNGVCiG1VVEIyy0GqPhUDW4g3p4G98
+ccFGOEow3j0jSKQU/EU/FtiJAzUJGl8Be1425lifcHn7YLytfCURcqz1Krolrhzs
+Zwr1lbkr1VqD5D+FiD87rTQQXSQmVpbojQpqG86osy7T3Sr06J+LIFjvOLMR+ddD
+mSRgh+l30oGrWtuzsb/GWb/Xo5ZrRh6p4QvWXQxZB5OYZBoqsQGIhyEX3y45OwdU
+6t+wkMMA/nZRFmmMf3q7tc6RLiATCN6epqlgAnaCijMk6s+nOdKs2R9no0vwr1IX
+rSr8eJZOATa/1p9Q9It2eQ833Bb1hCcg4gc5kHjqK7K2ODUiM45Fbnk/4Khk1wsP
+BnhUGVhwcnkpKjXI5BLJPAWxDnEioZFiG4Aw/PoihD4fFQ5bkWLpZ7gFHfq79wHf
+rD8RzC9q9kAqIOJFPLJv1AThNYSxTzgNFCbZPazx+aa4A8JjhoaBeRGrZD9CcBkb
+x2ESQfkp/M44rxO8AtI62xj8iN0OE3rYMeZ4YKS5wjjLX4onsFbAIEaQCTs+DgQW
+SbyqDH+Q5vxh1LeNpZAj0l0z0pzm8xPPxUYSU4T3Od7bGowMPFsEMQO/rmYM1pyg
+uI8bWuU0iITxbZvnz05AlQL14cMlyGDc6Hqf3oEkMg0cXlyKmjdJxcXEXFqW8wa2
+b3OXWcZATxa4BXpBXrBsn/gcsBsmDhD1LRcf9mYp69DaGXHdLWHT+fXDLv/sMDlB
+RsqCGlvG1Q7i5+mPUrcIW0TNh9uobp14T0AH5SNzzhthySYdevbGoOr6ghvTK0iQ
+WY6IFOYIcHT7uiBhUs+jMjxnbLBIR0VwJUjtalXiNK+FhzTJWi0N6W4y5FERoXr3
+iLFgADnqWt0RFN2EGZXWShqd8PP67JJ/Fol1kAzsw9d/eIZoYxpzvUmYd8fvHTfm
+gz+i3q1Ozhyn+H8jBFmusvMflhtIGCsQv5N6LDTGsQHXmi8V9jfzxucQxWq80dd4
+PuQJDVX5LgjlXAQnPeTAteQM2M6Jo1E2K+WgiQ6FbabTqccnuGJQ0w0krzrkGgJU
+4B26JsCSCieUFZINrPHV61Ty6zVnip3tfASMsstn2ZhLwpOzVgh4WlPyS5TIJi03
+VnbRks5iSyQ9m2zKEeSB00HK8tg1cdUR0opFZchQd/MXaQmeYAtEHBbkVbMHIDnf
+gmyaWf0rz0gWiVXfJqRQDFZx+T1XllWl2ojq6fDV3UbpEAS/hVJ51hKPaR7czYXJ
+Lo4AUsE01rF7+GLCJwBYU9zxgB8n3K5tJIiF/gWv3yyxpU3eLdlLg/xjGomWh3qb
+V/7+RdN3hZiyR3UeKFewyr+JcdlaaES6ZAKIf9UN3IoTtLqwXi9Mstgf6+gzmMge
+OIDIjXw4dBTsjBGnt+zb1qrN8GHA/i9ZNKtiwbCeZ00Pv0OKwmcchMaQb3tbvQfV</xenc:CipherValue>
+    </xenc:CipherData>
+</xenc:EncryptedData></saml:EncryptedAssertion></samlp:Response>
