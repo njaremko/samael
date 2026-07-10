@@ -69,7 +69,6 @@ impl UrlVerifier {
     //
     //   http://idp.example.com/SSOService.php?SAMLRequest=...&SigAlg=...&Signature=...
     //                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
     pub fn verify_signed_request_url(
         &self,
         signed_request_url: &url::Url,
@@ -182,7 +181,11 @@ impl UrlVerifier {
             match sig_alg {
                 SignatureAlgorithm::RsaSha256 => openssl::hash::MessageDigest::sha256(),
                 SignatureAlgorithm::EcdsaSha256 => openssl::hash::MessageDigest::sha256(),
-                _ => panic!("sig_alg is bad!"),
+                _ => {
+                    return Err(Box::new(UrlVerifierError::SigAlgUnimplemented {
+                        sigalg: format!("{sig_alg:?}"),
+                    }));
+                }
             },
             &self.public_key,
         )?;
