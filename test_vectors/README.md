@@ -48,3 +48,54 @@ openssl x509 -in ec_cert.pem -outform DER -out ec_cert.der
 # Step 5: Use the Private Key and Certificate with xmlsec1
 xmlsec1 --sign --privkey-der ec_private.der,ec_cert.der --output response_signed_by_idp_ecdsa.xml --id-attr:ID Response response_signed_template.xml
 ```
+
+# Generating encrypted responses for tests
+
+The `response_encrypted_aes{192,256}_{cbc,gcm}.xml` and `response_encrypted_valid_aes{192,256}_{cbc,gcm}.xml` fixtures are generated with `xmlsec1 --encrypt`, using the existing `sp_cert.pem` / `sp_private.pem` keypair (rsa-oaep-mgf1p key transport).
+
+Step 1 — extract the plaintext assertion from the existing AES-128-CBC fixture (the `<xenc:EncryptedData>` element is self-contained namespace-wise, so it can be passed directly to `xmlsec1 --decrypt`):
+
+```bash
+# Extract the inner <xenc:EncryptedData> element to a standalone file.
+python3 -c "
+import re
+with open('response_encrypted_valid.xml') as f:
+    print(re.search(r'<xenc:EncryptedData.*?</xenc:EncryptedData>', f.read(), re.DOTALL).group(0))
+" > /tmp/encrypted_data.xml
+
+# Decrypt it to obtain the plaintext <saml:Assertion>.
+xmlsec1 --decrypt --lax-key-search --privkey-pem sp_private.pem,sp_cert.pem /tmp/encrypted_data.xml \
+    | tail -n +2 > /tmp/plaintext_assertion.xml
+```
+
+Step 2 — create an encryption template per algorithm. Example for AES-256-CBC (substitute `aes192-cbc` for the AES-192-CBC variant, or use the `xmlenc11` namespace and `aes{192,256}-gcm` for GCM):
+
+```xml
+<xenc:EncryptedData xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" Type="http://www.w3.org/2001/04/xmlenc#Element">
+    <xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes256-cbc"/>
+    <dsig:KeyInfo>
+        <xenc:EncryptedKey>
+            <xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"/>
+            <xenc:CipherData>
+                <xenc:CipherValue/>
+            </xenc:CipherData>
+        </xenc:EncryptedKey>
+    </dsig:KeyInfo>
+    <xenc:CipherData>
+        <xenc:CipherValue/>
+    </xenc:CipherData>
+</xenc:EncryptedData>
+```
+
+Step 3 — encrypt the plaintext with `xmlsec1 --encrypt`, generating a fresh AES session key wrapped with rsa-oaep-mgf1p:
+
+```bash
+xmlsec1 --encrypt --lax-key-search \
+    --pubkey-cert-pem sp_cert.pem \
+    --session-key aes-256 \
+    --xml-data /tmp/plaintext_assertion.xml \
+    --output /tmp/encrypted_data_aes256_cbc.xml \
+    template_aes256_cbc.xml
+```
+
+Step 4 — wrap the resulting `<xenc:EncryptedData>` in a `<samlp:Response>` envelope (mirroring `response_encrypted.xml` / `response_encrypted_valid.xml`). When inlining the encrypted block, restore `xmlns:dsig="http://www.w3.org/2000/09/xmldsig#"` on the `<dsig:KeyInfo>` element — `xmlsec1` strips the redundant namespace declaration since the prefix is already in scope from the parent, but samael's serde-based parser requires the explicit attribute on the element itself (see `EncryptedKeyInfo.ds` in `src/key_info.rs`).

@@ -218,6 +218,182 @@ mod encrypted_assertion_tests {
         assert!(result.is_ok());
     }
 
+    #[test]
+    fn test_decrypt_assertion_aes192_cbc() {
+        let pkey = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/sp_private.pem"
+        ));
+        let key = PKey::private_key_from_pem(pkey).unwrap();
+
+        let response_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/response_encrypted_aes192_cbc.xml"
+        ));
+        let sp = create_sp_with_private_key_for_response(response_xml, key);
+
+        let response: crate::schema::Response = response_xml.parse().unwrap();
+        assert!(response.encrypted_assertion.is_some());
+
+        let result = response
+            .encrypted_assertion
+            .unwrap()
+            .decrypt(&sp.key.unwrap());
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_decrypt_assertion_aes256_cbc() {
+        let pkey = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/sp_private.pem"
+        ));
+        let key = PKey::private_key_from_pem(pkey).unwrap();
+
+        let response_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/response_encrypted_aes256_cbc.xml"
+        ));
+        let sp = create_sp_with_private_key_for_response(response_xml, key);
+
+        let response: crate::schema::Response = response_xml.parse().unwrap();
+        assert!(response.encrypted_assertion.is_some());
+
+        let result = response
+            .encrypted_assertion
+            .unwrap()
+            .decrypt(&sp.key.unwrap());
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_decrypt_and_validate_assertion_aes192_cbc() {
+        let pkey = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/sp_private.pem"
+        ));
+        let key = PKey::private_key_from_pem(pkey).unwrap();
+
+        let response_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/response_encrypted_valid_aes192_cbc.xml"
+        ));
+        let sp = create_sp_with_private_key_for_response(response_xml, key);
+
+        let result = sp.parse_xml_response(response_xml, Some(&["example"]));
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_decrypt_and_validate_assertion_aes256_cbc() {
+        let pkey = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/sp_private.pem"
+        ));
+        let key = PKey::private_key_from_pem(pkey).unwrap();
+
+        let response_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/response_encrypted_valid_aes256_cbc.xml"
+        ));
+        let sp = create_sp_with_private_key_for_response(response_xml, key);
+
+        let result = sp.parse_xml_response(response_xml, Some(&["example"]));
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_decrypt_assertion_aes192_gcm() {
+        let pkey = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/sp_private.pem"
+        ));
+        let key = PKey::private_key_from_pem(pkey).unwrap();
+
+        let response_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/response_encrypted_aes192_gcm.xml"
+        ));
+        let sp = create_sp_with_private_key_for_response(response_xml, key);
+
+        let response: crate::schema::Response = response_xml.parse().unwrap();
+        assert!(response.encrypted_assertion.is_some());
+
+        let result = response
+            .encrypted_assertion
+            .unwrap()
+            .decrypt(&sp.key.unwrap());
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_decrypt_assertion_aes256_gcm() {
+        let pkey = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/sp_private.pem"
+        ));
+        let key = PKey::private_key_from_pem(pkey).unwrap();
+
+        let response_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/response_encrypted_aes256_gcm.xml"
+        ));
+        let sp = create_sp_with_private_key_for_response(response_xml, key);
+
+        let response: crate::schema::Response = response_xml.parse().unwrap();
+        assert!(response.encrypted_assertion.is_some());
+
+        let result = response
+            .encrypted_assertion
+            .unwrap()
+            .decrypt(&sp.key.unwrap());
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_decrypt_and_validate_assertion_aes192_gcm() {
+        let pkey = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/sp_private.pem"
+        ));
+        let key = PKey::private_key_from_pem(pkey).unwrap();
+
+        let response_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/response_encrypted_valid_aes192_gcm.xml"
+        ));
+        let sp = create_sp_with_private_key_for_response(response_xml, key);
+
+        let result = sp.parse_xml_response(response_xml, Some(&["example"]));
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_decrypt_and_validate_assertion_aes256_gcm() {
+        let pkey = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/sp_private.pem"
+        ));
+        let key = PKey::private_key_from_pem(pkey).unwrap();
+
+        let response_xml = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test_vectors/response_encrypted_valid_aes256_gcm.xml"
+        ));
+        let sp = create_sp_with_private_key_for_response(response_xml, key);
+
+        let result = sp.parse_xml_response(response_xml, Some(&["example"]));
+
+        assert!(result.is_ok());
+    }
+
     fn extract_first_certificate(xml: &str) -> String {
         let start = xml
             .find("<ds:X509Certificate>")

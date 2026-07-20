@@ -24,7 +24,11 @@ Current Features:
       - `http://www.w3.org/2001/04/xmlenc#rsa-1_5`
     - **value info:**
       - `http://www.w3.org/2001/04/xmlenc#aes128-cbc`
+      - `http://www.w3.org/2001/04/xmlenc#aes192-cbc`
+      - `http://www.w3.org/2001/04/xmlenc#aes256-cbc`
       - `http://www.w3.org/2009/xmlenc11#aes128-gcm`
+      - `http://www.w3.org/2009/xmlenc11#aes192-gcm`
+      - `http://www.w3.org/2009/xmlenc11#aes256-gcm`
 - Verify SAMLRequest (AuthnRequest) message signatures
 - Create signed SAMLResponse (Response) messages
 

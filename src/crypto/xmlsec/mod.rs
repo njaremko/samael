@@ -375,8 +375,56 @@ impl super::CryptoProvider for XmlSec {
                     &encoded_value[iv_len..],
                 )?
             }
+            "http://www.w3.org/2001/04/xmlenc#aes192-cbc" => {
+                let cipher = Cipher::aes_192_cbc();
+                let iv_len = cipher.iv_len().unwrap();
+                decrypt(
+                    cipher,
+                    decryption_key,
+                    Some(&encoded_value[0..iv_len]),
+                    &encoded_value[iv_len..],
+                )?
+            }
+            "http://www.w3.org/2001/04/xmlenc#aes256-cbc" => {
+                let cipher = Cipher::aes_256_cbc();
+                let iv_len = cipher.iv_len().unwrap();
+                decrypt(
+                    cipher,
+                    decryption_key,
+                    Some(&encoded_value[0..iv_len]),
+                    &encoded_value[iv_len..],
+                )?
+            }
             "http://www.w3.org/2009/xmlenc11#aes128-gcm" => {
                 let cipher = Cipher::aes_128_gcm();
+                let iv_len = cipher.iv_len().unwrap();
+                let tag_len = 16usize;
+                let data_end = encoded_value.len() - tag_len;
+                decrypt_aead(
+                    cipher,
+                    decryption_key,
+                    Some(&encoded_value[0..iv_len]),
+                    &[],
+                    &encoded_value[iv_len..data_end],
+                    &encoded_value[data_end..],
+                )?
+            }
+            "http://www.w3.org/2009/xmlenc11#aes192-gcm" => {
+                let cipher = Cipher::aes_192_gcm();
+                let iv_len = cipher.iv_len().unwrap();
+                let tag_len = 16usize;
+                let data_end = encoded_value.len() - tag_len;
+                decrypt_aead(
+                    cipher,
+                    decryption_key,
+                    Some(&encoded_value[0..iv_len]),
+                    &[],
+                    &encoded_value[iv_len..data_end],
+                    &encoded_value[data_end..],
+                )?
+            }
+            "http://www.w3.org/2009/xmlenc11#aes256-gcm" => {
+                let cipher = Cipher::aes_256_gcm();
                 let iv_len = cipher.iv_len().unwrap();
                 let tag_len = 16usize;
                 let data_end = encoded_value.len() - tag_len;
