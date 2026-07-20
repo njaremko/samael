@@ -308,6 +308,26 @@ impl<'a> Iterator for EntityDescriptorIterator<'a> {
     }
 }
 
+impl EntityDescriptor {
+    pub fn sso_binding_location(&self, binding: &str) -> Option<String> {
+        if let Some(idp_sso_descriptors) = &self.idp_sso_descriptors {
+            for idp_sso_descriptor in idp_sso_descriptors {
+                return idp_sso_descriptor.sso_binding_location(binding);
+            }
+        }
+        None
+    }
+
+    pub fn slo_binding_location(&self, binding: &str) -> Option<String> {
+        if let Some(idp_sso_descriptors) = &self.idp_sso_descriptors {
+            for idp_sso_descriptor in idp_sso_descriptors {
+                return idp_sso_descriptor.slo_binding_location(binding);
+            }
+        }
+        None
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::traits::ToXml;
