@@ -13,7 +13,7 @@ pub struct LocalizedName {
 }
 
 impl LocalizedName {
-    pub fn to_xml(&self, element_name: &str) -> Result<Event, Box<dyn std::error::Error>> {
+    pub fn to_xml(&self, element_name: &str) -> Result<Event<'_>, Box<dyn std::error::Error>> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
         let mut root = BytesStart::new(element_name);
@@ -39,7 +39,7 @@ pub struct LocalizedUri {
 }
 
 impl LocalizedUri {
-    pub fn to_xml(&self, element_name: &str) -> Result<Event, Box<dyn std::error::Error>> {
+    pub fn to_xml(&self, element_name: &str) -> Result<Event<'_>, Box<dyn std::error::Error>> {
         let mut write_buf = Vec::new();
         let mut writer = Writer::new(Cursor::new(&mut write_buf));
         let mut root = BytesStart::new(element_name);

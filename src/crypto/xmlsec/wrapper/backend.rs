@@ -9,8 +9,6 @@ use crate::crypto::xmlsec::wrapper::bindings as backend_inner;
 mod backend_inner {
     pub use crate::crypto::xmlsec::wrapper::bindings::{
         xmlSecOpenSSLAppInit as xmlSecCryptoAppInit,
-        xmlSecOpenSSLAppKeyCertLoad as xmlSecCryptoAppKeyCertLoad,
-        xmlSecOpenSSLAppKeyCertLoadMemory as xmlSecCryptoAppKeyCertLoadMemory,
         xmlSecOpenSSLAppKeyLoadMemory as xmlSecCryptoAppKeyLoadMemory,
         xmlSecOpenSSLAppShutdown as xmlSecCryptoAppShutdown, xmlSecOpenSSLInit as xmlSecCryptoInit,
         xmlSecOpenSSLShutdown as xmlSecCryptoShutdown,

@@ -11,7 +11,7 @@ pub struct UnverifiedAuthnRequest<'a> {
 }
 
 impl<'a> UnverifiedAuthnRequest<'a> {
-    pub fn from_xml(xml: &str) -> Result<UnverifiedAuthnRequest, Error> {
+    pub fn from_xml(xml: &str) -> Result<UnverifiedAuthnRequest<'_>, Error> {
         Ok(UnverifiedAuthnRequest {
             request: xml.parse()?,
             xml,

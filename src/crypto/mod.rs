@@ -1,4 +1,5 @@
 mod cert_encoding;
+#[cfg(not(feature = "xmlsec"))]
 mod crypto_disabled;
 mod ids;
 mod url_verification;

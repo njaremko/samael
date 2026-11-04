@@ -1,7 +1,6 @@
 use crate::metadata::helpers::write_plain_element;
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
-use serde::Deserialize;
 use std::io::Cursor;
 
 const NAME: &str = "md:ContactPerson";
