@@ -30,7 +30,7 @@ pub enum EntityDescriptorType {
 }
 
 impl EntityDescriptorType {
-    pub fn iter(&self) -> EntityDescriptorIterator {
+    pub fn iter(&self) -> EntityDescriptorIterator<'_> {
         EntityDescriptorIterator::new(self)
     }
 }

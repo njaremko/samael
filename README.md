@@ -41,6 +41,11 @@ If you want to use the `"xmlsec"` feature, you'll need to install the following 
 - pkg-config
 - xmlsec1
 
+The build requires `pkg-config` (or a compatible `pkgconf`) and the
+`xmlsec1-openssl` package metadata. Set `PKG_CONFIG_PATH` when installing these
+libraries outside standard search paths. XMLsec's OpenSSL backend is linked
+directly; the build does not require the `xmlsec1-config` executable.
+
 # Build instructions
 
 We use [nix](https://nixos.org) flakes to provide the Rust toolchain and the C libraries required by the `xmlsec` feature without installing them globally. `flake.lock` is the single project lock file for both builds and the development shell.
